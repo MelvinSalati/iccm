@@ -1,49 +1,61 @@
-FROM php:8.3-cli
+FROM php:8.2-fpm
 
-WORKDIR /var/www/html
-
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
-    unzip \
     curl \
-    zip \
-    libzip-dev \
-    libpq-dev \
-    libxml2-dev \
+    libpng-dev \
     libonig-dev \
-    libgmp-dev \
-    libicu-dev \
-    nodejs \
-    npm \
+    libxml2-dev \
+    zip \
+    unzip \
+    sqlite3 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install \
-    bcmath \
-    pdo \
-    pdo_pgsql \
-    mbstring \
-    xml \
-    zip \
-    sockets \
-    gmp \
-    intl \
-    opcache
+# Install Node.js 20.x
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
 
+# Install PHP extensions
+RUN docker-php-ext-install pdo_sqlite mbstring exif pcntl bcmath gd
+
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-COPY . .
+# Set working directory
+WORKDIR /var/www/html
 
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
-    --no-interaction
+    --no-interaction \
+    --no-progress
 
-RUN npm install && npm run build
+# Copy npm files first for better caching
+COPY package.json package-lock.json ./
+RUN npm install && \
+    chmod -R 755 node_modules/.bin
 
-RUN chmod -R 775 storage bootstrap/cache
+# Copy the rest of the application
+COPY . /var/www/html
 
-EXPOSE 8080
+# Fix seeder name mismatch
+RUN mv database/seeders/ProvincialSeeder.php database/seeders/ProvinceSeeder.php 2>/dev/null || true
 
-CMD php artisan storage:link && \
-    php artisan optimize && \
-    php artisan serve --host=0.0.0.0 --port=$PORT
+# Create SQLite database
+RUN touch database/database.sqlite
+
+# Build assets
+RUN npm run build
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+EXPOSE 10000
+
+# Start PHP server
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
