@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="LaravelPint">
+    <laravel_pint_settings>
+      <LaravelPintConfiguration tool_path="$PROJECT_DIR$/iccm/vendor/bin/pint" />
+    </laravel_pint_settings>
+  </component>
+  <component name="MessDetectorOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PHPCSFixerOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PHPCodeSnifferOptionsConfiguration">
+    <option name="highlightLevel" value="WARNING" />
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PhpIncludePathManager">
+    <include_path>
+      <path value="$PROJECT_DIR$/iccm/vendor/tijsverkoyen/css-to-inline-styles" />
+      <path value="$PROJECT_DIR$/iccm/vendor/sebastian/exporter" />
+      <path value="$PROJECT_DIR$/iccm/vendor/spomky-labs/pki-framework" />
+      <path value="$PROJECT_DIR$/iccm/vendor/spomky-labs/cbor-php" />
+      <path value="$PROJECT_DIR$/iccm/vendor/nette/utils" />
+      <path value="$PROJECT_DIR$/iccm/vendor/voku/portable-ascii" />
+      <path value="$PROJECT_DIR$/iccm/vendor/nunomaduro/collision" />
+      <path value="$PROJECT_DIR$/iccm/vendor/theseer/tokenizer" />
+      <path value="$PROJECT_DIR$/iccm/vendor/web-auth/webauthn-lib" />
+      <path value="$PROJECT_DIR$/iccm/vendor/web-auth/cose-lib" />
+      <path value="$PROJECT_DIR$/iccm/vendor/psy/psysh" />
+      <path value="$PROJECT_DIR$/iccm/vendor/league/flysystem" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/iccm/vendor/vlucas/phpdotenv" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/routing" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/polyfill-php83" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/polyfill-php84" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/css-selector" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/polyfill-intl-grapheme" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/polyfill-intl-normalizer" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/mailer" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/property-access" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/mime" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/property-info" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/polyfill-intl-idn" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/event-dispatcher-contracts" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/polyfill-php86" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/console" />
+      <path value="$PROJECT_DIR$/iccm/vendor/sebastian/type" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/event-dispatcher" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/polyfill-php85" />
+      <path value="$PROJECT_DIR$/iccm/vendor/sebastian/lines-of-code" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/iccm/vendor/sebastian/cli-parser" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/iccm/vendor/sebastian/comparator" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/http-kernel" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/uid" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/iccm/vendor/sebastian/global-state" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/translation-contracts" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/serializer" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/string" />
+      <path value="$PROJECT_DIR$/iccm/vendor/sebastian/environment" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/yaml" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/type-info" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/translation" />
+      <path value="$PROJECT_DIR$/iccm/vendor/symfony/process" />
+      <path value="$PROJECT_DIR$/iccm/vendor/composer" />
+      <path value="$PROJECT_DIR$/iccm/vendor/phpunit/php-code-coverage" />
+      <path value="$PROJECT_DIR$/iccm/vendor/phpunit/phpunit" />
+      <path value="$PROJECT_DIR$/iccm/vendor/ta-tikoma/phpunit-architecture-test" />
+      <path value="$PROJECT_DIR$/iccm/vendor/inertiajs/inertia-laravel" />
+      <path value="$PROJECT_DIR$/iccm/vendor/pestphp/pest" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/sail" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/passkeys" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/serializable-closure" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/fortify" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/prompts" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/pao" />
+      <path value="$PROJECT_DIR$/iccm/vendor/guzzlehttp/uri-template" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/agent-detector" />
+      <path value="$PROJECT_DIR$/iccm/vendor/guzzlehttp/guzzle" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/wayfinder" />
+      <path value="$PROJECT_DIR$/iccm/vendor/webmozart/assert" />
+      <path value="$PROJECT_DIR$/iccm/vendor/guzzlehttp/psr7" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/pail" />
+      <path value="$PROJECT_DIR$/iccm/vendor/guzzlehttp/promises" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/chisel" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/framework" />
+      <path value="$PROJECT_DIR$/iccm/vendor/laravel/sanctum" />
+    </include_path>
+  </component>
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.3">
+    <option name="suggestChangeDefaultLanguageLevel" value="false" />
+  </component>
+  <component name="PhpStanOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PhpUnit">
+    <phpunit_settings>
+      <PhpUnitSettings configuration_file_path="$PROJECT_DIR$/iccm/phpunit.xml" custom_loader_path="$PROJECT_DIR$/iccm/vendor/autoload.php" paratest_path="$PROJECT_DIR$/iccm/vendor/bin/paratest_for_phpstorm" use_configuration_file="true" />
+    </phpunit_settings>
+  </component>
+  <component name="PsalmOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+</project>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="WEB_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/iccm/app" isTestSource="false" packagePrefix="App\" />
+      <sourceFolder url="file://$MODULE_DIR$/iccm/database/factories" isTestSource="false" packagePrefix="Database\Factories\" />
+      <sourceFolder url="file://$MODULE_DIR$/iccm/database/seeders" isTestSource="false" packagePrefix="Database\Seeders\" />
+      <sourceFolder url="file://$MODULE_DIR$/iccm/tests" isTestSource="true" packagePrefix="Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/spec" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/composer" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/guzzlehttp/guzzle" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/guzzlehttp/promises" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/guzzlehttp/psr7" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/guzzlehttp/uri-template" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/inertiajs/inertia-laravel" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/agent-detector" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/chisel" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/fortify" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/framework" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/pail" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/pao" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/passkeys" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/prompts" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/sail" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/serializable-closure" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/wayfinder" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/league/flysystem" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/nette/utils" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/nunomaduro/collision" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/pestphp/pest" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/phpunit/php-code-coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/phpunit/phpunit" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/psy/psysh" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/sebastian/cli-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/sebastian/comparator" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/sebastian/environment" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/sebastian/exporter" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/sebastian/global-state" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/sebastian/lines-of-code" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/sebastian/type" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/spomky-labs/cbor-php" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/spomky-labs/pki-framework" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/console" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/css-selector" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/deprecation-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/event-dispatcher" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/event-dispatcher-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/http-foundation" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/http-kernel" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/mailer" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/mime" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/polyfill-intl-grapheme" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/polyfill-intl-idn" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/polyfill-intl-normalizer" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/polyfill-mbstring" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/polyfill-php83" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/polyfill-php84" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/polyfill-php85" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/polyfill-php86" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/process" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/property-access" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/property-info" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/routing" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/serializer" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/service-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/string" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/translation" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/translation-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/type-info" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/uid" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/var-dumper" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/symfony/yaml" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/ta-tikoma/phpunit-architecture-test" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/theseer/tokenizer" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/tijsverkoyen/css-to-inline-styles" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/vlucas/phpdotenv" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/voku/portable-ascii" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/web-auth/cose-lib" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/web-auth/webauthn-lib" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/webmozart/assert" />
+      <excludeFolder url="file://$MODULE_DIR$/iccm/vendor/laravel/sanctum" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
