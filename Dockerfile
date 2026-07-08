@@ -10,15 +10,20 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     sqlite3 \
+    libsqlite3-dev \
+    nodejs \
+    npm \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js 20.x
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-
 # Install PHP extensions
-RUN docker-php-ext-install pdo_sqlite mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install \
+    pdo_sqlite \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -45,8 +50,8 @@ COPY . /var/www/html
 # Fix seeder name mismatch
 RUN mv database/seeders/ProvincialSeeder.php database/seeders/ProvinceSeeder.php 2>/dev/null || true
 
-# Create SQLite database
-RUN touch database/database.sqlite
+# Create database directory
+RUN mkdir -p /var/www/html/database
 
 # Build assets
 RUN npm run build
@@ -57,5 +62,5 @@ RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 10000
 
-# Start PHP server
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+# Create database file at startup if it doesn't exist and start server
+CMD ["sh", "-c", "touch /var/www/html/database/database.sqlite && php artisan serve --host=0.0.0.0 --port=10000"]
