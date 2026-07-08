@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.3-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -62,5 +62,5 @@ RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 10000
 
-# Create database file at startup if it doesn't exist and start server
+# Create database file at startup if it doesn't exist
 CMD ["sh", "-c", "touch /var/www/html/database/database.sqlite && php artisan serve --host=0.0.0.0 --port=10000"]
