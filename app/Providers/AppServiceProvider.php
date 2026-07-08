@@ -26,14 +26,18 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
 
+        // Force HTTPS in production
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
+
+            // Force HTTPS for all routes
+            $this->app['request']->server->set('HTTPS', 'on');
+
+            // Set trusted proxies for Render
+            Config::set('trustedproxy.proxies', '*');
         }
     }
 
-    /**
-     * Configure default behaviors for production-ready applications.
-     */
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
@@ -52,4 +56,25 @@ class AppServiceProvider extends ServiceProvider
             : null,
         );
     }
+    /**
+     * Configure default behaviors for production-ready applications.
+     */
+//    protected function configureDefaults(): void
+//    {
+//        Date::use(CarbonImmutable::class);
+//
+//        DB::prohibitDestructiveCommands(
+//            app()->isProduction(),
+//        );
+//
+//        Password::defaults(fn (): ?Password => app()->isProduction()
+//            ? Password::min(12)
+//                ->mixedCase()
+//                ->letters()
+//                ->numbers()
+//                ->symbols()
+//                ->uncompromised()
+//            : null,
+//        );
+//    }
 }
