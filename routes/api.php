@@ -60,3 +60,6 @@ Route::prefix('v1/laboratory')->group(function () {
     Route::post('/orders/{orderId}/results', [LaboratoryController::class, 'enterResults']);
 });
 
+
+Route::post('/v1/community-outreach',[\App\Http\Controllers\CommunityEngagement\AggregateController::class,'store']);
+Route::get('/community/engagement',[\App\Http\Controllers\CommunityEngagement\AggregateController::class,'index']);

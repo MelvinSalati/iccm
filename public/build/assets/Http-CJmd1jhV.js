@@ -1,0 +1,1 @@
+import{t as e}from"./axios-cADLB-jk.js";var t=e.create({baseURL:`http://127.0.0.1:9010/api/v1`});export{t};

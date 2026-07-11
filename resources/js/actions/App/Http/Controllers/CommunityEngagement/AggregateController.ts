@@ -1,0 +1,137 @@
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+/**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @route '/api/v1/community-outreach'
+ */
+export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+store.definition = {
+    methods: ["post"],
+    url: '/api/v1/community-outreach',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @route '/api/v1/community-outreach'
+ */
+store.url = (options?: RouteQueryOptions) => {
+    return store.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @route '/api/v1/community-outreach'
+ */
+store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @route '/api/v1/community-outreach'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @route '/api/v1/community-outreach'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
+/**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @route '/api/community/engagement'
+ */
+export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: index.url(options),
+    method: 'get',
+})
+
+index.definition = {
+    methods: ["get","head"],
+    url: '/api/community/engagement',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @route '/api/community/engagement'
+ */
+index.url = (options?: RouteQueryOptions) => {
+    return index.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @route '/api/community/engagement'
+ */
+index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: index.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @route '/api/community/engagement'
+ */
+index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: index.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @route '/api/community/engagement'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @route '/api/community/engagement'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @route '/api/community/engagement'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
+const AggregateController = { store, index }
+
+export default AggregateController
