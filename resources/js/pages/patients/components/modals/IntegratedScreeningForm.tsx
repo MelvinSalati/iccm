@@ -1,6 +1,6 @@
 // pages/patients/components/modals/IntegratedScreeningForm.tsx
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, AlertCircle, Upload } from 'lucide-react';
 import Http from '@/utils/Http';
 import Notiflix from 'notiflix';
 import { usePage } from '@inertiajs/react';
@@ -25,11 +25,21 @@ interface FormField {
     placeholder?: string;
     default?: any;
     condition?: string;
+    colSpan?: 1 | 2;
 }
 
 interface Section {
     category: string;
     fields: FormField[];
+}
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    role_id: number;
+    facility_id: number;
+    [key: string]: any;
 }
 
 const FORM_SCHEMA: Section[] = [
@@ -41,7 +51,8 @@ const FORM_SCHEMA: Section[] = [
                 label: "Screening Date",
                 type: "date",
                 required: true,
-                validation: { max: "current_date" }
+                validation: { max: "current_date" },
+                colSpan: 1
             },
             {
                 id: "screening_method",
@@ -52,7 +63,8 @@ const FORM_SCHEMA: Section[] = [
                     { value: "via", label: "VIA" },
                     { value: "hpv_test", label: "HPV Test" },
                     { value: "cytology", label: "Cytology" }
-                ]
+                ],
+                colSpan: 1
             },
             {
                 id: "screening_result",
@@ -64,7 +76,8 @@ const FORM_SCHEMA: Section[] = [
                     { value: "via_positive", label: "VIA Positive" },
                     { value: "hpv_positive", label: "HPV Positive" },
                     { value: "suspicious_cancer", label: "Suspicious Cancer" }
-                ]
+                ],
+                colSpan: 1
             },
             {
                 id: "treatment_decision",
@@ -76,7 +89,26 @@ const FORM_SCHEMA: Section[] = [
                     { value: "leep", label: "LEEP" },
                     { value: "referral", label: "Referral to Tertiary Hospital" },
                     { value: "observation", label: "Observation" }
-                ]
+                ],
+                colSpan: 1
+            },
+            {
+                id: "cervical_image",
+                label: "Cervical Image",
+                type: "image_upload",
+                required: false,
+                condition: "screening_result == 'via_positive' || screening_result == 'suspicious_cancer' || screening_result == 'hpv_positive'",
+                description: "Upload cervical image for consultation",
+                colSpan: 1
+            },
+            {
+                id: "consultant_id",
+                label: "Select Consultant",
+                type: "consultant_select",
+                required: false,
+                condition: "screening_result == 'via_positive' || screening_result == 'suspicious_cancer' || screening_result == 'hpv_positive'",
+                description: "Select a consultant for review",
+                colSpan: 1
             }
         ]
     },
@@ -87,14 +119,16 @@ const FORM_SCHEMA: Section[] = [
                 id: "ncd_status_flag",
                 label: "Pre-existing NCD Linkage Status",
                 type: "read_only_badge",
-                description: "Pulled automatically via API from the active Global Vitals/NCD triage form history."
+                description: "Pulled automatically via API from the active Global Vitals/NCD triage form history.",
+                colSpan: 2
             },
             {
                 id: "integrated_chronic_care_notes",
                 label: "Integrated Care Notes",
                 type: "text_area",
                 required: false,
-                placeholder: "Document clinical alignment if cervical lesions intersect with existing NCD medication management..."
+                placeholder: "Document clinical alignment if cervical lesions intersect with existing NCD medication management...",
+                colSpan: 2
             }
         ]
     },
@@ -107,22 +141,25 @@ const FORM_SCHEMA: Section[] = [
                 type: "slider",
                 required: true,
                 validation: { min: 0, max: 10 },
-                description: "Rapid emotional triage tool performed alongside physical examination."
+                description: "Rapid emotional triage tool",
+                colSpan: 1
             },
             {
                 id: "anxiety_gad7_score",
                 label: "Anxiety Screening Score (GAD-7)",
                 type: "integer",
                 required: false,
-                condition: "screening_result != 'negative' || distress_thermometer >= 4",
-                description: "Conditionally visible: Triggers if a positive cancer risk is identified or baseline distress is high."
+                condition: "screening_result && screening_result != 'negative' || distress_thermometer >= 4",
+                description: "Triggers if positive cancer risk or distress ≥ 4",
+                colSpan: 1
             },
             {
                 id: "depression_phq9_score",
                 label: "Depression Screening Score (PHQ-9)",
                 type: "integer",
                 required: false,
-                condition: "screening_result != 'negative' || distress_thermometer >= 4"
+                condition: "screening_result && screening_result != 'negative' || distress_thermometer >= 4",
+                colSpan: 1
             },
             {
                 id: "mental_health_services",
@@ -134,7 +171,8 @@ const FORM_SCHEMA: Section[] = [
                     { value: "survivor_linkage", label: "Linkage to Cancer Survivor Group" },
                     { value: "specialized_ref", label: "Referred to District Psychiatric/Mental Health Unit" }
                 ],
-                condition: "anxiety_gad7_score >= 10 || depression_phq9_score >= 10 || distress_thermometer >= 7"
+                condition: "(anxiety_gad7_score >= 10 || depression_phq9_score >= 10 || distress_thermometer >= 7) && anxiety_gad7_score != null && depression_phq9_score != null",
+                colSpan: 2
             }
         ]
     },
@@ -143,15 +181,17 @@ const FORM_SCHEMA: Section[] = [
         fields: [
             {
                 id: "follow_up_date",
-                label: "Next Integrated Review Appointment Date",
+                label: "Next Integrated Review Appointment",
                 type: "date",
-                required: true
+                required: true,
+                colSpan: 1
             },
             {
                 id: "sms_reminder_sent",
                 label: "Send Unified SMS Alert",
                 type: "toggle",
-                default: true
+                default: true,
+                colSpan: 1
             }
         ]
     }
@@ -172,15 +212,24 @@ const IntegratedScreeningForm: React.FC<IntegratedScreeningFormProps> = ({
                                                                              userId,
                                                                              onSuccess,
                                                                          }) => {
+    const { props } = usePage();
+    const { auth, sharedData } = props as any;
+
     const [formData, setFormData] = useState<{ [key: string]: any }>({});
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(false);
     const [ncdStatus, setNcdStatus] = useState<string>('Loading NCD status...');
     const [loadingNcd, setLoadingNcd] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
-const {auth} = usePage().props;
-console.log(auth.user.id)
-    // Initialize form with default values
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+
+    const users = sharedData?.users || [];
+    const consultantUsers = users.filter((user: User) => {
+        return user.role_id === 3 || user.role_id === 2;
+    });
+
     useEffect(() => {
         if (isOpen) {
             const initialData: { [key: string]: any } = {};
@@ -199,6 +248,8 @@ console.log(auth.user.id)
             });
             setFormData(initialData);
             setErrors({});
+            setSelectedImage(null);
+            setImagePreview(null);
             fetchNcdStatus();
         }
     }, [isOpen]);
@@ -209,7 +260,6 @@ console.log(auth.user.id)
         try {
             const response = await Http.get(`/patients/${patientId}/ncd-status`);
             setNcdStatus(response.data.status || 'No NCD records found');
-            console.log(response)
         } catch (error) {
             console.error('Error fetching NCD status:', error);
             setNcdStatus('Unable to retrieve NCD status');
@@ -220,15 +270,16 @@ console.log(auth.user.id)
 
     const evaluateCondition = (condition: string | undefined, data: { [key: string]: any }): boolean => {
         if (!condition) return true;
+
         try {
-            const evalFn = new Function(
-                ...Object.keys(data),
-                `return !!( ${condition} );`
-            );
-            return evalFn(...Object.values(data));
+            const context = { ...data };
+            const keys = Object.keys(context);
+            const values = Object.values(context);
+            const func = new Function(...keys, `try { return !!( ${condition} ); } catch(e) { return false; }`);
+            return func(...values);
         } catch (error) {
-            console.error('Error evaluating condition:', error);
-            return true;
+            console.warn('Error evaluating condition:', condition, error);
+            return false;
         }
     };
 
@@ -240,6 +291,30 @@ console.log(auth.user.id)
                 delete newErrors[fieldId];
                 return newErrors;
             });
+        }
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                Notiflix.Notify.warning('Please upload a valid image file (JPEG, PNG, WEBP, GIF)');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                Notiflix.Notify.warning('Image size should be less than 5MB');
+                return;
+            }
+
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+            handleInputChange('cervical_image', file.name);
         }
     };
 
@@ -293,23 +368,36 @@ console.log(auth.user.id)
 
         setLoading(true);
         try {
-            const payload = {
-                patient_id: patientId,
-                visit_id: visitId,
-                created_by: auth.user.id,
-                form_id: 'form_3_integrated_cervical_screening_optimized',
-                form_version: '3.0.0',
-                submitted_at: new Date().toISOString(),
-                data: formData,
-                metadata: {
-                    submitted_by: userId,
-                    submission_date: new Date().toISOString(),
+            const result = formData.screening_result;
+            const isPositive = result === 'via_positive' || result === 'suspicious_cancer' || result === 'hpv_positive';
+
+            // ✅ Use a different name for the FormData instance
+            const payload = new FormData();
+
+            // Add all form fields as JSON
+            payload.append('data', JSON.stringify({
+                ...formData,
+                cervical_image_url: null,
+            }));
+            payload.append('form_id', 'form_3_integrated_cervical_screening_optimized');
+            payload.append('form_version', '3.0.0');
+            payload.append('created_by', auth.user.id);
+
+            // Attach image if selected and result is positive/suspicious
+            if (selectedImage && isPositive) {
+                payload.append('image', selectedImage);
+            }
+
+            const response = await Http.post(
+                `/patients/${patientId}/visit/${visitId}/screening/integrated`,
+                payload,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
                 }
+            );
 
-            };
-
-            const response = await Http.post(`/patients/${patientId}/visit/${visitId}/screening/integrated`, payload);
-            console.log(response)
             if (response.status === 201 || response.status === 200) {
                 Notiflix.Notify.success(response.data.message || 'Screening form submitted successfully');
                 if (onSuccess) {
@@ -326,7 +414,6 @@ console.log(auth.user.id)
             setLoading(false);
         }
     };
-
     const renderField = (field: FormField) => {
         const value = formData[field.id] ?? '';
         const error = errors[field.id];
@@ -337,7 +424,7 @@ console.log(auth.user.id)
         switch (field.type) {
             case 'date':
                 return (
-                    <div className="mb-3" key={field.id}>
+                    <div className="w-full" key={field.id}>
                         <label className="text-xs font-medium text-slate-700">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </label>
@@ -357,7 +444,7 @@ console.log(auth.user.id)
 
             case 'select_one':
                 return (
-                    <div className="mb-3" key={field.id}>
+                    <div className="w-full" key={field.id}>
                         <label className="text-xs font-medium text-slate-700">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </label>
@@ -380,10 +467,91 @@ console.log(auth.user.id)
                     </div>
                 );
 
+            case 'consultant_select':
+                return (
+                    <div className="w-full" key={field.id}>
+                        <label className="text-xs font-medium text-slate-700">
+                            {field.label} {field.required && <span className="text-rose-500">*</span>}
+                        </label>
+                        <select
+                            value={value}
+                            onChange={(e) => handleInputChange(field.id, parseInt(e.target.value) || '')}
+                            className={`mt-1 w-full rounded-md border ${error ? 'border-rose-300' : 'border-slate-200'} bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                        >
+                            <option value="">Select Consultant...</option>
+                            {consultantUsers.map((user: User) => (
+                                <option key={user.id} value={user.id}>
+                                    {user.name} - {user.role_id === 3 ? 'Clinician' : 'Nurse'}
+                                </option>
+                            ))}
+                        </select>
+                        {error && <p className="mt-1 text-xs text-rose-500">{error}</p>}
+                        {field.description && (
+                            <p className="mt-1 text-xs text-slate-400">{field.description}</p>
+                        )}
+                        {consultantUsers.length === 0 && (
+                            <p className="mt-1 text-xs text-amber-600">No consultants available. Please add clinicians to the system.</p>
+                        )}
+                    </div>
+                );
+
+            case 'image_upload':
+                return (
+                    <div className="w-full" key={field.id}>
+                        <label className="text-xs font-medium text-slate-700">
+                            {field.label} {field.required && <span className="text-rose-500">*</span>}
+                        </label>
+                        <div className="mt-1">
+                            <div className="flex items-center gap-3">
+                                <label className={`flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <Upload className="h-4 w-4 text-slate-500" />
+                                    <span>{loading ? 'Uploading...' : 'Choose Image'}</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        className="hidden"
+                                        disabled={loading}
+                                    />
+                                </label>
+                                {selectedImage && (
+                                    <span className="text-sm text-slate-600 truncate max-w-[150px]">
+                                        {selectedImage.name}
+                                    </span>
+                                )}
+                            </div>
+                            {imagePreview && (
+                                <div className="mt-2 relative inline-block">
+                                    <img
+                                        src={imagePreview}
+                                        alt="Cervical"
+                                        className="max-h-32 rounded-md border border-slate-200 object-cover"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            setSelectedImage(null);
+                                            setImagePreview(null);
+                                            handleInputChange('cervical_image', '');
+                                        }}
+                                        className="absolute top-1 right-1 rounded-full bg-slate-900/70 p-1 text-white hover:bg-slate-900"
+                                        disabled={loading}
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        {error && <p className="mt-1 text-xs text-rose-500">{error}</p>}
+                        {field.description && (
+                            <p className="mt-1 text-xs text-slate-400">{field.description}</p>
+                        )}
+                    </div>
+                );
+
             case 'select_multiple':
                 const selectedValues = Array.isArray(value) ? value : [];
                 return (
-                    <div className="mb-3" key={field.id}>
+                    <div className="w-full" key={field.id}>
                         <label className="text-xs font-medium text-slate-700">{field.label}</label>
                         <div className="mt-1 space-y-1.5 rounded-md border border-slate-200 p-2">
                             {field.options?.map((option) => (
@@ -413,7 +581,7 @@ console.log(auth.user.id)
 
             case 'integer':
                 return (
-                    <div className="mb-3" key={field.id}>
+                    <div className="w-full" key={field.id}>
                         <label className="text-xs font-medium text-slate-700">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </label>
@@ -434,7 +602,7 @@ console.log(auth.user.id)
 
             case 'slider':
                 return (
-                    <div className="mb-3" key={field.id}>
+                    <div className="w-full" key={field.id}>
                         <label className="text-xs font-medium text-slate-700">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </label>
@@ -461,7 +629,7 @@ console.log(auth.user.id)
 
             case 'text_area':
                 return (
-                    <div className="mb-3" key={field.id}>
+                    <div className="w-full" key={field.id}>
                         <label className="text-xs font-medium text-slate-700">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </label>
@@ -481,7 +649,7 @@ console.log(auth.user.id)
 
             case 'toggle':
                 return (
-                    <div className="mb-3" key={field.id}>
+                    <div className="w-full" key={field.id}>
                         <label className="flex items-center gap-2 text-sm text-slate-700">
                             <input
                                 type="checkbox"
@@ -499,7 +667,7 @@ console.log(auth.user.id)
 
             case 'read_only_badge':
                 return (
-                    <div className="mb-3 rounded-md bg-slate-50 p-3 ring-1 ring-slate-200" key={field.id}>
+                    <div className="w-full rounded-md bg-slate-50 p-3 ring-1 ring-slate-200" key={field.id}>
                         <div className="flex items-center gap-2">
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100">
                                 <AlertCircle className="h-3.5 w-3.5 text-blue-600" />
@@ -554,17 +722,15 @@ console.log(auth.user.id)
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
-            {/* Overlay */}
             <div
                 className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px]"
                 onClick={onClose}
                 aria-hidden="true"
             />
 
-            {/* Modal */}
-            <div className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-lg bg-white shadow-xl">
+            <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-lg bg-white shadow-xl">
                 {/* Header */}
-                <div className="border-b border-slate-200 bg-white px-5 py-3.5 flex items-center justify-between sticky top-0 z-10">
+                <div className="border-b border-slate-200 bg-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
                     <div>
                         <h3 className="text-sm font-semibold text-slate-900">
                             Form 3: Integrated Cervical & Mental Health Screening
@@ -609,25 +775,52 @@ console.log(auth.user.id)
                 </div>
 
                 {/* Body */}
-                <div className="overflow-y-auto p-5" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+                <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                     {FORM_SCHEMA.map((section, sectionIndex) => (
                         <div key={sectionIndex} className={sectionIndex === activeTab ? 'block' : 'hidden'}>
                             <div className="mb-4">
-                                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+                                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-4">
                                     {section.category}
                                 </h4>
-                                {section.fields.map((field) => (
-                                    <div key={field.id}>
-                                        {renderField(field)}
+
+                                {/* Two columns for first tab only */}
+                                {sectionIndex === 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {section.fields.map((field) => {
+                                            const isVisible = !field.condition || evaluateCondition(field.condition, formData);
+                                            if (!isVisible) return null;
+
+                                            return (
+                                                <div
+                                                    key={field.id}
+                                                    className={field.colSpan === 2 ? 'md:col-span-2' : 'md:col-span-1'}
+                                                >
+                                                    {renderField(field)}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {section.fields.map((field) => {
+                                            const isVisible = !field.condition || evaluateCondition(field.condition, formData);
+                                            if (!isVisible) return null;
+
+                                            return (
+                                                <div key={field.id}>
+                                                    {renderField(field)}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-slate-200 bg-slate-50 px-5 py-3 flex items-center justify-between sticky bottom-0">
+                <div className="border-t border-slate-200 bg-slate-50 px-6 py-3.5 flex items-center justify-between sticky bottom-0">
                     <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span>Step {activeTab + 1} of {FORM_SCHEMA.length}</span>
                         <span className="text-slate-300">|</span>
@@ -637,7 +830,7 @@ console.log(auth.user.id)
                         {activeTab > 0 && (
                             <button
                                 onClick={() => setActiveTab(activeTab - 1)}
-                                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                                className="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                             >
                                 Previous
                             </button>
@@ -645,7 +838,7 @@ console.log(auth.user.id)
                         {activeTab < FORM_SCHEMA.length - 1 ? (
                             <button
                                 onClick={() => setActiveTab(activeTab + 1)}
-                                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                                className="rounded-md bg-blue-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-blue-700"
                             >
                                 Next
                             </button>
@@ -653,12 +846,12 @@ console.log(auth.user.id)
                             <button
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                                className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
                             >
                                 {loading ? (
                                     <>
                                         <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                        Submitting...
+                                        {uploadingImage ? 'Uploading Image...' : 'Submitting...'}
                                     </>
                                 ) : (
                                     'Submit Screening'
@@ -667,7 +860,7 @@ console.log(auth.user.id)
                         )}
                         <button
                             onClick={onClose}
-                            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                            className="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                         >
                             Cancel
                         </button>

@@ -24,6 +24,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { AppointmentModal } from './components/modals/AppointmentModal';
+import Http from '@/utils/Http';
+import Notiflix from 'notiflix';
 
 // Types
 interface Address {
@@ -69,11 +71,12 @@ interface Appointment {
     id: string;
     appointment_date: string;
     appointment_time: string;
-    type: string;
-    status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
-    provider: string;
+    appointment_type: string;
+    appointment_status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+    doctor_name: string;
     department: string;
     notes?: string;
+    reason?: string;
     created_at: string;
 }
 
@@ -90,10 +93,11 @@ interface PageProps {
 }
 
 // Appointment Status Badge
-const AppointmentStatusBadge = ({ status }: { status: Appointment['status'] }) => {
+const AppointmentStatusBadge = ({ status }: { status: Appointment['appointment_status'] }) => {
     const styles = {
         scheduled: 'bg-blue-100 text-blue-700',
         confirmed: 'bg-green-100 text-green-700',
+        in_progress: 'bg-purple-100 text-purple-700',
         completed: 'bg-slate-100 text-slate-700',
         cancelled: 'bg-red-100 text-red-700',
         no_show: 'bg-amber-100 text-amber-700',
@@ -102,12 +106,13 @@ const AppointmentStatusBadge = ({ status }: { status: Appointment['status'] }) =
     const labels = {
         scheduled: 'Scheduled',
         confirmed: 'Confirmed',
+        in_progress: 'In Progress',
         completed: 'Completed',
         cancelled: 'Cancelled',
         no_show: 'No Show',
     };
 
-    return <Badge className={styles[status]}>{labels[status]}</Badge>;
+    return <Badge className={styles[status] || styles.scheduled}>{labels[status] || status}</Badge>;
 };
 
 export default function Appointments() {
@@ -117,9 +122,10 @@ export default function Appointments() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [appointmentsList, setAppointmentsList] = useState<Appointment[]>(appointments);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<Appointment['status'] | 'all'>('all');
+    const [filterStatus, setFilterStatus] = useState<Appointment['appointment_status'] | 'all'>('all');
     const [sortField, setSortField] = useState<keyof Appointment>('appointment_date');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Get primary address
     const primaryAddress: Address | undefined = patient?.addresses?.[0];
@@ -154,23 +160,59 @@ export default function Appointments() {
         }
     };
 
-    const handleAddAppointment = (newAppointment: Appointment) => {
-        setAppointmentsList([...appointmentsList, newAppointment]);
+console.log(props)
+    const handleAddAppointment = async (newAppointment: any) => {
+        setIsSubmitting(true);
+        try {
+            const response = await Http.post('/appointments/create', newAppointment);
+console.log(response)
+            if (response.status === 201 || response.status === 200) {
+                // Add the new appointment to the list with the response data
+                const createdAppointment = response.data?.appointment || response.data;
+
+                // If the response has the appointment data, use it, otherwise use the submitted data
+                const appointmentToAdd = createdAppointment ? {
+                    ...createdAppointment,
+                    id: createdAppointment.id || crypto.randomUUID(),
+                } : {
+                    ...newAppointment,
+                    id: crypto.randomUUID(),
+                };
+
+                setAppointmentsList(prev => [appointmentToAdd, ...prev]);
+                Notiflix.Notify.success(response.data?.message || 'Appointment created successfully');
+            } else {
+                Notiflix.Notify.warning(response.data?.message || 'Failed to create appointment');
+            }
+        } catch (error: any) {
+            console.error('Error creating appointment:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to create appointment';
+            Notiflix.Notify.failure(errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    // Filter and sort appointments
+    // Filter and sort appointments - FIXED: added null/undefined checks
     const filteredAppointments = appointmentsList
         .filter(app => {
+            // Safely convert to lowercase with null checks
+            const type = (app?.appointment_type || '').toLowerCase();
+            const provider = (app?.doctor_name || '').toLowerCase();
+            const department = (app?.department || '').toLowerCase();
+            const search = (searchTerm || '').toLowerCase();
+
             const matchesSearch =
-                app.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                app.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                app.department.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesFilter = filterStatus === 'all' || app.status === filterStatus;
+                type.includes(search) ||
+                provider.includes(search) ||
+                department.includes(search);
+
+            const matchesFilter = filterStatus === 'all' || app?.appointment_status === filterStatus;
             return matchesSearch && matchesFilter;
         })
         .sort((a, b) => {
-            const aVal = a[sortField]?.toString() || '';
-            const bVal = b[sortField]?.toString() || '';
+            const aVal = (a?.[sortField]?.toString() || '');
+            const bVal = (b?.[sortField]?.toString() || '');
             return sortDirection === 'asc'
                 ? aVal.localeCompare(bVal)
                 : bVal.localeCompare(aVal);
@@ -391,7 +433,7 @@ export default function Appointments() {
                                 </div>
                             </div>
 
-                            {/* Search and Filter - Same as medications table */}
+                            {/* Search and Filter */}
                             <div className="mb-4 flex items-center gap-4">
                                 <div className="relative flex-1 max-w-sm">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -404,19 +446,20 @@ export default function Appointments() {
                                 </div>
                                 <select
                                     value={filterStatus}
-                                    onChange={(e) => setFilterStatus(e.target.value as Appointment['status'] | 'all')}
+                                    onChange={(e) => setFilterStatus(e.target.value as Appointment['appointment_status'] | 'all')}
                                     className="px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                                 >
                                     <option value="all">All Status</option>
                                     <option value="scheduled">Scheduled</option>
                                     <option value="confirmed">Confirmed</option>
+                                    <option value="in_progress">In Progress</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
                                     <option value="no_show">No Show</option>
                                 </select>
                             </div>
 
-                            {/* Appointments Table - Same styling as medications table */}
+                            {/* Appointments Table */}
                             <div className="border rounded-lg overflow-hidden">
                                 <Table>
                                     <TableHeader className="bg-slate-50">
@@ -434,11 +477,11 @@ export default function Appointments() {
                                             </TableHead>
                                             <TableHead
                                                 className="cursor-pointer hover:bg-slate-100"
-                                                onClick={() => handleSort('type')}
+                                                onClick={() => handleSort('appointment_type')}
                                             >
                                                 <div className="flex items-center gap-1">
                                                     Type
-                                                    {sortField === 'type' && (
+                                                    {sortField === 'appointment_type' && (
                                                         sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                                                     )}
                                                 </div>
@@ -456,22 +499,22 @@ export default function Appointments() {
                                             </TableHead>
                                             <TableHead
                                                 className="cursor-pointer hover:bg-slate-100"
-                                                onClick={() => handleSort('provider')}
+                                                onClick={() => handleSort('doctor_name')}
                                             >
                                                 <div className="flex items-center gap-1">
                                                     Provider
-                                                    {sortField === 'provider' && (
+                                                    {sortField === 'doctor_name' && (
                                                         sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                                                     )}
                                                 </div>
                                             </TableHead>
                                             <TableHead
                                                 className="cursor-pointer hover:bg-slate-100"
-                                                onClick={() => handleSort('status')}
+                                                onClick={() => handleSort('appointment_status')}
                                             >
                                                 <div className="flex items-center gap-1">
                                                     Status
-                                                    {sortField === 'status' && (
+                                                    {sortField === 'appointment_status' && (
                                                         sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                                                     )}
                                                 </div>
@@ -497,11 +540,11 @@ export default function Appointments() {
                                                             </span>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="capitalize">{appointment.type}</TableCell>
-                                                    <TableCell>{appointment.department}</TableCell>
-                                                    <TableCell>{appointment.provider || '—'}</TableCell>
+                                                    <TableCell className="capitalize">{appointment.appointment_type || 'N/A'}</TableCell>
+                                                    <TableCell>{appointment.department || 'N/A'}</TableCell>
+                                                    <TableCell>{appointment.doctor_name || '—'}</TableCell>
                                                     <TableCell>
-                                                        <AppointmentStatusBadge status={appointment.status} />
+                                                        <AppointmentStatusBadge status={appointment.appointment_status || 'scheduled'} />
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <button className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
@@ -527,6 +570,7 @@ export default function Appointments() {
                     onClose={() => setIsModalOpen(false)}
                     onSubmit={handleAddAppointment}
                     patient={patient}
+                    visitId={null}
                 />
             </div>
         </AppLayout>

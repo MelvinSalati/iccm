@@ -2,6 +2,8 @@
 
 use App\Domains\Patients\Controllers\LocationController;
 use App\Domains\Patients\Controllers\PatientController;
+use App\Http\Controllers\Appointments\AppointmentController;
+use App\Http\Controllers\Pathology\laboratoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Domains\Patients\Actions\CreateVisitAction;
@@ -35,10 +37,26 @@ Route::prefix('v1/patients')->group(function () {
 
     // Store vitals (for a visit)
     Route::post('/{patientuuid}/visit/{visitId}/vitals', [VitalsController::class, 'store'])->name('vitals.store');
-
+// Route::post('/{patientuuid}/l', [LaboratoryController::class, 'store']);
     // Update specific vitals record
     Route::put('/{patientuuid}/vitals/{vitalId}', [VitalsController::class, 'update'])->name('vitals.update');
+});
+
+/*
+ *  Appointments
+ * **/
+
+Route::prefix('v1/appointments')->group(function () {
+    Route::post('/create', [AppointmentController::class, 'createAppointment']);
 });
 Route::get('v1/locations/provinces', [LocationController::class, 'getProvinces']);
 Route::get('v1/locations/districts', [LocationController::class, 'getDistricts']);
 Route::get('v1/locations/facilities', [LocationController::class, 'getFacilities']);
+
+
+Route::prefix('v1/laboratory')->group(function () {
+    Route::post('/orders', [LaboratoryController::class, 'createOrder']);
+    Route::post('/orders/{orderId}/sample-assessment', [LaboratoryController::class, 'sampleAssessment']);
+    Route::post('/orders/{orderId}/results', [LaboratoryController::class, 'enterResults']);
+});
+

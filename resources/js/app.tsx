@@ -100,6 +100,18 @@ createInertiaApp({
                 return null;
             case name === 'patients/search':
                 return AppLayout;
+            case name === 'Community/community':
+                return AppLayout;
+            case name === 'admissions/admission':
+                return null;
+            case name === 'Mortality/review':
+                return null;
+            case name === 'Consultancy/consultancy':
+                return null;
+            case name === 'Mental/mental':
+                return null;
+            case name === 'Discharges/discharges':
+                return null;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
             default:

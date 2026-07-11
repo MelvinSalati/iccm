@@ -11,15 +11,11 @@ import {
     Clock,
     AlertCircle,
     CheckCircle,
-    Microscope,
-    Syringe,
-    Droplet,
-    Activity,
-    Pill,
+    XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Types
+// Types aligned with laboratory_orders table
 interface LabTest {
     id: string;
     test_name: string;
@@ -35,19 +31,15 @@ interface LabTest {
 interface LabOrderModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: any) => void;
+    onSubmit: (data: any) => Promise<void> | void;
     availableTests: LabTest[];
     patientName?: string;
+    patientId?: number;
+    facilityId?: number;
+    userId?: number;
+    visitId?: string; // Added visitId
     loading?: boolean;
 }
-
-const CATEGORY_COLORS: Record<string, string> = {
-    'Cervical Cancer': 'bg-pink-50 text-pink-700 border-pink-200',
-    'Infectious Diseases': 'bg-rose-50 text-rose-700 border-rose-200',
-    'Hematology': 'bg-red-50 text-red-700 border-red-200',
-    'Chemistry': 'bg-blue-50 text-blue-700 border-blue-200',
-    'Microbiology': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-};
 
 export function LabOrderModal({
                                   isOpen,
@@ -55,6 +47,10 @@ export function LabOrderModal({
                                   onSubmit,
                                   availableTests = [],
                                   patientName = 'Patient',
+                                  patientId,
+                                  facilityId,
+                                  userId,
+                                  visitId,
                                   loading = false
                               }: LabOrderModalProps) {
     const [selectedTests, setSelectedTests] = useState<string[]>([]);
@@ -64,11 +60,24 @@ export function LabOrderModal({
     const [formData, setFormData] = useState({
         priority: 'routine' as 'routine' | 'urgent' | 'stat',
         notes: '',
+        laboratory_uuid: '',
     });
-    const [showConsentWarning, setShowConsentWarning] = useState(false);
+    const [generatedUUID, setGeneratedUUID] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const pageSize = 5;
     const categories = ['All', ...new Set(availableTests.map(t => t.test_category))];
+
+    // Generate UUID for the order
+    useEffect(() => {
+        if (isOpen) {
+            const uuid = `LAB-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            setGeneratedUUID(uuid);
+            setFormData(prev => ({ ...prev, laboratory_uuid: uuid }));
+            setError(null);
+        }
+    }, [isOpen]);
 
     const filteredTests = availableTests.filter(test => {
         const matchesSearch = test.test_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,31 +93,70 @@ export function LabOrderModal({
         return availableTests.filter(test => selectedTests.includes(test.id));
     };
 
-    const requiresConsent = () => {
-        return getSelectedTestObjects().some(test => test.requires_consent);
-    };
-
     const toggleTest = (testId: string) => {
         setSelectedTests(prev =>
             prev.includes(testId)
                 ? prev.filter(id => id !== testId)
                 : [...prev, testId]
         );
-        if (showConsentWarning) setShowConsentWarning(false);
+        if (error) setError(null);
     };
 
-    const handleSubmit = () => {
-        if (selectedTests.length === 0) return;
-        if (requiresConsent()) {
-            setShowConsentWarning(true);
+    const handleSubmit = async () => {
+        if (selectedTests.length === 0) {
+            setError('Please select at least one test');
             return;
         }
-        onSubmit({
-            tests: getSelectedTestObjects(),
+
+        if (!patientId) {
+            setError('Patient ID is required');
+            return;
+        }
+
+        if (!facilityId) {
+            setError('Facility ID is required');
+            return;
+        }
+
+        if (!userId) {
+            setError('User ID is required');
+            return;
+        }
+
+        if (!visitId) {
+            setError('Visit ID is required');
+            return;
+        }
+
+        // Prepare data matching laboratory_orders table structure
+        const orderData = {
+            laboratory_uuid: generatedUUID,
+            patient_id: patientId,
+            facility_id: facilityId,
+            ordered_by: userId,
+            visit_id: visitId, // Added visit_id
+            test_ids: selectedTests,
+            status: 'pending',
+            comment: formData.notes || null,
             priority: formData.priority,
-            notes: formData.notes,
-        });
-        onClose();
+            tests: getSelectedTestObjects(),
+            test_count: selectedTests.length,
+            test_names: getSelectedTestObjects().map(t => t.test_name).join(', ')
+        };
+
+        console.log('Submitting order data:', orderData);
+
+        try {
+            setIsSubmitting(true);
+            setError(null);
+            await onSubmit(orderData);
+            onClose();
+        } catch (err: any) {
+            console.error('Order submission error:', err);
+            setError(err.message || 'Failed to create order. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     useEffect(() => {
@@ -117,8 +165,9 @@ export function LabOrderModal({
             setSearchTerm('');
             setCurrentPage(1);
             setSelectedCategory('All');
-            setFormData({ priority: 'routine', notes: '' });
-            setShowConsentWarning(false);
+            setFormData({ priority: 'routine', notes: '', laboratory_uuid: '' });
+            setError(null);
+            setIsSubmitting(false);
         }
     }, [isOpen]);
 
@@ -132,39 +181,61 @@ export function LabOrderModal({
         <>
             <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="relative w-full max-w-3xl bg-white rounded-lg shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
                     {/* Header - Compact */}
                     <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200">
                         <div className="flex items-center gap-1.5">
-                            <TestTube className="h-3.5 w-3.5 text-blue-600" />
+                            <TestTube className="h-3.5 w-3.5 text-slate-600" />
                             <h2 className="text-xs font-semibold text-slate-900">New Lab Order</h2>
                             <span className="text-[10px] text-slate-400">|</span>
                             <span className="text-[10px] text-slate-500">Patient: {patientName}</span>
+                            {visitId && (
+                                <>
+                                    <span className="text-[10px] text-slate-400">|</span>
+                                    <span className="text-[10px] text-slate-500">Visit: #{visitId}</span>
+                                </>
+                            )}
                         </div>
                         <button onClick={onClose} className="p-0.5 hover:bg-slate-200 rounded transition-colors">
                             <X className="h-3.5 w-3.5 text-slate-500" />
                         </button>
                     </div>
 
+                    {/* UUID Display - Compact */}
+                    <div className="px-3 py-1 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500">Order #:</span>
+                        <span className="text-[10px] font-mono font-medium text-slate-700">{generatedUUID || 'Generating...'}</span>
+                    </div>
+
+                    {/* Error Display - Compact */}
+                    {error && (
+                        <div className="px-3 py-1 bg-red-50 border-b border-red-200">
+                            <p className="text-[10px] text-red-600 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                {error}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Body - Compact */}
                     <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
                         {/* Left - Test Selection */}
-                        <div className="p-2.5 bg-slate-50/50">
+                        <div className="p-2 bg-slate-50/50">
                             {/* Search & Filter - Compact */}
-                            <div className="flex gap-1.5 mb-2">
+                            <div className="flex gap-1.5 mb-1.5">
                                 <div className="flex-1 relative">
                                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
                                     <input
-                                        placeholder="Search tests..."
+                                        placeholder="Search..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-6 pr-2 py-1 text-xs border border-slate-200 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white outline-none"
+                                        className="w-full pl-6 pr-2 py-1 text-xs border border-slate-200 rounded focus:border-slate-400 focus:ring-1 focus:ring-slate-400 bg-white outline-none"
                                     />
                                 </div>
                                 <select
                                     value={selectedCategory}
                                     onChange={(e) => setSelectedCategory(e.target.value)}
-                                    className="px-1.5 py-1 text-xs border border-slate-200 rounded bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                                    className="px-1.5 py-1 text-xs border border-slate-200 rounded bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-400 outline-none"
                                 >
                                     {categories.map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
@@ -173,19 +244,18 @@ export function LabOrderModal({
                             </div>
 
                             {/* Selected count - Compact */}
-                            <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center justify-between mb-1">
                                 <span className="text-[10px] text-slate-500">{filteredTests.length} available</span>
-                                <span className="text-[10px] font-medium text-blue-600">{selectedTests.length} selected</span>
+                                <span className="text-[10px] font-medium text-slate-700">{selectedTests.length} selected</span>
                             </div>
 
                             {/* Test List - Compact */}
-                            <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1">
+                            <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
                                 {paginatedTests.length === 0 ? (
-                                    <div className="text-center py-4 text-xs text-slate-500">No tests found</div>
+                                    <div className="text-center py-3 text-xs text-slate-500">No tests found</div>
                                 ) : (
                                     paginatedTests.map((test) => {
                                         const isSelected = selectedTests.includes(test.id);
-                                        const categoryColor = CATEGORY_COLORS[test.test_category] || 'bg-slate-50 text-slate-700 border-slate-200';
 
                                         return (
                                             <div
@@ -194,31 +264,23 @@ export function LabOrderModal({
                                                 className={cn(
                                                     "p-1.5 rounded border cursor-pointer transition-all",
                                                     isSelected
-                                                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500/20"
-                                                        : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/30"
+                                                        ? "border-slate-400 bg-slate-50"
+                                                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
                                                 )}
                                             >
-                                                <div className="flex items-start gap-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isSelected}
-                                                        onChange={() => toggleTest(test.id)}
-                                                        className="mt-0.5 h-3 w-3 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    />
+                                                <div className="flex items-center justify-between gap-2">
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-1 flex-wrap">
-                                                            <span className="text-xs font-medium text-slate-900 truncate">{test.test_name}</span>
-                                                            <span className={cn("text-[8px] px-1 py-0.5 rounded border", categoryColor)}>
-                                                                {test.test_category}
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-xs font-medium text-slate-900 truncate">
+                                                                {test.test_name}
                                                             </span>
                                                             {test.requires_consent && (
-                                                                <span className="text-[8px] px-1 py-0.5 bg-amber-50 text-amber-700 rounded border border-amber-200">
+                                                                <span className="text-[8px] px-1 py-0.5 bg-amber-50 text-amber-700 rounded border border-amber-200 flex-shrink-0">
                                                                     Consent
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] text-slate-500 mt-0.5">
+                                                        <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 mt-0.5">
                                                             <span className="font-mono">{test.code}</span>
                                                             <span>•</span>
                                                             <span>{test.specimen_type}</span>
@@ -232,13 +294,10 @@ export function LabOrderModal({
                                                                 </>
                                                             )}
                                                         </div>
-                                                        {test.preparation_instructions && (
-                                                            <div className="mt-0.5 text-[8px] text-amber-600 flex items-center gap-0.5">
-                                                                <AlertCircle className="h-2.5 w-2.5" />
-                                                                {test.preparation_instructions}
-                                                            </div>
-                                                        )}
                                                     </div>
+                                                    {isSelected && (
+                                                        <CheckCircle className="h-3.5 w-3.5 text-slate-600 flex-shrink-0" />
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -248,8 +307,8 @@ export function LabOrderModal({
 
                             {/* Pagination - Compact */}
                             {totalPages > 1 && (
-                                <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-slate-200">
-                                    <span className="text-[9px] text-slate-500">
+                                <div className="flex items-center justify-between pt-1 mt-1 border-t border-slate-200">
+                                    <span className="text-[10px] text-slate-500">
                                         {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, filteredTests.length)} of {filteredTests.length}
                                     </span>
                                     <div className="flex gap-0.5">
@@ -273,92 +332,85 @@ export function LabOrderModal({
                         </div>
 
                         {/* Right - Order Details - Compact */}
-                        <div className="p-2.5 bg-white">
+                        <div className="p-2 bg-white">
                             {selectedTests.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-[280px] text-center">
-                                    <TestTube className="h-8 w-8 text-slate-300 mb-2" />
+                                <div className="flex flex-col items-center justify-center h-[180px] text-center">
+                                    <TestTube className="h-8 w-8 text-slate-300 mb-1.5" />
                                     <p className="text-xs text-slate-500 font-medium">No tests selected</p>
-                                    <p className="text-[10px] text-slate-400">Select tests from the left panel</p>
+                                    <p className="text-[10px] text-slate-400">Click a test to select</p>
                                 </div>
                             ) : (
-                                <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                                <div className="space-y-1.5">
                                     {/* Selected Tests Summary - Compact */}
-                                    <div className="pb-1.5 border-b border-slate-200">
+                                    <div className="pb-1 border-b border-slate-200">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                                                 Selected ({selectedTests.length})
                                             </h3>
                                             <button
                                                 onClick={() => setSelectedTests([])}
-                                                className="text-[9px] text-rose-600 hover:text-rose-700 hover:underline"
+                                                className="text-[10px] text-rose-600 hover:text-rose-700 hover:underline"
                                             >
-                                                Clear all
+                                                Clear
                                             </button>
                                         </div>
                                         <div className="flex flex-wrap gap-0.5 mt-1">
-                                            {getSelectedTestObjects().map(test => (
-                                                <span key={test.id} className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1 py-0.5 text-[9px] border border-blue-200">
+                                            {getSelectedTestObjects().slice(0, 4).map(test => (
+                                                <span key={test.id} className="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] border border-slate-200">
                                                     {test.test_name}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); toggleTest(test.id); }}
                                                         className="text-slate-400 hover:text-rose-500 transition-colors"
                                                     >
-                                                        <X className="h-2 w-2" />
+                                                        <X className="h-2.5 w-2.5" />
                                                     </button>
                                                 </span>
+                                            ))}
+                                            {getSelectedTestObjects().length > 4 && (
+                                                <span className="text-[10px] text-slate-500">+{getSelectedTestObjects().length - 4} more</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Visit ID Display - Compact */}
+                                    <div className="bg-slate-50 rounded px-2 py-1 border border-slate-200">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] text-slate-500">Visit ID</span>
+                                            <span className="text-xs font-medium text-slate-800">{visitId || '—'}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Priority - Compact */}
+                                    <div>
+                                        <Label className="text-[10px] text-slate-500 font-medium">Priority</Label>
+                                        <div className="flex gap-0.5 mt-0.5">
+                                            {(['routine', 'urgent', 'stat'] as const).map((priority) => (
+                                                <button
+                                                    key={priority}
+                                                    onClick={() => setFormData(prev => ({ ...prev, priority }))}
+                                                    className={cn(
+                                                        "px-2 py-0.5 text-[10px] rounded border transition-colors capitalize",
+                                                        formData.priority === priority
+                                                            ? "border-slate-400 bg-slate-100 text-slate-800"
+                                                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                                    )}
+                                                >
+                                                    {priority}
+                                                </button>
                                             ))}
                                         </div>
                                     </div>
 
-                                    {/* Consent Warning - Compact */}
-                                    {requiresConsent() && (
-                                        <div className="rounded-md bg-amber-50 border border-amber-200 p-1.5">
-                                            <div className="flex items-start gap-1.5">
-                                                <AlertCircle className="h-3.5 w-3.5 text-amber-600 mt-0.5" />
-                                                <div>
-                                                    <p className="text-[10px] font-medium text-amber-800">Consent Required</p>
-                                                    <p className="text-[9px] text-amber-700">Some tests require patient consent</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Order Details - Compact */}
-                                    <div className="space-y-1.5">
-                                        <div>
-                                            <Label className="text-[9px] text-slate-500 font-medium">Priority</Label>
-                                            <div className="flex gap-0.5 mt-0.5">
-                                                {(['routine', 'urgent', 'stat'] as const).map((priority) => (
-                                                    <button
-                                                        key={priority}
-                                                        onClick={() => setFormData(prev => ({ ...prev, priority }))}
-                                                        className={cn(
-                                                            "px-2 py-0.5 text-[10px] rounded border transition-colors capitalize",
-                                                            formData.priority === priority
-                                                                ? priority === 'stat'
-                                                                    ? "bg-rose-50 border-rose-400 text-rose-700"
-                                                                    : priority === 'urgent'
-                                                                        ? "bg-amber-50 border-amber-400 text-amber-700"
-                                                                        : "bg-blue-50 border-blue-400 text-blue-700"
-                                                                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                                        )}
-                                                    >
-                                                        {priority}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <Label className="text-[9px] text-slate-500 font-medium">Notes</Label>
-                                            <input
-                                                type="text"
-                                                value={formData.notes}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                                                placeholder="Add notes..."
-                                                className="w-full px-1.5 py-0.5 text-xs border border-slate-200 rounded bg-slate-50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                                            />
-                                        </div>
+                                    {/* Comment - Compact */}
+                                    <div>
+                                        <Label className="text-[10px] text-slate-500 font-medium">Comment</Label>
+                                        <textarea
+                                            value={formData.notes}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                            placeholder="Add notes..."
+                                            rows={2}
+                                            className="w-full px-2 py-1 text-xs border border-slate-200 rounded bg-slate-50 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 outline-none resize-none mt-0.5"
+                                        />
                                     </div>
                                 </div>
                             )}
@@ -366,39 +418,46 @@ export function LabOrderModal({
                     </div>
 
                     {/* Footer - Compact */}
-                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-t border-slate-200">
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 border-t border-slate-200">
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                             {selectedTests.length > 0 && (
                                 <>
-                                    <CheckCircle className="h-3 w-3 text-emerald-500" />
-                                    <span>{selectedTests.length} test{selectedTests.length > 1 ? 's' : ''} ready</span>
+                                    <CheckCircle className="h-3 w-3 text-slate-600" />
+                                    <span>{selectedTests.length} test{selectedTests.length > 1 ? 's' : ''}</span>
                                 </>
                             )}
-                            {requiresConsent() && (
+                            {generatedUUID && (
                                 <>
                                     <span className="text-slate-300">|</span>
-                                    <span className="text-amber-600">Consent required</span>
+                                    <span className="font-mono text-[9px] text-slate-400 truncate max-w-[120px]">{generatedUUID}</span>
+                                </>
+                            )}
+                            {visitId && (
+                                <>
+                                    <span className="text-slate-300">|</span>
+                                    <span className="text-[9px] text-slate-400">Visit: {visitId}</span>
                                 </>
                             )}
                         </div>
                         <div className="flex gap-1.5">
                             <button
                                 onClick={onClose}
-                                className="px-2.5 py-1 text-xs border border-slate-200 rounded hover:bg-slate-100 text-slate-700 transition-colors"
+                                disabled={isSubmitting || loading}
+                                className="px-2.5 py-1 text-xs border border-slate-200 rounded hover:bg-slate-100 text-slate-700 transition-colors disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSubmit}
-                                disabled={selectedTests.length === 0 || loading}
+                                disabled={selectedTests.length === 0 || isSubmitting || loading}
                                 className={cn(
                                     "px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1",
-                                    selectedTests.length > 0 && !loading
-                                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                                        : "bg-slate-300 text-slate-500 cursor-not-allowed"
+                                    selectedTests.length > 0 && !isSubmitting && !loading
+                                        ? "bg-slate-800 hover:bg-slate-900 text-white"
+                                        : "bg-slate-200 text-slate-500 cursor-not-allowed"
                                 )}
                             >
-                                {loading ? (
+                                {isSubmitting || loading ? (
                                     <>
                                         <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
                                         Ordering...
@@ -406,7 +465,7 @@ export function LabOrderModal({
                                 ) : (
                                     <>
                                         <TestTube className="h-3 w-3" />
-                                        Order
+                                        Create
                                     </>
                                 )}
                             </button>

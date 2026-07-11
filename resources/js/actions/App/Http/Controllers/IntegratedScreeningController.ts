@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\IntegratedScreeningController::store
- * @see app/Http/Controllers/IntegratedScreeningController.php:14
+ * @see app/Http/Controllers/IntegratedScreeningController.php:23
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/screening/integrated'
  */
 export const store = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\IntegratedScreeningController::store
- * @see app/Http/Controllers/IntegratedScreeningController.php:14
+ * @see app/Http/Controllers/IntegratedScreeningController.php:23
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/screening/integrated'
  */
 store.url = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions) => {
@@ -42,7 +42,7 @@ store.url = (args: { patientuuid: string | number, visitId: string | number } | 
 
 /**
 * @see \App\Http\Controllers\IntegratedScreeningController::store
- * @see app/Http/Controllers/IntegratedScreeningController.php:14
+ * @see app/Http/Controllers/IntegratedScreeningController.php:23
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/screening/integrated'
  */
 store.post = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -52,7 +52,7 @@ store.post = (args: { patientuuid: string | number, visitId: string | number } |
 
     /**
 * @see \App\Http\Controllers\IntegratedScreeningController::store
- * @see app/Http/Controllers/IntegratedScreeningController.php:14
+ * @see app/Http/Controllers/IntegratedScreeningController.php:23
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/screening/integrated'
  */
     const storeForm = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -62,7 +62,7 @@ store.post = (args: { patientuuid: string | number, visitId: string | number } |
 
             /**
 * @see \App\Http\Controllers\IntegratedScreeningController::store
- * @see app/Http/Controllers/IntegratedScreeningController.php:14
+ * @see app/Http/Controllers/IntegratedScreeningController.php:23
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/screening/integrated'
  */
         storeForm.post = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

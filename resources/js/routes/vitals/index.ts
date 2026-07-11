@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\VitalsController::current
- * @see app/Http/Controllers/VitalsController.php:138
+ * @see app/Http/Controllers/VitalsController.php:143
  * @route '/api/v1/patients/{patientuuid}/vitals/current'
  */
 export const current = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ current.definition = {
 
 /**
 * @see \App\Http\Controllers\VitalsController::current
- * @see app/Http/Controllers/VitalsController.php:138
+ * @see app/Http/Controllers/VitalsController.php:143
  * @route '/api/v1/patients/{patientuuid}/vitals/current'
  */
 current.url = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ current.url = (args: { patientuuid: string | number } | [patientuuid: string | n
 
 /**
 * @see \App\Http\Controllers\VitalsController::current
- * @see app/Http/Controllers/VitalsController.php:138
+ * @see app/Http/Controllers/VitalsController.php:143
  * @route '/api/v1/patients/{patientuuid}/vitals/current'
  */
 current.get = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ current.get = (args: { patientuuid: string | number } | [patientuuid: string | n
 })
 /**
 * @see \App\Http\Controllers\VitalsController::current
- * @see app/Http/Controllers/VitalsController.php:138
+ * @see app/Http/Controllers/VitalsController.php:143
  * @route '/api/v1/patients/{patientuuid}/vitals/current'
  */
 current.head = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ current.head = (args: { patientuuid: string | number } | [patientuuid: string | 
 
     /**
 * @see \App\Http\Controllers\VitalsController::current
- * @see app/Http/Controllers/VitalsController.php:138
+ * @see app/Http/Controllers/VitalsController.php:143
  * @route '/api/v1/patients/{patientuuid}/vitals/current'
  */
     const currentForm = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ current.head = (args: { patientuuid: string | number } | [patientuuid: string | 
 
             /**
 * @see \App\Http\Controllers\VitalsController::current
- * @see app/Http/Controllers/VitalsController.php:138
+ * @see app/Http/Controllers/VitalsController.php:143
  * @route '/api/v1/patients/{patientuuid}/vitals/current'
  */
         currentForm.get = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ current.head = (args: { patientuuid: string | number } | [patientuuid: string | 
         })
             /**
 * @see \App\Http\Controllers\VitalsController::current
- * @see app/Http/Controllers/VitalsController.php:138
+ * @see app/Http/Controllers/VitalsController.php:143
  * @route '/api/v1/patients/{patientuuid}/vitals/current'
  */
         currentForm.head = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -98,7 +98,7 @@ current.head = (args: { patientuuid: string | number } | [patientuuid: string | 
     current.form = currentForm
 /**
 * @see \App\Http\Controllers\VitalsController::history
- * @see app/Http/Controllers/VitalsController.php:208
+ * @see app/Http/Controllers/VitalsController.php:215
  * @route '/api/v1/patients/{patientuuid}/vitals/history'
  */
 export const history = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -113,7 +113,7 @@ history.definition = {
 
 /**
 * @see \App\Http\Controllers\VitalsController::history
- * @see app/Http/Controllers/VitalsController.php:208
+ * @see app/Http/Controllers/VitalsController.php:215
  * @route '/api/v1/patients/{patientuuid}/vitals/history'
  */
 history.url = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -141,7 +141,7 @@ history.url = (args: { patientuuid: string | number } | [patientuuid: string | n
 
 /**
 * @see \App\Http\Controllers\VitalsController::history
- * @see app/Http/Controllers/VitalsController.php:208
+ * @see app/Http/Controllers/VitalsController.php:215
  * @route '/api/v1/patients/{patientuuid}/vitals/history'
  */
 history.get = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -150,7 +150,7 @@ history.get = (args: { patientuuid: string | number } | [patientuuid: string | n
 })
 /**
 * @see \App\Http\Controllers\VitalsController::history
- * @see app/Http/Controllers/VitalsController.php:208
+ * @see app/Http/Controllers/VitalsController.php:215
  * @route '/api/v1/patients/{patientuuid}/vitals/history'
  */
 history.head = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -160,7 +160,7 @@ history.head = (args: { patientuuid: string | number } | [patientuuid: string | 
 
     /**
 * @see \App\Http\Controllers\VitalsController::history
- * @see app/Http/Controllers/VitalsController.php:208
+ * @see app/Http/Controllers/VitalsController.php:215
  * @route '/api/v1/patients/{patientuuid}/vitals/history'
  */
     const historyForm = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -170,7 +170,7 @@ history.head = (args: { patientuuid: string | number } | [patientuuid: string | 
 
             /**
 * @see \App\Http\Controllers\VitalsController::history
- * @see app/Http/Controllers/VitalsController.php:208
+ * @see app/Http/Controllers/VitalsController.php:215
  * @route '/api/v1/patients/{patientuuid}/vitals/history'
  */
         historyForm.get = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -179,7 +179,7 @@ history.head = (args: { patientuuid: string | number } | [patientuuid: string | 
         })
             /**
 * @see \App\Http\Controllers\VitalsController::history
- * @see app/Http/Controllers/VitalsController.php:208
+ * @see app/Http/Controllers/VitalsController.php:215
  * @route '/api/v1/patients/{patientuuid}/vitals/history'
  */
         historyForm.head = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -195,7 +195,7 @@ history.head = (args: { patientuuid: string | number } | [patientuuid: string | 
     history.form = historyForm
 /**
 * @see \App\Http\Controllers\VitalsController::stats
- * @see app/Http/Controllers/VitalsController.php:323
+ * @see app/Http/Controllers/VitalsController.php:350
  * @route '/api/v1/patients/{patientuuid}/vitals/stats'
  */
 export const stats = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -210,7 +210,7 @@ stats.definition = {
 
 /**
 * @see \App\Http\Controllers\VitalsController::stats
- * @see app/Http/Controllers/VitalsController.php:323
+ * @see app/Http/Controllers/VitalsController.php:350
  * @route '/api/v1/patients/{patientuuid}/vitals/stats'
  */
 stats.url = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -238,7 +238,7 @@ stats.url = (args: { patientuuid: string | number } | [patientuuid: string | num
 
 /**
 * @see \App\Http\Controllers\VitalsController::stats
- * @see app/Http/Controllers/VitalsController.php:323
+ * @see app/Http/Controllers/VitalsController.php:350
  * @route '/api/v1/patients/{patientuuid}/vitals/stats'
  */
 stats.get = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -247,7 +247,7 @@ stats.get = (args: { patientuuid: string | number } | [patientuuid: string | num
 })
 /**
 * @see \App\Http\Controllers\VitalsController::stats
- * @see app/Http/Controllers/VitalsController.php:323
+ * @see app/Http/Controllers/VitalsController.php:350
  * @route '/api/v1/patients/{patientuuid}/vitals/stats'
  */
 stats.head = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -257,7 +257,7 @@ stats.head = (args: { patientuuid: string | number } | [patientuuid: string | nu
 
     /**
 * @see \App\Http\Controllers\VitalsController::stats
- * @see app/Http/Controllers/VitalsController.php:323
+ * @see app/Http/Controllers/VitalsController.php:350
  * @route '/api/v1/patients/{patientuuid}/vitals/stats'
  */
     const statsForm = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -267,7 +267,7 @@ stats.head = (args: { patientuuid: string | number } | [patientuuid: string | nu
 
             /**
 * @see \App\Http\Controllers\VitalsController::stats
- * @see app/Http/Controllers/VitalsController.php:323
+ * @see app/Http/Controllers/VitalsController.php:350
  * @route '/api/v1/patients/{patientuuid}/vitals/stats'
  */
         statsForm.get = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -276,7 +276,7 @@ stats.head = (args: { patientuuid: string | number } | [patientuuid: string | nu
         })
             /**
 * @see \App\Http\Controllers\VitalsController::stats
- * @see app/Http/Controllers/VitalsController.php:323
+ * @see app/Http/Controllers/VitalsController.php:350
  * @route '/api/v1/patients/{patientuuid}/vitals/stats'
  */
         statsForm.head = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -292,7 +292,7 @@ stats.head = (args: { patientuuid: string | number } | [patientuuid: string | nu
     stats.form = statsForm
 /**
 * @see \App\Http\Controllers\VitalsController::forVisit
- * @see app/Http/Controllers/VitalsController.php:176
+ * @see app/Http/Controllers/VitalsController.php:181
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
 export const forVisit = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -307,7 +307,7 @@ forVisit.definition = {
 
 /**
 * @see \App\Http\Controllers\VitalsController::forVisit
- * @see app/Http/Controllers/VitalsController.php:176
+ * @see app/Http/Controllers/VitalsController.php:181
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
 forVisit.url = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions) => {
@@ -333,7 +333,7 @@ forVisit.url = (args: { patientuuid: string | number, visitId: string | number }
 
 /**
 * @see \App\Http\Controllers\VitalsController::forVisit
- * @see app/Http/Controllers/VitalsController.php:176
+ * @see app/Http/Controllers/VitalsController.php:181
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
 forVisit.get = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -342,7 +342,7 @@ forVisit.get = (args: { patientuuid: string | number, visitId: string | number }
 })
 /**
 * @see \App\Http\Controllers\VitalsController::forVisit
- * @see app/Http/Controllers/VitalsController.php:176
+ * @see app/Http/Controllers/VitalsController.php:181
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
 forVisit.head = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -352,7 +352,7 @@ forVisit.head = (args: { patientuuid: string | number, visitId: string | number 
 
     /**
 * @see \App\Http\Controllers\VitalsController::forVisit
- * @see app/Http/Controllers/VitalsController.php:176
+ * @see app/Http/Controllers/VitalsController.php:181
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
     const forVisitForm = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -362,7 +362,7 @@ forVisit.head = (args: { patientuuid: string | number, visitId: string | number 
 
             /**
 * @see \App\Http\Controllers\VitalsController::forVisit
- * @see app/Http/Controllers/VitalsController.php:176
+ * @see app/Http/Controllers/VitalsController.php:181
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
         forVisitForm.get = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -371,7 +371,7 @@ forVisit.head = (args: { patientuuid: string | number, visitId: string | number 
         })
             /**
 * @see \App\Http\Controllers\VitalsController::forVisit
- * @see app/Http/Controllers/VitalsController.php:176
+ * @see app/Http/Controllers/VitalsController.php:181
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
         forVisitForm.head = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -387,7 +387,7 @@ forVisit.head = (args: { patientuuid: string | number, visitId: string | number 
     forVisit.form = forVisitForm
 /**
 * @see \App\Http\Controllers\VitalsController::store
- * @see app/Http/Controllers/VitalsController.php:21
+ * @see app/Http/Controllers/VitalsController.php:20
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
 export const store = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -402,7 +402,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\VitalsController::store
- * @see app/Http/Controllers/VitalsController.php:21
+ * @see app/Http/Controllers/VitalsController.php:20
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
 store.url = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions) => {
@@ -428,7 +428,7 @@ store.url = (args: { patientuuid: string | number, visitId: string | number } | 
 
 /**
 * @see \App\Http\Controllers\VitalsController::store
- * @see app/Http/Controllers/VitalsController.php:21
+ * @see app/Http/Controllers/VitalsController.php:20
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
 store.post = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -438,7 +438,7 @@ store.post = (args: { patientuuid: string | number, visitId: string | number } |
 
     /**
 * @see \App\Http\Controllers\VitalsController::store
- * @see app/Http/Controllers/VitalsController.php:21
+ * @see app/Http/Controllers/VitalsController.php:20
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
     const storeForm = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -448,7 +448,7 @@ store.post = (args: { patientuuid: string | number, visitId: string | number } |
 
             /**
 * @see \App\Http\Controllers\VitalsController::store
- * @see app/Http/Controllers/VitalsController.php:21
+ * @see app/Http/Controllers/VitalsController.php:20
  * @route '/api/v1/patients/{patientuuid}/visit/{visitId}/vitals'
  */
         storeForm.post = (args: { patientuuid: string | number, visitId: string | number } | [patientuuid: string | number, visitId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -459,7 +459,7 @@ store.post = (args: { patientuuid: string | number, visitId: string | number } |
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\VitalsController::update
- * @see app/Http/Controllers/VitalsController.php:255
+ * @see app/Http/Controllers/VitalsController.php:264
  * @route '/api/v1/patients/{patientuuid}/vitals/{vitalId}'
  */
 export const update = (args: { patientuuid: string | number, vitalId: string | number } | [patientuuid: string | number, vitalId: string | number ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -474,7 +474,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\VitalsController::update
- * @see app/Http/Controllers/VitalsController.php:255
+ * @see app/Http/Controllers/VitalsController.php:264
  * @route '/api/v1/patients/{patientuuid}/vitals/{vitalId}'
  */
 update.url = (args: { patientuuid: string | number, vitalId: string | number } | [patientuuid: string | number, vitalId: string | number ], options?: RouteQueryOptions) => {
@@ -500,7 +500,7 @@ update.url = (args: { patientuuid: string | number, vitalId: string | number } |
 
 /**
 * @see \App\Http\Controllers\VitalsController::update
- * @see app/Http/Controllers/VitalsController.php:255
+ * @see app/Http/Controllers/VitalsController.php:264
  * @route '/api/v1/patients/{patientuuid}/vitals/{vitalId}'
  */
 update.put = (args: { patientuuid: string | number, vitalId: string | number } | [patientuuid: string | number, vitalId: string | number ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -510,7 +510,7 @@ update.put = (args: { patientuuid: string | number, vitalId: string | number } |
 
     /**
 * @see \App\Http\Controllers\VitalsController::update
- * @see app/Http/Controllers/VitalsController.php:255
+ * @see app/Http/Controllers/VitalsController.php:264
  * @route '/api/v1/patients/{patientuuid}/vitals/{vitalId}'
  */
     const updateForm = (args: { patientuuid: string | number, vitalId: string | number } | [patientuuid: string | number, vitalId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -525,7 +525,7 @@ update.put = (args: { patientuuid: string | number, vitalId: string | number } |
 
             /**
 * @see \App\Http\Controllers\VitalsController::update
- * @see app/Http/Controllers/VitalsController.php:255
+ * @see app/Http/Controllers/VitalsController.php:264
  * @route '/api/v1/patients/{patientuuid}/vitals/{vitalId}'
  */
         updateForm.put = (args: { patientuuid: string | number, vitalId: string | number } | [patientuuid: string | number, vitalId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

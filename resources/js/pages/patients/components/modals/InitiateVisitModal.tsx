@@ -1,7 +1,7 @@
 // components/InitiateVisitModal.tsx
 
 import React, { useState, useEffect } from 'react';
-import { X, Activity, User, ArrowRight } from 'lucide-react';
+import { X, Activity, User, ArrowRight, MapPin, Hospital, Check } from 'lucide-react';
 import Http from '@/utils/Http';
 import Notiflix from 'notiflix';
 
@@ -26,6 +26,30 @@ interface VisitFormData {
     referral_source: string;
     referral_reason: string;
     visit_mode: 'physical' | 'virtual' | 'hybrid';
+    province_code: string;
+    district_code: string;
+    facility_code: string;
+}
+
+interface Province {
+    id: number;
+    name: string;
+    code: string;
+}
+
+interface District {
+    id: number;
+    name: string;
+    province_id: number;
+    code?: string;
+}
+
+interface Facility {
+    id: number;
+    name: string;
+    type: string;
+    district_id: number;
+    code?: string;
 }
 
 export const InitiateVisitModal: React.FC<InitiateVisitModalProps> = ({
@@ -48,11 +72,24 @@ export const InitiateVisitModal: React.FC<InitiateVisitModalProps> = ({
         referral_source: '',
         referral_reason: '',
         visit_mode: 'physical',
+        province_code: '',
+        district_code: '',
+        facility_code: '',
     });
 
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [showReferralFields, setShowReferralFields] = useState(false);
+
+    // Location data
+    const [provinces, setProvinces] = useState<Province[]>([]);
+    const [districts, setDistricts] = useState<District[]>([]);
+    const [facilities, setFacilities] = useState<Facility[]>([]);
+    const [locationLoading, setLocationLoading] = useState({
+        provinces: false,
+        districts: false,
+        facilities: false
+    });
 
     // Reset form when modal opens
     useEffect(() => {
@@ -69,11 +106,126 @@ export const InitiateVisitModal: React.FC<InitiateVisitModalProps> = ({
                 referral_source: '',
                 referral_reason: '',
                 visit_mode: 'physical',
+                province_code: '',
+                district_code: '',
+                facility_code: '',
             });
             setErrors({});
             setShowReferralFields(false);
+            setDistricts([]);
+            setFacilities([]);
+            fetchProvinces();
         }
     }, [isOpen]);
+
+    // Fetch districts when province changes
+    useEffect(() => {
+        if (formData.province_code && formData.location_type === 'outreach') {
+            const selectedProvince = provinces.find(p => p.code === formData.province_code);
+            if (selectedProvince) {
+                fetchDistricts(selectedProvince.id);
+                setFormData(prev => ({ ...prev, district_code: '', facility_code: '' }));
+                setFacilities([]);
+            }
+        }
+    }, [formData.province_code]);
+
+    // Fetch facilities when district changes
+    useEffect(() => {
+        if (formData.district_code && formData.location_type === 'outreach') {
+            const selectedDistrict = districts.find(d => d.code === formData.district_code);
+            if (selectedDistrict) {
+                fetchFacilities(selectedDistrict.id);
+                setFormData(prev => ({ ...prev, facility_code: '' }));
+            }
+        }
+    }, [formData.district_code]);
+
+    const fetchProvinces = async () => {
+        setLocationLoading(prev => ({ ...prev, provinces: true }));
+        try {
+            const response = await Http.get('/locations/provinces');
+            console.log('Provinces response:', response.data);
+
+            // Handle different response formats
+            let provincesData = response.data;
+            if (response.data.data) {
+                provincesData = response.data.data;
+            }
+
+            setProvinces(provincesData);
+        } catch (error: any) {
+            console.error('Error fetching provinces:', error);
+            // Don't show error notification for this, just log it
+            // Use fallback data if needed
+        } finally {
+            setLocationLoading(prev => ({ ...prev, provinces: false }));
+        }
+    };
+
+    const fetchDistricts = async (provinceId: number) => {
+        setLocationLoading(prev => ({ ...prev, districts: true }));
+        try {
+            // Try different parameter formats
+            let response;
+            try {
+                response = await Http.get(`/locations/districts?province_id=${provinceId}`);
+            } catch (error) {
+                // Fallback to different parameter format
+                response = await Http.get(`/locations/districts/${provinceId}`);
+            }
+
+            console.log('Districts response:', response.data);
+
+            let districtsData = response.data;
+            if (response.data.data) {
+                districtsData = response.data.data;
+            }
+
+            const districtsWithCode = districtsData.map((d: any) => ({
+                ...d,
+                code: d.code || `district_${d.id}`
+            }));
+            setDistricts(districtsWithCode);
+        } catch (error: any) {
+            console.error('Error fetching districts:', error);
+            // Handle error silently
+        } finally {
+            setLocationLoading(prev => ({ ...prev, districts: false }));
+        }
+    };
+
+    const fetchFacilities = async (districtId: number) => {
+        setLocationLoading(prev => ({ ...prev, facilities: true }));
+        try {
+            // Try different parameter formats
+            let response;
+            try {
+                response = await Http.get(`/locations/facilities?district_id=${districtId}`);
+            } catch (error) {
+                // Fallback to different parameter format
+                response = await Http.get(`/locations/facilities/${districtId}`);
+            }
+
+            console.log('Facilities response:', response.data);
+
+            let facilitiesData = response.data;
+            if (response.data.data) {
+                facilitiesData = response.data.data;
+            }
+
+            const facilitiesWithCode = facilitiesData.map((f: any) => ({
+                ...f,
+                code: f.code || `facility_${f.id}`
+            }));
+            setFacilities(facilitiesWithCode);
+        } catch (error: any) {
+            console.error('Error fetching facilities:', error);
+            // Handle error silently
+        } finally {
+            setLocationLoading(prev => ({ ...prev, facilities: false }));
+        }
+    };
 
     const visitTypes = [
         { value: 'cervical_cancer_screening', label: 'Cervical Cancer Screening' },
@@ -115,7 +267,6 @@ export const InitiateVisitModal: React.FC<InitiateVisitModalProps> = ({
 
     const handleInputChange = (field: keyof VisitFormData, value: any) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
-        // Clear error for this field
         if (errors[field]) {
             setErrors((prev) => {
                 const newErrors = { ...prev };
@@ -134,11 +285,23 @@ export const InitiateVisitModal: React.FC<InitiateVisitModalProps> = ({
         if (!formData.reason_for_visit || formData.reason_for_visit.trim().length < 5) {
             newErrors.reason_for_visit = 'Please provide a valid reason for visit (min 5 characters)';
         }
-        if (!formData.facility && formData.location_type === 'facility') {
+
+        if (formData.location_type === 'facility' && !formData.facility) {
             newErrors.facility = 'Facility is required';
         }
-        if (!formData.outreach_location && formData.location_type === 'outreach') {
-            newErrors.outreach_location = 'Outreach location is required';
+        if (formData.location_type === 'outreach') {
+            if (!formData.province_code) {
+                newErrors.province_code = 'Province is required';
+            }
+            if (!formData.district_code) {
+                newErrors.district_code = 'District is required';
+            }
+            if (!formData.facility_code) {
+                newErrors.facility_code = 'Facility is required';
+            }
+        }
+        if (formData.location_type === 'home_visit' && !formData.outreach_location) {
+            newErrors.outreach_location = 'Home visit address is required';
         }
         if (formData.is_referral && !formData.referral_source) {
             newErrors.referral_source = 'Referral source is required';
@@ -155,6 +318,36 @@ export const InitiateVisitModal: React.FC<InitiateVisitModalProps> = ({
 
         setLoading(true);
         try {
+            let facilityName = '';
+            let locationDetails = {};
+
+            if (formData.location_type === 'facility') {
+                facilityName = formData.facility;
+            } else if (formData.location_type === 'outreach') {
+                const selectedFacility = facilities.find(f => f.code === formData.facility_code);
+                const selectedDistrict = districts.find(d => d.code === formData.district_code);
+                const selectedProvince = provinces.find(p => p.code === formData.province_code);
+
+                facilityName = selectedFacility?.name || '';
+                locationDetails = {
+                    province: selectedProvince?.name || '',
+                    province_code: formData.province_code,
+                    province_id: selectedProvince?.id || null,
+                    district: selectedDistrict?.name || '',
+                    district_code: formData.district_code,
+                    district_id: selectedDistrict?.id || null,
+                    facility_code: formData.facility_code,
+                    facility_id: selectedFacility?.id || null,
+                    facility_type: selectedFacility?.type || '',
+                };
+            } else if (formData.location_type === 'home_visit') {
+                facilityName = formData.outreach_location;
+                locationDetails = {
+                    address: formData.outreach_location,
+                    visit_type: 'home_visit'
+                };
+            }
+
             const payload = {
                 patient_id: patientId,
                 created_by: userId,
@@ -162,7 +355,7 @@ export const InitiateVisitModal: React.FC<InitiateVisitModalProps> = ({
                 visit_mode: formData.visit_mode,
                 presenting_complaint: formData.reason_for_visit,
                 priority: formData.priority,
-                facility: formData.location_type === 'facility' ? formData.facility : formData.outreach_location,
+                facility: facilityName,
                 department: formData.department,
                 is_referral: formData.is_referral,
                 referral_source: formData.is_referral ? formData.referral_source : null,
@@ -173,47 +366,70 @@ export const InitiateVisitModal: React.FC<InitiateVisitModalProps> = ({
                     location_type: formData.location_type,
                     initiated_by: userId,
                     initiated_at: new Date().toISOString(),
+                    ...locationDetails,
                 },
             };
 
+            console.log('Submitting payload:', payload);
+
             const response = await Http.post(`/patients/${patientId}/visit`, payload);
-console.log(response)
-            if (response.status===201) {
+            console.log('Response:', response);
 
-                Notiflix.Notify.success(response.data.message)
-                const visitUuid = response.data.data.id;
-                onVisitCreated(visitUuid);
+            if (response.status === 201) {
+                Notiflix.Notify.success(response.data.message || 'Visit initiated successfully');
+                const visitUuid = response.data.data?.id || response.data.id;
+                if (visitUuid) {
+                    onVisitCreated(visitUuid);
+                }
                 onClose();
-
-                // Show success message or trigger navigation
-                // The parent component will handle navigation
             } else {
-                Notiflix.Notify.warning(response.data.message)
-
+                Notiflix.Notify.warning(response.data.message || 'Failed to initiate visit');
                 onClose();
             }
         } catch (error: any) {
             console.error('Error initiating visit:', error);
+            const errorMessage = error.response?.data?.message || 'Failed to initiate visit. Please try again.';
+            Notiflix.Notify.failure(errorMessage);
             setErrors({
-                submit: error.response?.data?.message || 'Failed to initiate visit. Please try again.'
+                submit: errorMessage
             });
         } finally {
             setLoading(false);
         }
     };
 
+    const getProvinceName = (code: string) => {
+        const province = provinces.find(p => p.code === code);
+        return province?.name || code;
+    };
+
+    const getDistrictName = (code: string) => {
+        const district = districts.find(d => d.code === code);
+        return district?.name || code;
+    };
+
+    const getFacilityName = (code: string) => {
+        const facility = facilities.find(f => f.code === code);
+        return facility?.name || code;
+    };
+
+    const isOutreachLocationComplete = () => {
+        return formData.location_type === 'outreach' &&
+            formData.province_code &&
+            formData.district_code &&
+            formData.facility_code;
+    };
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
-            {/* Overlay */}
             <div
                 className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px] transition-opacity"
                 onClick={onClose}
                 aria-hidden="true"
             />
 
-            {/* Modal */}
             <div className="relative z-10 w-full max-w-3xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3.5">
@@ -320,7 +536,7 @@ console.log(response)
                                         <button
                                             key={mode}
                                             type="button"
-                                            onClick={() => handleInputChange('visit_mode', mode)}
+                                            onClick={() => handleInputChange('visit_mode', mode as any)}
                                             className={`rounded-md border px-2.5 py-1.5 text-xs capitalize transition-colors ${
                                                 formData.visit_mode === mode
                                                     ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -350,7 +566,19 @@ console.log(response)
                                         <button
                                             key={type.value}
                                             type="button"
-                                            onClick={() => handleInputChange('location_type', type.value as any)}
+                                            onClick={() => {
+                                                handleInputChange('location_type', type.value as any);
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    province_code: '',
+                                                    district_code: '',
+                                                    facility_code: '',
+                                                    facility: '',
+                                                    outreach_location: '',
+                                                }));
+                                                setDistricts([]);
+                                                setFacilities([]);
+                                            }}
                                             className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
                                                 formData.location_type === type.value
                                                     ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -363,35 +591,143 @@ console.log(response)
                                 </div>
                             </div>
 
-                            {/* Facility / Location */}
-                            <div>
-                                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    {formData.location_type === 'facility' ? 'Facility *' :
-                                        formData.location_type === 'outreach' ? 'Outreach location *' :
-                                            'Home visit address'}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.location_type === 'facility' ? formData.facility :
-                                        formData.location_type === 'outreach' ? formData.outreach_location : ''}
-                                    onChange={(e) => {
-                                        if (formData.location_type === 'facility') {
-                                            handleInputChange('facility', e.target.value);
-                                        } else if (formData.location_type === 'outreach') {
-                                            handleInputChange('outreach_location', e.target.value);
-                                        }
-                                    }}
-                                    className={`mt-1 w-full rounded-md border ${errors.facility || errors.outreach_location ? 'border-rose-300' : 'border-slate-200'} bg-white px-2.5 py-2 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-                                    placeholder={formData.location_type === 'facility' ? 'e.g., Central Hospital' :
-                                        formData.location_type === 'outreach' ? 'e.g., Rural Health Center - Village A' :
-                                            'e.g., 123 Main St, Village B'}
-                                />
-                                {(errors.facility || errors.outreach_location) && (
-                                    <p className="mt-1 text-[11px] text-rose-500">
-                                        {errors.facility || errors.outreach_location}
-                                    </p>
-                                )}
-                            </div>
+                            {/* Location fields based on type */}
+                            {formData.location_type === 'facility' && (
+                                <div>
+                                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                        Facility *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.facility}
+                                        onChange={(e) => handleInputChange('facility', e.target.value)}
+                                        className={`mt-1 w-full rounded-md border ${errors.facility ? 'border-rose-300' : 'border-slate-200'} bg-white px-2.5 py-2 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                                        placeholder="e.g., Central Hospital"
+                                    />
+                                    {errors.facility && (
+                                        <p className="mt-1 text-[11px] text-rose-500">{errors.facility}</p>
+                                    )}
+                                </div>
+                            )}
+
+                            {formData.location_type === 'outreach' && (
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                            Province *
+                                        </label>
+                                        <select
+                                            value={formData.province_code}
+                                            onChange={(e) => handleInputChange('province_code', e.target.value)}
+                                            className={`mt-1 w-full rounded-md border ${errors.province_code ? 'border-rose-300' : 'border-slate-200'} bg-white px-2.5 py-2 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                                            disabled={locationLoading.provinces}
+                                        >
+                                            <option value="">Select province</option>
+                                            {provinces.map((province) => (
+                                                <option key={province.code} value={province.code}>
+                                                    {province.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {locationLoading.provinces && (
+                                            <p className="mt-1 text-[11px] text-slate-400">Loading provinces...</p>
+                                        )}
+                                        {errors.province_code && (
+                                            <p className="mt-1 text-[11px] text-rose-500">{errors.province_code}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                            District *
+                                        </label>
+                                        <select
+                                            value={formData.district_code}
+                                            onChange={(e) => handleInputChange('district_code', e.target.value)}
+                                            className={`mt-1 w-full rounded-md border ${errors.district_code ? 'border-rose-300' : 'border-slate-200'} bg-white px-2.5 py-2 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                                            disabled={!formData.province_code || locationLoading.districts}
+                                        >
+                                            <option value="">Select district</option>
+                                            {districts.map((district) => (
+                                                <option key={district.code} value={district.code}>
+                                                    {district.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {locationLoading.districts && (
+                                            <p className="mt-1 text-[11px] text-slate-400">Loading districts...</p>
+                                        )}
+                                        {formData.province_code && districts.length === 0 && !locationLoading.districts && (
+                                            <p className="mt-1 text-[11px] text-amber-600">No districts found for this province</p>
+                                        )}
+                                        {errors.district_code && (
+                                            <p className="mt-1 text-[11px] text-rose-500">{errors.district_code}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                            Facility *
+                                        </label>
+                                        <select
+                                            value={formData.facility_code}
+                                            onChange={(e) => handleInputChange('facility_code', e.target.value)}
+                                            className={`mt-1 w-full rounded-md border ${errors.facility_code ? 'border-rose-300' : 'border-slate-200'} bg-white px-2.5 py-2 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                                            disabled={!formData.district_code || locationLoading.facilities}
+                                        >
+                                            <option value="">Select facility</option>
+                                            {facilities.map((facility) => (
+                                                <option key={facility.code} value={facility.code}>
+                                                    {facility.name} ({facility.type})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {locationLoading.facilities && (
+                                            <p className="mt-1 text-[11px] text-slate-400">Loading facilities...</p>
+                                        )}
+                                        {formData.district_code && facilities.length === 0 && !locationLoading.facilities && (
+                                            <p className="mt-1 text-[11px] text-amber-600">No facilities found for this district</p>
+                                        )}
+                                        {errors.facility_code && (
+                                            <p className="mt-1 text-[11px] text-rose-500">{errors.facility_code}</p>
+                                        )}
+                                    </div>
+
+                                    {isOutreachLocationComplete() && (
+                                        <div className="p-2.5 bg-green-50 border border-green-200 rounded-md">
+                                            <div className="flex items-start gap-2">
+                                                <Check className="h-4 w-4 text-green-600 mt-0.5" />
+                                                <div>
+                                                    <p className="text-xs font-medium text-green-800">Location Selected</p>
+                                                    <p className="text-[11px] text-green-700">
+                                                        {getProvinceName(formData.province_code)} →
+                                                        {getDistrictName(formData.district_code)} →
+                                                        {getFacilityName(formData.facility_code)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {formData.location_type === 'home_visit' && (
+                                <div>
+                                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                        Home visit address *
+                                    </label>
+                                    <textarea
+                                        value={formData.outreach_location}
+                                        onChange={(e) => handleInputChange('outreach_location', e.target.value)}
+                                        rows={2}
+                                        className={`mt-1 w-full rounded-md border ${errors.outreach_location ? 'border-rose-300' : 'border-slate-200'} bg-white px-2.5 py-2 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                                        placeholder="e.g., 123 Main St, Village B, District"
+                                    />
+                                    {errors.outreach_location && (
+                                        <p className="mt-1 text-[11px] text-rose-500">{errors.outreach_location}</p>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Priority */}
                             <div>

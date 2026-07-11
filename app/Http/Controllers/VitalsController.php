@@ -6,9 +6,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PatientVital;
-use App\Models\Patient;
-use App\Models\Visit;
-use Illuminate\Support\Facades\Validator;
+use App\Models\Patients\Patient;
+use App\Models\Patients\PatientVisit as Visit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -21,22 +20,8 @@ class VitalsController extends Controller
     public function store(Request $request, $patientUuid, $visitId)
     {
         try {
-            $validated = $request->validate([
-                'systolic_bp' => 'nullable|integer|min:50|max:250',
-                'diastolic_bp' => 'nullable|integer|min:30|max:180',
-                'heart_rate' => 'nullable|integer|min:20|max:250',
-                'temperature' => 'nullable|numeric|min:32|max:45',
-                'respiratory_rate' => 'nullable|integer|min:4|max:60',
-                'oxygen_saturation' => 'nullable|integer|min:50|max:100',
-                'weight' => 'nullable|numeric|min:1|max:500',
-                'height' => 'nullable|numeric|min:20|max:300',
-                'bmi' => 'nullable|numeric|min:5|max:100',
-                'blood_glucose' => 'nullable|numeric|min:1|max:50',
-                'pain_score' => 'nullable|integer|min:0|max:10',
-                'pain_location' => 'nullable|string|max:255',
-                'recorded_at' => 'nullable|date',
-                'created_by' => 'required|uuid|exists:users,id',
-            ]);
+            // Get all data from request
+            $data = $request->all();
 
             // Find patient
             $patient = Patient::where('patient_uuid', $patientUuid)->first();
@@ -49,15 +34,20 @@ class VitalsController extends Controller
 
             // Find visit if provided
             $visit = null;
-            if ($visitId) {
+            if ($visitId && $visitId !== 'null' && $visitId !== 'undefined') {
                 $visit = Visit::where('id', $visitId)->orWhere('visit_number', $visitId)->first();
             }
 
             // Calculate BMI if not provided but height and weight are
-            $bmi = $validated['bmi'] ?? null;
-            if (!$bmi && !empty($validated['weight']) && !empty($validated['height']) && $validated['height'] > 0) {
-                $heightInMeters = $validated['height'] / 100;
-                $bmi = round($validated['weight'] / ($heightInMeters * $heightInMeters), 2);
+            $bmi = $data['bmi'] ?? null;
+            if (!$bmi && !empty($data['weight']) && !empty($data['height']) && $data['height'] > 0) {
+                $heightInMeters = $data['height'] / 100;
+                $bmi = round($data['weight'] / ($heightInMeters * $heightInMeters), 2);
+            }
+
+            // Ensure BMI is within reasonable range, otherwise set to null
+            if ($bmi !== null && ($bmi < 5 || $bmi > 100)) {
+                $bmi = null;
             }
 
             // Start transaction
@@ -68,65 +58,80 @@ class VitalsController extends Controller
                 ->where('is_current', true)
                 ->update(['is_current' => false]);
 
-            // Create new vitals record
-            $vital = PatientVital::create([
+            // Prepare data with proper types for SQLite - explicitly handle nulls
+            $vitalData = [
                 'id' => (string) Str::uuid(),
                 'patient_uuid' => $patientUuid,
                 'visit_uuid' => $visit?->id,
-                'recorded_by' => $validated['created_by'],
-                'systolic_bp' => $validated['systolic_bp'] ?? null,
-                'diastolic_bp' => $validated['diastolic_bp'] ?? null,
-                'heart_rate' => $validated['heart_rate'] ?? null,
-                'temperature' => $validated['temperature'] ?? null,
-                'respiratory_rate' => $validated['respiratory_rate'] ?? null,
-                'oxygen_saturation' => $validated['oxygen_saturation'] ?? null,
-                'weight' => $validated['weight'] ?? null,
-                'height' => $validated['height'] ?? null,
-                'bmi' => $bmi,
-                'blood_glucose' => $validated['blood_glucose'] ?? null,
-                'pain_score' => $validated['pain_score'] ?? null,
-                'pain_location' => $validated['pain_location'] ?? null,
-                'recorded_at' => $validated['recorded_at'] ?? now(),
+                'recorded_by' => isset($data['created_by']) ? (string) $data['created_by'] : null,
+                'systolic_bp' => isset($data['systolic_bp']) && $data['systolic_bp'] !== '' && $data['systolic_bp'] !== null ? (int) $data['systolic_bp'] : null,
+                'diastolic_bp' => isset($data['diastolic_bp']) && $data['diastolic_bp'] !== '' && $data['diastolic_bp'] !== null ? (int) $data['diastolic_bp'] : null,
+                'heart_rate' => isset($data['heart_rate']) && $data['heart_rate'] !== '' && $data['heart_rate'] !== null ? (int) $data['heart_rate'] : null,
+                'temperature' => isset($data['temperature']) && $data['temperature'] !== '' && $data['temperature'] !== null ? (float) $data['temperature'] : null,
+                'respiratory_rate' => isset($data['respiratory_rate']) && $data['respiratory_rate'] !== '' && $data['respiratory_rate'] !== null ? (int) $data['respiratory_rate'] : null,
+                'oxygen_saturation' => isset($data['oxygen_saturation']) && $data['oxygen_saturation'] !== '' && $data['oxygen_saturation'] !== null ? (int) $data['oxygen_saturation'] : null,
+                'weight' => isset($data['weight']) && $data['weight'] !== '' && $data['weight'] !== null ? (float) $data['weight'] : null,
+                'height' => isset($data['height']) && $data['height'] !== '' && $data['height'] !== null ? (float) $data['height'] : null,
+                'bmi' => $bmi !== null ? (float) $bmi : null,
+                'blood_glucose' => isset($data['blood_glucose']) && $data['blood_glucose'] !== '' && $data['blood_glucose'] !== null ? (float) $data['blood_glucose'] : null,
+                'pain_score' => isset($data['pain_score']) && $data['pain_score'] !== '' && $data['pain_score'] !== null ? (int) $data['pain_score'] : null,
+                'pain_location' => isset($data['pain_location']) && $data['pain_location'] !== '' ? (string) $data['pain_location'] : null,
+                'recorded_at' => isset($data['recorded_at']) ? $data['recorded_at'] : now(),
                 'is_current' => true,
-                'status' => 'active',
-                'metadata' => [
-                    'source' => 'api',
-                    'visit_type' => $visit?->visit_type,
-                    'recorded_by_name' => $request->user()?->name,
-                ],
-            ]);
+                'status' => isset($data['status']) && $data['status'] !== '' ? (string) $data['status'] : 'active',
+                'metadata' => json_encode(array_merge(
+                    [
+                        'source' => 'api',
+                        'visit_type' => $visit?->visit_type,
+                        'recorded_by_name' => $request->user()?->name,
+                    ],
+                    isset($data['metadata']) && is_array($data['metadata']) ? $data['metadata'] : []
+                )),
+            ];
+
+            // Remove any null values that might cause issues with SQLite
+            // But keep the fields that should be null
+            $finalData = [];
+            foreach ($vitalData as $key => $value) {
+                if ($key === 'metadata') {
+                    $finalData[$key] = $value;
+                } elseif ($value !== null && $value !== '') {
+                    $finalData[$key] = $value;
+                } else {
+                    $finalData[$key] = null;
+                }
+            }
+
+            Log::info('Attempting to insert vitals', ['data' => $finalData]);
+
+            // Create new vitals record
+            $vital = PatientVital::create($finalData);
 
             DB::commit();
 
-            Log::info('Vitals recorded', [
+            Log::info('Vitals recorded successfully', [
                 'patient_uuid' => $patientUuid,
                 'visit_id' => $visitId,
                 'vital_id' => $vital->id,
-                'recorded_by' => $validated['created_by'],
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Vitals recorded successfully',
-                'data' => $vital->formatted,
+                'data' => $vital->formatted ?? $vital,
             ], 201);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error recording vitals', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to record vitals',
+                'message' => 'Failed to record vitals: ' . $e->getMessage(),
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -153,7 +158,7 @@ class VitalsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $vital->formatted,
+                'data' => $vital->formatted ?? $vital,
             ]);
 
         } catch (\Exception $e) {
@@ -184,7 +189,9 @@ class VitalsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $vitals->map->formatted,
+                'data' => $vitals->map(function($vital) {
+                    return $vital->formatted ?? $vital;
+                }),
             ]);
 
         } catch (\Exception $e) {
@@ -227,7 +234,9 @@ class VitalsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $vitals->map->formatted,
+                'data' => $vitals->map(function($vital) {
+                    return $vital->formatted ?? $vital;
+                }),
                 'meta' => [
                     'count' => $vitals->count(),
                     'limit' => $limit,
@@ -255,20 +264,7 @@ class VitalsController extends Controller
     public function update(Request $request, $patientUuid, $vitalId)
     {
         try {
-            $validated = $request->validate([
-                'systolic_bp' => 'nullable|integer|min:50|max:250',
-                'diastolic_bp' => 'nullable|integer|min:30|max:180',
-                'heart_rate' => 'nullable|integer|min:20|max:250',
-                'temperature' => 'nullable|numeric|min:32|max:45',
-                'respiratory_rate' => 'nullable|integer|min:4|max:60',
-                'oxygen_saturation' => 'nullable|integer|min:50|max:100',
-                'weight' => 'nullable|numeric|min:1|max:500',
-                'height' => 'nullable|numeric|min:20|max:300',
-                'bmi' => 'nullable|numeric|min:5|max:100',
-                'blood_glucose' => 'nullable|numeric|min:1|max:50',
-                'pain_score' => 'nullable|integer|min:0|max:10',
-                'pain_location' => 'nullable|string|max:255',
-            ]);
+            $data = $request->all();
 
             $vital = PatientVital::where('patient_uuid', $patientUuid)
                 ->where('id', $vitalId)
@@ -282,24 +278,55 @@ class VitalsController extends Controller
             }
 
             // Calculate BMI if needed
-            $bmi = $validated['bmi'] ?? null;
-            if (!$bmi && isset($validated['weight']) && isset($validated['height']) && $validated['height'] > 0) {
-                $heightInMeters = $validated['height'] / 100;
-                $bmi = round($validated['weight'] / ($heightInMeters * $heightInMeters), 2);
-                $validated['bmi'] = $bmi;
+            $bmi = $data['bmi'] ?? null;
+            if (!$bmi && isset($data['weight']) && isset($data['height']) && $data['height'] > 0) {
+                $heightInMeters = $data['height'] / 100;
+                $bmi = round($data['weight'] / ($heightInMeters * $heightInMeters), 2);
+                $data['bmi'] = $bmi;
             }
 
-            $vital->update($validated);
+            // Ensure BMI is within reasonable range
+            if (isset($data['bmi']) && ($data['bmi'] < 5 || $data['bmi'] > 100)) {
+                $data['bmi'] = null;
+            }
+
+            // Cast numeric values and handle nulls
+            $numericFields = [
+                'systolic_bp', 'diastolic_bp', 'heart_rate', 'temperature',
+                'respiratory_rate', 'oxygen_saturation', 'weight', 'height',
+                'bmi', 'blood_glucose', 'pain_score'
+            ];
+
+            foreach ($numericFields as $field) {
+                if (isset($data[$field]) && $data[$field] !== '' && $data[$field] !== null) {
+                    if (in_array($field, ['temperature', 'weight', 'height', 'bmi', 'blood_glucose'])) {
+                        $data[$field] = (float) $data[$field];
+                    } else {
+                        $data[$field] = (int) $data[$field];
+                    }
+                } else {
+                    $data[$field] = null;
+                }
+            }
+
+            // Update metadata if provided
+            if (isset($data['metadata']) && is_array($data['metadata'])) {
+                $currentMetadata = $vital->metadata ?? [];
+                $data['metadata'] = array_merge($currentMetadata, $data['metadata']);
+            }
+
+            $vital->update($data);
 
             Log::info('Vitals updated', [
                 'patient_uuid' => $patientUuid,
                 'vital_id' => $vitalId,
+                'data' => $data,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Vitals updated successfully',
-                'data' => $vital->formatted,
+                'data' => $vital->formatted ?? $vital,
             ]);
 
         } catch (\Exception $e) {
@@ -354,7 +381,7 @@ class VitalsController extends Controller
                         'total_readings' => $stats->total_readings ?? 0,
                         'last_recorded_at' => $stats->last_recorded_at,
                     ],
-                    'latest' => $latest?->formatted,
+                    'latest' => $latest?->formatted ?? $latest,
                 ],
             ]);
 

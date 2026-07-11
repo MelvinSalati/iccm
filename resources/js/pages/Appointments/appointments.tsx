@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
+import { dashboard } from '@/routes';
+import Dashboard from '@/pages/dashboard';
 
 // Types
 interface Appointment {
@@ -433,11 +435,16 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
 
     const getFilterLabel = () => {
         switch (filterPeriod) {
-            case 'today': return 'Today';
-            case 'weekly': return 'This Week';
-            case 'monthly': return 'This Month';
-            case 'all': return 'All Appointments';
-            default: return '';
+            case 'today':
+                return 'Today';
+            case 'weekly':
+                return 'This Week';
+            case 'monthly':
+                return 'This Month';
+            case 'all':
+                return 'All Appointments';
+            default:
+                return '';
         }
     };
 
@@ -540,11 +547,13 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <Avatar className="h-6 w-6">
-                                                    <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px] font-medium">
+                                                    <AvatarFallback
+                                                        className="bg-blue-100 text-blue-700 text-[10px] font-medium">
                                                         {appointment.patient_initial || appointment.patient_name?.substring(0, 2).toUpperCase() || '??'}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <span className="text-sm font-medium text-slate-900 truncate max-w-[120px]">
+                                                <span
+                                                    className="text-sm font-medium text-slate-900 truncate max-w-[120px]">
                                                     {appointment.patient_name || 'Unknown'}
                                                 </span>
                                             </div>
@@ -554,11 +563,13 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
                                                 <span className="text-xs">
                                                     {appointment.date ? format(parseISO(appointment.date), 'MMM dd') : '—'}
                                                 </span>
-                                                <span className="text-[10px] text-slate-500">{appointment.time || '—'}</span>
+                                                <span
+                                                    className="text-[10px] text-slate-500">{appointment.time || '—'}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <span className="text-xs truncate block max-w-[100px]">{appointment.type || '—'}</span>
+                                            <span
+                                                className="text-xs truncate block max-w-[100px]">{appointment.type || '—'}</span>
                                         </TableCell>
                                         <TableCell>
                                             <StatusBadge status={appointment.status} />
@@ -586,7 +597,8 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
                                                     className="h-6 w-6 p-0"
                                                     title="View Patient Appointments"
                                                 >
-                                                    <Link href={`/patients/registry/${appointment.patient_uuid}/appointments`}>
+                                                    <Link
+                                                        href={`/patients/registry/${appointment.patient_uuid}/appointments`}>
                                                         <ExternalLink className="h-3.5 w-3.5" />
                                                     </Link>
                                                 </Button>
@@ -681,7 +693,8 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
 
                                     {currentPage < totalPages - 2 && (
                                         <>
-                                            {currentPage < totalPages - 3 && <span className="text-xs px-0.5">...</span>}
+                                            {currentPage < totalPages - 3 &&
+                                                <span className="text-xs px-0.5">...</span>}
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -730,3 +743,17 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
         </div>
     );
 }
+
+AppointmentTable.layout = {
+    breadcrumbs: [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+        },  {
+            title: 'Appointments',
+            href: '',
+        },
+    ],
+};
+
+
