@@ -6,7 +6,7 @@ import { dashboard } from '@/routes';
 import Http from '@/utils/Http';
 import Notiflix from 'notiflix';
 import { router } from '@inertiajs/react';
-import Create from '@/pages/patients/create';
+import Create from '@/pages/patients/create2';
 
 type SearchType = 'nrc_number' | 'phone_number' | 'email_address';
 
@@ -102,6 +102,8 @@ export default function SearchRegistry() {
                 search_type: searchType,
                 search_value: searchValue.trim(),
             });
+
+            console.log(searchType)
 
             if (response.data && response.data.length > 0) {
                 setSearchResults(response.data);

@@ -1,4 +1,4 @@
-// components/appointments/appointment-table.tsx
+// resources/js/components/appointments/appointment-table.tsx
 import { useState, useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import {
@@ -31,7 +31,6 @@ import {
 import { cn } from '@/lib/utils';
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
 import { dashboard } from '@/routes';
-import Dashboard from '@/pages/dashboard';
 
 // Types
 interface Appointment {
@@ -54,166 +53,6 @@ interface AppointmentTableProps {
 
 type FilterPeriod = 'today' | 'weekly' | 'monthly' | 'all';
 
-// Dummy data for testing
-const DUMMY_APPOINTMENTS: Appointment[] = [
-    {
-        id: 1,
-        patient_uuid: 'abc-123',
-        patient_name: 'Sarah Mwansa',
-        patient_initial: 'SM',
-        date: new Date().toISOString().split('T')[0],
-        time: '09:00',
-        type: 'General Checkup',
-        status: 'scheduled',
-        doctor_name: 'Dr. James Banda',
-        facility_name: 'Lusaka Central Hospital',
-        notes: 'Routine checkup, patient has been stable'
-    },
-    {
-        id: 2,
-        patient_uuid: 'def-456',
-        patient_name: 'John Chanda',
-        patient_initial: 'JC',
-        date: new Date().toISOString().split('T')[0],
-        time: '10:30',
-        type: 'Dental Cleaning',
-        status: 'confirmed',
-        doctor_name: 'Dr. Mary Zulu',
-        facility_name: 'University Teaching Hospital',
-        notes: 'Follow-up dental appointment'
-    },
-    {
-        id: 3,
-        patient_uuid: 'ghi-789',
-        patient_name: 'Grace Banda',
-        patient_initial: 'GB',
-        date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        time: '14:00',
-        type: 'Cardiology',
-        status: 'scheduled',
-        doctor_name: 'Dr. Peter Phiri',
-        facility_name: 'Heart Health Center',
-        notes: 'ECG and blood pressure monitoring'
-    },
-    {
-        id: 4,
-        patient_uuid: 'jkl-012',
-        patient_name: 'David Mulenga',
-        patient_initial: 'DM',
-        date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-        time: '11:00',
-        type: 'Pediatrics',
-        status: 'completed',
-        doctor_name: 'Dr. Esther Mwape',
-        facility_name: 'Children\'s Hospital',
-        notes: 'Growth checkup for 2-year-old'
-    },
-    {
-        id: 5,
-        patient_uuid: 'mno-345',
-        patient_name: 'Mary Phiri',
-        patient_initial: 'MP',
-        date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
-        time: '15:30',
-        type: 'Gynecology',
-        status: 'cancelled',
-        doctor_name: 'Dr. Rose Tembo',
-        facility_name: 'Women\'s Health Clinic',
-        notes: 'Cancelled due to patient emergency'
-    },
-    {
-        id: 6,
-        patient_uuid: 'pqr-678',
-        patient_name: 'Michael Zulu',
-        patient_initial: 'MZ',
-        date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-        time: '08:30',
-        type: 'Orthopedics',
-        status: 'confirmed',
-        doctor_name: 'Dr. Andrew Mwale',
-        facility_name: 'Orthopedic Center',
-        notes: 'Follow-up on fracture healing'
-    },
-    {
-        id: 7,
-        patient_uuid: 'stu-901',
-        patient_name: 'Patricia Mwansa',
-        patient_initial: 'PM',
-        date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-        time: '13:00',
-        type: 'Nutrition',
-        status: 'scheduled',
-        doctor_name: 'Dr. Susan Banda',
-        facility_name: 'Nutrition Clinic',
-        notes: 'Initial nutrition consultation'
-    },
-    {
-        id: 8,
-        patient_uuid: 'vwx-234',
-        patient_name: 'Robert Chisanga',
-        patient_initial: 'RC',
-        date: new Date(Date.now() - 345600000).toISOString().split('T')[0],
-        time: '16:00',
-        type: 'Dermatology',
-        status: 'no-show',
-        doctor_name: 'Dr. Francis Mwansa',
-        facility_name: 'Skin Health Center',
-        notes: 'Patient did not show up'
-    },
-    {
-        id: 9,
-        patient_uuid: 'yza-567',
-        patient_name: 'Alice Nkandu',
-        patient_initial: 'AN',
-        date: new Date(Date.now() + 432000000).toISOString().split('T')[0],
-        time: '10:00',
-        type: 'Ophthalmology',
-        status: 'scheduled',
-        doctor_name: 'Dr. Gift Mwansa',
-        facility_name: 'Eye Care Center',
-        notes: 'Eye examination'
-    },
-    {
-        id: 10,
-        patient_uuid: 'bcd-890',
-        patient_name: 'Joseph Mwape',
-        patient_initial: 'JM',
-        date: new Date().toISOString().split('T')[0],
-        time: '12:00',
-        type: 'Psychiatry',
-        status: 'confirmed',
-        doctor_name: 'Dr. Margaret Chanda',
-        facility_name: 'Mental Health Clinic',
-        notes: 'Follow-up session'
-    },
-    {
-        id: 11,
-        patient_uuid: 'efg-123',
-        patient_name: 'Catherine Lungu',
-        patient_initial: 'CL',
-        date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-        time: '09:30',
-        type: 'General Checkup',
-        status: 'completed',
-        doctor_name: 'Dr. James Banda',
-        facility_name: 'Lusaka Central Hospital',
-        notes: 'Routine physical examination'
-    },
-    {
-        id: 12,
-        patient_uuid: 'hij-456',
-        patient_name: 'Samuel Banda',
-        patient_initial: 'SB',
-        date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        time: '15:00',
-        type: 'Dental Cleaning',
-        status: 'scheduled',
-        doctor_name: 'Dr. Mary Zulu',
-        facility_name: 'University Teaching Hospital',
-        notes: 'Regular cleaning'
-    },
-];
-
 // Status badge component
 const StatusBadge = ({ status }: { status: Appointment['status'] }) => {
     const statusConfig = {
@@ -233,7 +72,7 @@ const StatusBadge = ({ status }: { status: Appointment['status'] }) => {
     );
 };
 
-// Appointment Details Modal (Simple Overlay)
+// Appointment Details Modal
 const AppointmentDetailsModal = ({
                                      appointment,
                                      isOpen,
@@ -352,7 +191,7 @@ const AppointmentDetailsModal = ({
 };
 
 // Main Appointment Table Component
-export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: AppointmentTableProps) {
+export default function AppointmentTable({ appointments = [] }: AppointmentTableProps) {
     const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -433,29 +272,14 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
         setIsModalOpen(true);
     };
 
-    const getFilterLabel = () => {
-        switch (filterPeriod) {
-            case 'today':
-                return 'Today';
-            case 'weekly':
-                return 'This Week';
-            case 'monthly':
-                return 'This Month';
-            case 'all':
-                return 'All Appointments';
-            default:
-                return '';
-        }
-    };
-
     // Reset to first page when filter or search changes
     useMemo(() => {
         setCurrentPage(1);
     }, [filterPeriod, searchTerm]);
 
     return (
-        <div className="space-y-3 p-2 bg-slate-100">
-            {/* Filters and Search Bar - Compact */}
+        <div className="space-y-3 p-2 bg-slate-100 rounded-lg">
+            {/* Filters and Search Bar */}
             <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
                 <div className="flex flex-wrap gap-1.5">
                     <Button
@@ -507,7 +331,7 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
                 </div>
             </div>
 
-            {/* Results count - Compact */}
+            {/* Results count */}
             <div className="text-xs text-slate-500">
                 {filteredAppointments.length === 0 ? (
                     'No appointments found'
@@ -516,8 +340,8 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
                 )}
             </div>
 
-            {/* Table - Compact */}
-            <div className="border rounded-lg overflow-hidden">
+            {/* Table */}
+            <div className="border rounded-lg overflow-hidden bg-white">
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
@@ -611,7 +435,7 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
                     </Table>
                 </div>
 
-                {/* Pagination - Compact */}
+                {/* Pagination */}
                 {totalPages > 1 && (
                     <div className="flex items-center justify-between px-3 py-2 border-t bg-slate-50">
                         <div className="text-xs text-slate-500">
@@ -731,7 +555,7 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
                 )}
             </div>
 
-            {/* Appointment Details Modal - Custom Overlay */}
+            {/* Appointment Details Modal */}
             <AppointmentDetailsModal
                 appointment={selectedAppointment}
                 isOpen={isModalOpen}
@@ -744,16 +568,16 @@ export default function AppointmentTable({ appointments = DUMMY_APPOINTMENTS }: 
     );
 }
 
+// Layout configuration for the page
 AppointmentTable.layout = {
     breadcrumbs: [
         {
             title: 'Dashboard',
             href: dashboard(),
-        },  {
+        },
+        {
             title: 'Appointments',
             href: '',
         },
     ],
 };
-
-

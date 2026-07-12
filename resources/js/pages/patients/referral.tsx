@@ -33,6 +33,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ReferralModal } from './components/modals/ReferralModal';
+import Http from '@/utils/Http';
 
 // Types
 interface Address {
@@ -204,12 +205,16 @@ export default function Referral() {
     };
 
     const handleAddReferral = (newReferral: Referral) => {
-        console.log('New referral:', newReferral);
-        router.reload({
-            only: ['referrals'],
-            preserveState: true,
-            preserveScroll: true,
-        });
+        const respponse = Http.post(`patients/${patient.patient_uuid}/referral`,newReferral);
+console.log("new",newReferral)
+        if(respponse){
+            router.reload({
+                only: ['referrals'],
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }
+      console.log(respponse)
     };
 
     // Filter and sort referrals

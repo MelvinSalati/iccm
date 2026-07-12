@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:306
  * @route '/api/v1/community-outreach'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:306
  * @route '/api/v1/community-outreach'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:306
  * @route '/api/v1/community-outreach'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -35,7 +35,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:306
  * @route '/api/v1/community-outreach'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -45,7 +45,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::store
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:264
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:306
  * @route '/api/v1/community-outreach'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -56,7 +56,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:265
  * @route '/api/community/engagement'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -71,7 +71,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:265
  * @route '/api/community/engagement'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -80,7 +80,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:265
  * @route '/api/community/engagement'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -89,7 +89,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:265
  * @route '/api/community/engagement'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -99,7 +99,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:265
  * @route '/api/community/engagement'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -109,7 +109,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:265
  * @route '/api/community/engagement'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -118,7 +118,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\CommunityEngagement\AggregateController::index
- * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:223
+ * @see app/Http/Controllers/CommunityEngagement/AggregateController.php:265
  * @route '/api/community/engagement'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

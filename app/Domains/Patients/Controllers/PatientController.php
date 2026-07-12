@@ -9,8 +9,10 @@ use App\Models\IntegratedScreening;
 use App\Models\Patients\Patient;
 use App\Models\Patients\PatientVisit;
 use App\Models\Patients\PatientVisitInteraction;
+use App\Models\Referral;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PatientController extends Controller
@@ -48,7 +50,14 @@ class PatientController extends Controller
      */
     public function search(Request $request)
     {
-        return PatientSearchAction::search($request->all());
+        if($request->search_type==='nrc'){
+
+        }
+        return Patient::where('nrc_number', 'LIKE', '%' . $request->search_value . '%')
+            ->orWhere('first_name', 'LIKE', '%' . $request->search_value . '%')
+            ->orWhere('last_name', 'LIKE', '%' . $request->search_value . '%')
+            ->orWhere('phone_number', 'LIKE', '%' . $request->search_value . '%')
+            ->get();
     }
 
     /**
@@ -292,6 +301,76 @@ class PatientController extends Controller
     /**
      * Display visit interactions for a patient.
      */
+    public function manageClientTransfer(Request $request)
+    {
+        try {
+            // Validate the request
+//            $validated = $request->validate([
+//                'referral_date' => 'required|date',
+//                'reason' => 'required|string|max:500',
+//                'referring_facility_id' => 'required|exists:facilities,id',
+//                'receiving_facility_id' => 'required|exists:facilities,id|different:referring_facility_id',
+//                'referral_status' => 'required|in:pending,accepted,rejected,completed,cancelled',
+//                'feedback_notes' => 'nullable|string|max:1000',
+//                'created_by' => 'required|exists:users,id',
+//            ]);
+
+            // Log the validated data (remove in production or use debug level)
+//            Log::info('Creating referral with data:', $validated);
+
+            // Generate reference number
+            $validated['referral_reference'] = $this->generateReferralReference();
+
+            // Use transaction to ensure data integrity
+            $referral = DB::transaction(function () use ($validated) {
+                return Referral::create($validated);
+            });
+
+            // Load relationships for response
+            $referral->load(['patient', 'referringFacility', 'receivingFacility', 'creator']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Patient referral created successfully.',
+                'data' => $referral
+            ], 201);
+
+        } catch (ValidationException $e) {
+            Log::warning('Validation failed for referral creation:', $e->errors());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            // Log the full error for debugging
+            Log::error('Failed to create referral: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create referral',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
+    }
+
+    private function generateReferralReference()
+    {
+        // Generate unique reference number
+        // Format: REF-YYYYMMDD-XXXX (where XXXX is random)
+        $reference = 'REF-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+
+        // Ensure uniqueness (optional)
+        while (Referral::where('referral_reference', $reference)->exists()) {
+            $reference = 'REF-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        }
+
+        return $reference;
+    }
     public function visitInteractions(Request $request, $patientUuid, $visitId = null)
     {
         // Get patient with only the relationships that exist

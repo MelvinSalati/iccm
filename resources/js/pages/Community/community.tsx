@@ -1,11 +1,28 @@
-// pages/community/index.tsx
+// resources/js/pages/community-outreach/index.tsx
 
-import { useState, useEffect, useCallback } from 'react';
-import bg from '../assets/images/undraw_code-thinking_tqs9.svg'
-import { Head, useForm } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Head } from '@inertiajs/react';
 import {
-    Plus, Eye, Edit, Trash2, MoreVertical, X,
-    MapPin, Calendar, Users, Activity, ArrowRight, Check, Loader2
+    Plus,
+    Edit,
+    Trash2,
+    X,
+    MapPin,
+    Users,
+    Activity,
+    ArrowRight,
+    Loader2,
+    User,
+    UserCircle,
+    Calendar,
+    Search,
+    Filter,
+    Eye,
+    Building2,
+    Stethoscope,
+    CheckSquare,
+    UserPlus,
+    UsersRound
 } from 'lucide-react';
 import { format } from 'date-fns';
 import AppLayout from '@/layouts/app-layout';
@@ -25,6 +42,8 @@ export interface CommunityOutreachRecord {
     facility: string;
     services: string[];
     women_reached: number;
+    men_reached: number;
+    total_beneficiaries: number;
     awareness_session_conducted: boolean;
     referred_for_screening: boolean;
     referral_required: boolean;
@@ -32,958 +51,303 @@ export interface CommunityOutreachRecord {
     referral_date?: string;
     referral_outcome?: string;
     referral_status: 'pending' | 'completed' | 'not_required';
+    male_engagement: number; // New field
     created_at: string;
     updated_at: string;
 }
 
-interface Province {
-    id: number;
-    name: string;
-    code: string;
-}
-
-interface District {
-    id: number;
-    name: string;
-    province_id: number;
-    code?: string;
-}
-
-// Service options - Moved outside component to prevent recreation
+// Service options
 const SERVICE_OPTIONS = [
     'Cervical Cancer Education',
-    'VIA Screening',
     'HPV Vaccination',
-    'HIV Testing',
-    'Family Planning',
-    'Breast Cancer Awareness',
     'Blood Pressure Screening',
     'Blood Sugar Screening',
-    'Mental Health Education',
-    'Nutrition Education'
+    'Mental Health Awareness'
 ];
 
 // ============================================
-// DELETE DIALOG COMPONENT
+// MAIN COMPONENT
 // ============================================
-function DeleteCommunityDialog({
-                                   open,
-                                   onOpenChange,
-                                   recordId,
-                                   onDelete
-                               }: {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    recordId: number;
-    onDelete: (id: number) => void;
-}) {
-    const [isDeleting, setIsDeleting] = useState(false);
+export default function CommunityOutreach({ records: initialRecords = [] }: { records?: CommunityOutreachRecord[] }) {
+    const [records, setRecords] = useState<CommunityOutreachRecord[]>(initialRecords);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingRecord, setEditingRecord] = useState<CommunityOutreachRecord | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState<string>('all');
 
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && open) onOpenChange(false);
-        };
-        window.addEventListener('keydown', handleEscape);
-        return () => window.removeEventListener('keydown', handleEscape);
-    }, [open, onOpenChange]);
+    // ============================================
+    // INDIVIDUAL USESTATE FOR EACH INPUT
+    // ============================================
 
-    useEffect(() => {
-        document.body.style.overflow = open ? 'hidden' : 'unset';
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [open]);
+    // Outreach Details
+    const [outreachDate, setOutreachDate] = useState('');
+    const [communityName, setCommunityName] = useState('');
+    const [chwName, setChwName] = useState('');
+    const [outreachType, setOutreachType] = useState('');
+    const [facility, setFacility] = useState('');
 
-    const handleDelete = async () => {
-        setIsDeleting(true);
+    // Services Provided (checkbox array)
+    const [selectedServices, setSelectedServices] = useState<string[]>([]);
+
+    // Outputs
+    const [referredForScreening, setReferredForScreening] = useState('');
+    const [awarenessSessionConducted, setAwarenessSessionConducted] = useState('');
+
+    // Number of People Reached
+    const [womenReached, setWomenReached] = useState<number>(0);
+    const [menReached, setMenReached] = useState<number>(0);
+    const [maleEngagement, setMaleEngagement] = useState<number>(0); // NEW FIELD
+
+    // Referral Information
+    const [referralRequired, setReferralRequired] = useState('');
+    const [referredFacility, setReferredFacility] = useState('');
+    const [referralDate, setReferralDate] = useState('');
+    const [referralOutcome, setReferralOutcome] = useState('');
+
+    // ============================================
+    // FORM VALIDATION
+    // ============================================
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+
+        if (!outreachDate) errors.outreachDate = 'Outreach Date is required';
+        if (!communityName.trim()) errors.communityName = 'Community Name is required';
+        if (!chwName.trim()) errors.chwName = 'CHW Name is required';
+        if (!outreachType) errors.outreachType = 'Outreach Type is required';
+        if (!facility) errors.facility = 'Facility is required';
+        if (selectedServices.length === 0) errors.selectedServices = 'Select at least one service';
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    // ============================================
+    // RESET FORM
+    // ============================================
+    const resetForm = () => {
+        setOutreachDate('');
+        setCommunityName('');
+        setChwName('');
+        setOutreachType('');
+        setFacility('');
+        setSelectedServices([]);
+        setReferredForScreening('');
+        setAwarenessSessionConducted('');
+        setWomenReached(0);
+        setMenReached(0);
+        setMaleEngagement(0); // Reset new field
+        setReferralRequired('');
+        setReferredFacility('');
+        setReferralDate('');
+        setReferralOutcome('');
+        setFormErrors({});
+        setEditingRecord(null);
+    };
+
+    // ============================================
+    // FETCH RECORDS
+    // ============================================
+    const fetchRecords = async () => {
         try {
-            const response = await Http.delete(`/community-outreach/${recordId}`);
-            if (response.status === 200 || response.status === 204) {
-                onDelete(recordId);
-                onOpenChange(false);
-                Notiflix.Notify.success('Record deleted successfully');
+            const response = await Http.get('/community-outreach');
+            console.log('📊 GET /community-outreach - Response:', response.data);
+            if (response.data?.data) {
+                setRecords(response.data.data);
+            } else if (response.data?.length !== undefined) {
+                setRecords(response.data);
             }
+        } catch (error) {
+            console.error('❌ Error fetching records:', error);
+        }
+    };
+
+    // ============================================
+    // HANDLE EDIT
+    // ============================================
+    const handleEdit = (record: CommunityOutreachRecord) => {
+        setEditingRecord(record);
+        setOutreachDate(record.outreach_date || '');
+        setCommunityName(record.community_name || '');
+        setChwName(record.chw_name || '');
+        setOutreachType(record.outreach_type || '');
+        setFacility(record.facility || '');
+        setSelectedServices(record.services || []);
+        setReferredForScreening(record.referred_for_screening ? 'yes' : 'no');
+        setAwarenessSessionConducted(record.awareness_session_conducted ? 'yes' : 'no');
+        setWomenReached(record.women_reached || 0);
+        setMenReached(record.men_reached || 0);
+        setMaleEngagement(record.male_engagement || 0); // Edit new field
+        setReferralRequired(record.referral_required ? 'yes' : 'no');
+        setReferredFacility(record.referred_facility || '');
+        setReferralDate(record.referral_date || '');
+        setReferralOutcome(record.referral_outcome || '');
+        setIsModalOpen(true);
+    };
+
+    // ============================================
+    // HANDLE DELETE
+    // ============================================
+    const handleDelete = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this record?')) return;
+
+        try {
+            console.log('🗑️ DELETE /community-outreach/' + id);
+            await Http.delete(`/community-outreach/${id}`);
+            Notiflix.Notify.success('Record deleted successfully');
+            setRecords(prev => prev.filter(r => r.id !== id));
         } catch (error) {
             console.error('Error deleting record:', error);
             Notiflix.Notify.failure('Failed to delete record');
-        } finally {
-            setIsDeleting(false);
         }
     };
 
-    if (!open) return null;
-
-    return (
-        <>
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => onOpenChange(false)} />
-            {/*<div className="fixed inset-0 z-50 flex items-center justify-center p-4">*/}
-            {/*    <div className="bg-white rounded-lg shadow-2xl w-full max-w-md animate-in fade-in zoom-in-95 duration-200">*/}
-            {/*        <div className="p-6">*/}
-            {/*            <div className="flex items-start gap-3">*/}
-            {/*                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">*/}
-            {/*                    <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">*/}
-            {/*                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />*/}
-            {/*                    </svg>*/}
-            {/*                </div>*/}
-            {/*                <div className="flex-1">*/}
-            {/*                    <h3 className="text-lg font-semibold text-gray-900">Delete Outreach Record</h3>*/}
-            {/*                    <p className="text-sm text-gray-500 mt-1">This action cannot be undone.</p>*/}
-            {/*                </div>*/}
-            {/*            </div>*/}
-            {/*            <div className="flex justify-end gap-3 mt-6">*/}
-            {/*                <button*/}
-            {/*                    onClick={() => onOpenChange(false)}*/}
-            {/*                    className="h-9 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"*/}
-            {/*                    disabled={isDeleting}*/}
-            {/*                >*/}
-            {/*                    Cancel*/}
-            {/*                </button>*/}
-            {/*                <button*/}
-            {/*                    onClick={handleDelete}*/}
-            {/*                    className="h-9 px-4 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 flex items-center gap-2"*/}
-            {/*                    disabled={isDeleting}*/}
-            {/*                >*/}
-            {/*                    {isDeleting ? (*/}
-            {/*                        <>*/}
-            {/*                            <Loader2 className="h-4 w-4 animate-spin" />*/}
-            {/*                            Deleting...*/}
-            {/*                        </>*/}
-            {/*                    ) : (*/}
-            {/*                        'Delete'*/}
-            {/*                    )}*/}
-            {/*                </button>*/}
-            {/*            </div>*/}
-            {/*        </div>*/}
-            {/*    </div>*/}
-            {/*</div>*/}
-        </>
-    );
-}
-
-// ============================================
-// TAB 1: METADATA COMPONENT
-// ============================================
-function MetaDataTab({
-                         formData,
-                         setFormData,
-                         errors,
-                         provinces,
-                         districts,
-                         loading,
-                         fetchDistricts
-                     }: any) {
-    const outreachTypes = ['Market', 'Church', 'School', 'Community Meeting', 'Door to Door', 'Health Fair', 'Other'];
-
-    // Get districts for selected province
-    const availableDistricts = formData.province_code ? (districts[formData.province_code] || []) : [];
-
-    return (
-        <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Type of Outreach <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        value={formData.outreach_type}
-                        onChange={e => setFormData({...formData, outreach_type: e.target.value})}
-                        className="w-full h-8 px-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                        <option value="">Select type</option>
-                        {outreachTypes.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                        ))}
-                    </select>
-                    {errors.outreach_type && <p className="text-[10px] text-red-500 mt-0.5">{errors.outreach_type}</p>}
-                </div>
-                <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Date Conducted <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="date"
-                        value={formData.outreach_date}
-                        onChange={e => setFormData({...formData, outreach_date: e.target.value})}
-                        className="w-full h-8 px-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    {errors.outreach_date && <p className="text-[10px] text-red-500 mt-0.5">{errors.outreach_date}</p>}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Province <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        value={formData.province_code || ''}
-                        onChange={e => {
-                            const provinceCode = e.target.value;
-                            setFormData({
-                                ...formData,
-                                province_code: provinceCode,
-                                district_code: ''
-                            });
-                            if (provinceCode) {
-                                const selectedProvince = provinces.find((p: any) => p.code === provinceCode);
-                                if (selectedProvince) {
-                                    fetchDistricts(selectedProvince.id);
-                                }
-                            }
-                        }}
-                        className="w-full h-8 px-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                        disabled={loading.provinces}
-                    >
-                        <option value="">Select province</option>
-                        {provinces.map((province: any) => (
-                            <option key={province.code} value={province.code}>
-                                {province.name}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.province_code && <p className="text-[10px] text-red-500 mt-0.5">{errors.province_code}</p>}
-                </div>
-                <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        District <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        value={formData.district_code || ''}
-                        onChange={e => setFormData({...formData, district_code: e.target.value})}
-                        className="w-full h-8 px-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                        disabled={!formData.province_code || loading.districts}
-                    >
-                        <option value="">{formData.province_code ? 'Select district' : 'Select province first'}</option>
-                        {availableDistricts.map((district: any) => (
-                            <option key={district.code} value={district.code}>
-                                {district.name}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.district_code && <p className="text-[10px] text-red-500 mt-0.5">{errors.district_code}</p>}
-                </div>
-            </div>
-
-            <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Community/Place Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    value={formData.community_name}
-                    onChange={e => setFormData({...formData, community_name: e.target.value})}
-                    placeholder="Enter community or place name"
-                    className="w-full h-8 px-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-                {errors.community_name && <p className="text-[10px] text-red-500 mt-0.5">{errors.community_name}</p>}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        CHW Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        value={formData.chw_name}
-                        onChange={e => setFormData({...formData, chw_name: e.target.value})}
-                        placeholder="Enter CHW name"
-                        className="w-full h-8 px-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    {errors.chw_name && <p className="text-[10px] text-red-500 mt-0.5">{errors.chw_name}</p>}
-                </div>
-                <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Facility <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        value={formData.facility}
-                        onChange={e => setFormData({...formData, facility: e.target.value})}
-                        className="w-full h-8 px-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                        <option value="">Select facility</option>
-                        <option value="Facility A">Facility A</option>
-                        <option value="Facility B">Facility B</option>
-                        <option value="Facility C">Facility C</option>
-                    </select>
-                    {errors.facility && <p className="text-[10px] text-red-500 mt-0.5">{errors.facility}</p>}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ============================================
-// TAB 2: SERVICES COMPONENT - FIXED
-// ============================================
-function ServicesTab({ formData, setFormData, errors }: any) {
-    const [initialized, setInitialized] = useState(false);
-
-    // Initialize services only once
-    useEffect(() => {
-        if (!initialized && formData.services.length === 0) {
-            setFormData((prev: any) => ({
-                ...prev,
-                services: SERVICE_OPTIONS.map(s => ({ name: s, count: 0, selected: false }))
-            }));
-            setInitialized(true);
-        }
-    }, [initialized, formData.services.length, setFormData]);
-
-    const toggleService = (serviceName: string) => {
-        setFormData((prev: any) => ({
-            ...prev,
-            services: prev.services.map((s: any) =>
-                s.name === serviceName ? { ...s, selected: !s.selected, count: !s.selected ? (s.count || 1) : 0 } : s
-            )
-        }));
+    // ============================================
+    // TOGGLE SERVICE SELECTION
+    // ============================================
+    const toggleService = (service: string) => {
+        setSelectedServices(prev =>
+            prev.includes(service)
+                ? prev.filter(s => s !== service)
+                : [...prev, service]
+        );
     };
 
-    const updateServiceCount = (serviceName: string, count: number) => {
-        setFormData((prev: any) => ({
-            ...prev,
-            services: prev.services.map((s: any) =>
-                s.name === serviceName ? { ...s, count: Math.max(0, count) } : s
-            )
-        }));
-    };
-
-    const totalBeneficiaries = formData.services.reduce((sum: number, s: any) => {
-        return s.selected ? sum + (s.count || 0) : sum;
-    }, 0);
-
-    const selectedCount = formData.services.filter((s: any) => s.selected).length;
-
-    return (
-        <div className="space-y-3">
-            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Users className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-medium text-gray-700">
-                        {selectedCount} service{selectedCount !== 1 ? 's' : ''} selected
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Total:</span>
-                    <span className="text-lg font-bold text-blue-600">{totalBeneficiaries}</span>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {formData.services.map((service: any) => (
-                    <div key={service.name} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
-                        <input
-                            type="checkbox"
-                            checked={service.selected || false}
-                            onChange={() => toggleService(service.name)}
-                            className="h-3.5 w-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <label className="flex-1 text-xs font-medium text-gray-700 cursor-pointer">
-                            {service.name}
-                        </label>
-                        <div className="flex items-center gap-1">
-                            <input
-                                type="number"
-                                min="0"
-                                value={service.count || 0}
-                                onChange={(e) => updateServiceCount(service.name, Number(e.target.value))}
-                                disabled={!service.selected}
-                                className={`w-14 h-7 px-1 text-xs border rounded focus:ring-1 focus:ring-blue-500 ${
-                                    service.selected
-                                        ? 'border-gray-300 bg-white'
-                                        : 'border-gray-200 bg-gray-100 text-gray-400'
-                                }`}
-                                placeholder="0"
-                            />
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {errors.services && <p className="text-[10px] text-red-500 mt-0.5">{errors.services}</p>}
-
-            {selectedCount === 0 && (
-                <div className="text-center py-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                    <Activity className="h-6 w-6 text-gray-300 mx-auto mb-1" />
-                    <p className="text-xs text-gray-400">Select at least one service</p>
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ============================================
-// COMMUNITY OUTREACH MODAL
-// ============================================
-function CommunityOutreachModal({
-                                    open,
-                                    onOpenChange,
-                                    editingRecord,
-                                    onSave
-                                }: {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    editingRecord?: CommunityOutreachRecord | null;
-    onSave: (data: any) => void;
-}) {
-    const [activeTab, setActiveTab] = useState<'metadata' | 'services'>('metadata');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [provinces, setProvinces] = useState<Province[]>([]);
-    const [districts, setDistricts] = useState<Record<string, District[]>>({});
-    const [loading, setLoading] = useState({
-        provinces: false,
-        districts: false
-    });
-
-    const [formData, setFormData] = useState({
-        outreach_date: editingRecord?.outreach_date || new Date().toISOString().split('T')[0],
-        outreach_type: editingRecord?.outreach_type || '',
-        community_name: editingRecord?.community_name || '',
-        chw_name: editingRecord?.chw_name || '',
-        facility: editingRecord?.facility || '',
-        province_code: '',
-        district_code: '',
-        services: editingRecord?.services?.map(s => ({ name: s, count: 0, selected: false })) || [],
-        women_reached: editingRecord?.women_reached || 0,
-        awareness_session_conducted: editingRecord?.awareness_session_conducted || false,
-        referred_for_screening: editingRecord?.referred_for_screening || false,
-        referral_required: editingRecord?.referral_required || false,
-        referred_facility: editingRecord?.referred_facility || '',
-        referral_date: editingRecord?.referral_date || '',
-        referral_outcome: editingRecord?.referral_outcome || '',
-    });
-
-    const [errors, setErrors] = useState<Record<string, string>>({});
-
-    // Fetch provinces when modal opens
-    useEffect(() => {
-        if (open) {
-            fetchProvinces();
-        }
-    }, [open]);
-
-    const fetchProvinces = async () => {
-        setLoading(prev => ({ ...prev, provinces: true }));
-        try {
-            const response = await Http.get('/locations/provinces');
-            setProvinces(response.data);
-        } catch (error) {
-            console.error('Error fetching provinces:', error);
-        } finally {
-            setLoading(prev => ({ ...prev, provinces: false }));
-        }
-    };
-
-    const fetchDistricts = async (provinceId: number) => {
-        setLoading(prev => ({ ...prev, districts: true }));
-        try {
-            const response = await Http.get(`/locations/districts?province_id=${provinceId}`);
-            const province = provinces.find(p => p.id === provinceId);
-            if (province) {
-                setDistricts(prev => ({
-                    ...prev,
-                    [province.code]: response.data.map((d: any) => ({
-                        ...d,
-                        code: d.code || d.name.toLowerCase().replace(/\s+/g, '_')
-                    }))
-                }));
-            }
-        } catch (error) {
-            console.error('Error fetching districts:', error);
-        } finally {
-            setLoading(prev => ({ ...prev, districts: false }));
-        }
-    };
-
-    // Handle escape key
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && open) onOpenChange(false);
-        };
-        window.addEventListener('keydown', handleEscape);
-        return () => window.removeEventListener('keydown', handleEscape);
-    }, [open, onOpenChange]);
-
-    // Handle body overflow
-    useEffect(() => {
-        document.body.style.overflow = open ? 'hidden' : 'unset';
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [open]);
-
-    // Update form when editing record changes
-    useEffect(() => {
-        if (editingRecord) {
-            setFormData({
-                outreach_date: editingRecord.outreach_date || new Date().toISOString().split('T')[0],
-                outreach_type: editingRecord.outreach_type || '',
-                community_name: editingRecord.community_name || '',
-                chw_name: editingRecord.chw_name || '',
-                facility: editingRecord.facility || '',
-                province_code: '',
-                district_code: '',
-                services: editingRecord.services?.map(s => ({ name: s, count: 0, selected: false })) || [],
-                women_reached: editingRecord.women_reached || 0,
-                awareness_session_conducted: editingRecord.awareness_session_conducted || false,
-                referred_for_screening: editingRecord.referred_for_screening || false,
-                referral_required: editingRecord.referral_required || false,
-                referred_facility: editingRecord.referred_facility || '',
-                referral_date: editingRecord.referral_date || '',
-                referral_outcome: editingRecord.referral_outcome || '',
-            });
-            // Reset services initialization flag in ServicesTab
-            setInitialized(false);
-        }
-    }, [editingRecord]);
-
-    // Track initialization for services
-    const [initialized, setInitialized] = useState(false);
-
-    const validateMetadata = () => {
-        const newErrors: Record<string, string> = {};
-        if (!formData.outreach_date) newErrors.outreach_date = 'Required';
-        if (!formData.outreach_type) newErrors.outreach_type = 'Required';
-        if (!formData.community_name.trim()) newErrors.community_name = 'Required';
-        if (!formData.chw_name.trim()) newErrors.chw_name = 'Required';
-        if (!formData.facility) newErrors.facility = 'Required';
-        if (!formData.province_code) newErrors.province_code = 'Required';
-        if (!formData.district_code) newErrors.district_code = 'Required';
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const validateServices = () => {
-        const newErrors: Record<string, string> = {};
-        const hasSelected = formData.services.some((s: any) => s.selected);
-        if (!hasSelected) newErrors.services = 'Select at least one service';
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleTabChange = (tab: 'metadata' | 'services') => {
-        if (tab === 'services' && !validateMetadata()) {
-            return;
-        }
-        setActiveTab(tab);
-    };
-
+    // ============================================
+    // HANDLE SUBMIT
+    // ============================================
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validateMetadata()) {
-            setActiveTab('metadata');
+        if (!validateForm()) {
+            Notiflix.Notify.warning('Please fix the highlighted fields');
             return;
         }
 
-        if (!validateServices()) {
-            setActiveTab('services');
-            return;
-        }
-
-        setIsSubmitting(true);
+        setIsLoading(true);
 
         try {
-            const selectedServices = formData.services
-                .filter((s: any) => s.selected)
-                .map((s: any) => s.name);
-
-            const serviceCounts = formData.services
-                .filter((s: any) => s.selected)
-                .reduce((acc: any, s: any) => {
-                    acc[s.name] = s.count || 0;
-                    return acc;
-                }, {});
-
-            let referral_status: 'pending' | 'completed' | 'not_required' = 'not_required';
-            if (formData.referral_required) {
-                referral_status = formData.referral_outcome ? 'completed' : 'pending';
-            }
+            const totalBeneficiaries = (womenReached || 0) + (menReached || 0);
 
             const payload = {
-                ...formData,
+                outreach_date: outreachDate,
+                outreach_type: outreachType,
+                community_name: communityName,
+                chw_name: chwName,
+                facility: facility,
                 services: selectedServices,
-                service_counts: serviceCounts,
-                referral_date: formData.referral_date || null,
-                referral_status,
-                total_beneficiaries: formData.services
-                    .filter((s: any) => s.selected)
-                    .reduce((sum: number, s: any) => sum + (s.count || 0), 0),
+                women_reached: womenReached || 0,
+                men_reached: menReached || 0,
+                male_engagement: maleEngagement || 0, // NEW FIELD
+                total_beneficiaries: totalBeneficiaries,
+                awareness_session_conducted: awarenessSessionConducted === 'yes',
+                referred_for_screening: referredForScreening === 'yes',
+                referral_required: referralRequired === 'yes',
+                referred_facility: referralRequired === 'yes' ? referredFacility : null,
+                referral_date: referralRequired === 'yes' ? referralDate : null,
+                referral_outcome: referralRequired === 'yes' ? referralOutcome : null,
+                referral_status: referralRequired === 'yes'
+                    ? (referralOutcome ? 'completed' : 'pending')
+                    : 'not_required',
             };
 
             const url = editingRecord
                 ? `/community-outreach/${editingRecord.id}`
                 : '/community-outreach';
 
-            const method = editingRecord ? 'put' : 'post';
+            const method = editingRecord ? 'PUT' : 'POST';
+
+            // ============================================
+            // CONSOLE LOGGING
+            // ============================================
+            console.log('================================================');
+            console.log('📤 COMMUNITY OUTREACH REQUEST');
+            console.log('================================================');
+            console.log('📍 ENDPOINT:', url);
+            console.log('📌 METHOD:', method);
+            console.log('📦 PAYLOAD:', JSON.stringify(payload, null, 2));
+            console.log('================================================');
 
             let response;
-            if (method === 'post') {
-                response = await Http.post(url, payload);
-            } else {
+            if (editingRecord) {
                 response = await Http.put(url, payload);
+            } else {
+                response = await Http.post(url, payload);
             }
+
+            console.log('================================================');
+            console.log('📥 COMMUNITY OUTREACH RESPONSE');
+            console.log('================================================');
+            console.log('📊 STATUS:', response.status);
+            console.log('📦 DATA:', JSON.stringify(response.data, null, 2));
+            console.log('================================================');
 
             if (response.status === 200 || response.status === 201) {
                 Notiflix.Notify.success(
                     editingRecord ? 'Record updated successfully!' : 'Record created successfully!'
                 );
-                onSave(payload);
-                onOpenChange(false);
-            }
-        } catch (error: any) {
-            console.error('Error saving record:', error);
-            Notiflix.Notify.failure(error.response?.data?.message || 'Failed to save record');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    if (!open) return null;
-
-    return (
-        <>
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => onOpenChange(false)} />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
-                <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-
-                    <div className="flex-shrink-0 border-b px-4 py-2.5 bg-white rounded-t-lg">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-sm font-semibold text-gray-900">
-                                    {editingRecord ? 'Edit Outreach Record' : 'New Community Outreach'}
-                                </h2>
-                                <p className="text-[10px] text-gray-500">
-                                    {editingRecord ? 'Update existing outreach record' : 'Record new community outreach activity'}
-                                </p>
-                            </div>
-                            <button onClick={() => onOpenChange(false)} className="rounded p-1 hover:bg-gray-100">
-                                <X className="h-4 w-4 text-gray-500" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex-shrink-0 px-4 pt-2 border-b border-gray-200">
-                        <div className="flex gap-1">
-                            <button
-                                onClick={() => handleTabChange('metadata')}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-t transition-colors ${
-                                    activeTab === 'metadata'
-                                        ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                                }`}
-                            >
-                                <div className="flex items-center gap-1.5">
-                                    <MapPin className="h-3.5 w-3.5" />
-                                    Metadata
-                                </div>
-                            </button>
-                            <button
-                                onClick={() => handleTabChange('services')}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-t transition-colors ${
-                                    activeTab === 'services'
-                                        ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                                }`}
-                            >
-                                <div className="flex items-center gap-1.5">
-                                    <Activity className="h-3.5 w-3.5" />
-                                    Services
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto px-4 py-3">
-                        {activeTab === 'metadata' ? (
-                            <MetaDataTab
-                                formData={formData}
-                                setFormData={setFormData}
-                                errors={errors}
-                                provinces={provinces}
-                                districts={districts}
-                                loading={loading}
-                                fetchDistricts={fetchDistricts}
-                            />
-                        ) : (
-                            <ServicesTab
-                                formData={formData}
-                                setFormData={setFormData}
-                                errors={errors}
-                            />
-                        )}
-                    </div>
-
-                    <div className="flex-shrink-0 border-t px-4 py-2.5 bg-gray-50 rounded-b-lg flex justify-between items-center">
-                        <div className="text-[10px] text-gray-500">
-                            {activeTab === 'metadata' ? 'Step 1 of 2' : 'Step 2 of 2'}
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => onOpenChange(false)}
-                                className="h-7 px-3 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
-                                disabled={isSubmitting}
-                            >
-                                Cancel
-                            </button>
-                            {activeTab === 'metadata' ? (
-                                <button
-                                    type="button"
-                                    onClick={() => handleTabChange('services')}
-                                    className="h-7 px-3 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 flex items-center gap-1.5"
-                                >
-                                    Next
-                                    <ArrowRight className="h-3.5 w-3.5" />
-                                </button>
-                            ) : (
-                                <button
-                                    type="submit"
-                                    onClick={handleSubmit}
-                                    className="h-7 px-3 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 flex items-center gap-1.5"
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? (
-                                        <>
-                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                            Saving...
-                                        </>
-                                    ) : (
-                                        'Save'
-                                    )}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-}
-
-// ============================================
-// TABLE COMPONENT
-// ============================================
-function CommunityOutreachTable({
-                                    records,
-                                    onEdit,
-                                    onDelete
-                                }: {
-    records: CommunityOutreachRecord[];
-    onEdit: (record: CommunityOutreachRecord) => void;
-    onDelete: (id: number) => void;
-}) {
-    const [deleteId, setDeleteId] = useState<number | null>(null);
-    const [dropdownOpen, setDropdownOpen] = useState<number | null>(null);
-
-    const getStatusColor = (status: string) => {
-        const colors = {
-            pending: 'bg-yellow-100 text-yellow-800',
-            completed: 'bg-green-100 text-green-800',
-            not_required: 'bg-gray-100 text-gray-800'
-        };
-        return colors[status as keyof typeof colors] || colors.not_required;
-    };
-
-    const getStatusLabel = (status: string) => {
-        const labels = {
-            pending: 'Pending',
-            completed: 'Completed',
-            not_required: 'Not Required'
-        };
-        return labels[status as keyof typeof labels] || status;
-    };
-
-    return (
-        <>
-            {/*<div className="bg-white rounded-lg border border-gray-200 overflow-hidden">*/}
-            {/*    <div className="overflow-x-auto">*/}
-            {/*        <table className="min-w-full divide-y divide-gray-200">*/}
-            {/*            <thead className="bg-gray-50">*/}
-            {/*            <tr>*/}
-            {/*                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>*/}
-            {/*                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Community</th>*/}
-            {/*                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">CHW</th>*/}
-            {/*                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>*/}
-            {/*                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Facility</th>*/}
-            {/*                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Services</th>*/}
-            {/*                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Women</th>*/}
-            {/*                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Referral</th>*/}
-            {/*                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>*/}
-            {/*                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase w-12">Actions</th>*/}
-            {/*            </tr>*/}
-            {/*            </thead>*/}
-            {/*            <tbody className="bg-white divide-y divide-gray-200">*/}
-            {/*            {records.length === 0 ? (*/}
-            {/*                <tr>*/}
-            {/*                    <td colSpan={10} className="px-3 py-8 text-center text-sm text-gray-500">No records found</td>*/}
-            {/*                </tr>*/}
-            {/*            ) : (*/}
-            {/*                records.map(record => (*/}
-            {/*                    <tr key={record.id} className="hover:bg-gray-50">*/}
-            {/*                        <td className="px-3 py-2 text-sm">{format(new Date(record.outreach_date), 'MMM d, yyyy')}</td>*/}
-            {/*                        <td className="px-3 py-2 text-sm font-medium">{record.community_name}</td>*/}
-            {/*                        <td className="px-3 py-2 text-sm">{record.chw_name}</td>*/}
-            {/*                        <td className="px-3 py-2 text-sm">{record.outreach_type}</td>*/}
-            {/*                        <td className="px-3 py-2 text-sm">{record.facility}</td>*/}
-            {/*                        <td className="px-3 py-2">*/}
-            {/*                            <div className="flex flex-wrap gap-1">*/}
-            {/*                                {record.services.slice(0, 2).map(s => (*/}
-            {/*                                    <span key={s} className="px-2 py-0.5 text-xs bg-gray-100 rounded">{s.length > 15 ? s.slice(0, 15)+'...' : s}</span>*/}
-            {/*                                ))}*/}
-            {/*                                {record.services.length > 2 && (*/}
-            {/*                                    <span className="px-2 py-0.5 text-xs border rounded">+{record.services.length - 2}</span>*/}
-            {/*                                )}*/}
-            {/*                            </div>*/}
-            {/*                        </td>*/}
-            {/*                        <td className="px-3 py-2 text-sm text-right">{record.women_reached}</td>*/}
-            {/*                        <td className="px-3 py-2 text-sm">{record.referred_for_screening ? 'Yes' : 'No'}</td>*/}
-            {/*                        <td className="px-3 py-2">*/}
-            {/*                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${getStatusColor(record.referral_status)}`}>*/}
-            {/*                                    {getStatusLabel(record.referral_status)}*/}
-            {/*                                </span>*/}
-            {/*                        </td>*/}
-            {/*                        <td className="px-3 py-2 text-right relative">*/}
-            {/*                            <button onClick={() => setDropdownOpen(dropdownOpen === record.id ? null : record.id)} className="p-1 rounded hover:bg-gray-100">*/}
-            {/*                                <MoreVertical className="h-4 w-4 text-gray-500" />*/}
-            {/*                            </button>*/}
-            {/*                            {dropdownOpen === record.id && (*/}
-            {/*                                <div className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg border border-gray-200 z-10">*/}
-            {/*                                    <button className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2">*/}
-            {/*                                        <Eye className="h-3.5 w-3.5" /> View*/}
-            {/*                                    </button>*/}
-            {/*                                    <button onClick={() => { onEdit(record); setDropdownOpen(null); }} className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2">*/}
-            {/*                                        <Edit className="h-3.5 w-3.5" /> Edit*/}
-            {/*                                    </button>*/}
-            {/*                                    <button onClick={() => { setDeleteId(record.id); setDropdownOpen(null); }} className="w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">*/}
-            {/*                                        <Trash2 className="h-3.5 w-3.5" /> Delete*/}
-            {/*                                    </button>*/}
-            {/*                                </div>*/}
-            {/*                            )}*/}
-            {/*                        </td>*/}
-            {/*                    </tr>*/}
-            {/*                ))*/}
-            {/*            )}*/}
-            {/*            </tbody>*/}
-            {/*        </table>*/}
-            {/*    </div>*/}
-            {/*</div>*/}
-
-        </>
-    );
-}
-
-// ============================================
-// MAIN PAGE COMPONENT
-// ============================================
-interface CommunityPageProps {
-    records: CommunityOutreachRecord[];
-}
-
-export default function CommunityPage({ records: initialRecords = [] }: CommunityPageProps) {
-    const [records, setRecords] = useState<CommunityOutreachRecord[]>(initialRecords);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingRecord, setEditingRecord] = useState<CommunityOutreachRecord | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
-
-    useEffect(() => {
-        setRecords(initialRecords);
-    }, [initialRecords]);
-
-    const handleSave = useCallback(async (formData: any) => {
-        setIsSaving(true);
-        try {
-            // Prepare services data
-            const selectedServices = formData.services
-                .filter((s: any) => s.selected)
-                .map((s: any) => s.name);
-
-            const serviceCounts = formData.services
-                .filter((s: any) => s.selected)
-                .reduce((acc: any, s: any) => {
-                    acc[s.name] = s.count || 0;
-                    return acc;
-                }, {});
-
-            const totalBeneficiaries = formData.services
-                .filter((s: any) => s.selected)
-                .reduce((sum: number, s: any) => sum + (s.count || 0), 0);
-
-            const facilityId = formData.facility || 'default';
-
-            // Prepare aggregate data
-            const aggregateData = {
-                facility_id: facilityId,
-                total_participants: totalBeneficiaries,
-                cervical_education: selectedServices.includes('Cervical Cancer Education')
-                    ? (serviceCounts['Cervical Cancer Education'] || 0) : 0,
-                breast_education: selectedServices.includes('Breast Cancer Awareness')
-                    ? (serviceCounts['Breast Cancer Awareness'] || 0) : 0,
-                family_planning_education: selectedServices.includes('Family Planning')
-                    ? (serviceCounts['Family Planning'] || 0) : 0,
-                nutrition_education: selectedServices.includes('Nutrition Education')
-                    ? (serviceCounts['Nutrition Education'] || 0) : 0,
-                cervical_screening: selectedServices.includes('VIA Screening')
-                    ? (serviceCounts['VIA Screening'] || 0) : 0,
-                hiv_screening: selectedServices.includes('HIV Testing')
-                    ? (serviceCounts['HIV Testing'] || 0) : 0,
-                referrals_made: formData.referred_for_screening ? 1 : 0,
-                referrals_completed: formData.referral_status === 'completed' ? 1 : 0,
-                follow_ups_completed: formData.referral_outcome ? 1 : 0,
-                total_females: formData.women_reached || 0,
-                notes: formData.community_name
-                    ? `Outreach at ${formData.community_name} - ${formData.outreach_type}`
-                    : null,
-                assessment_date: formData.outreach_date || new Date().toISOString().split('T')[0],
-                status: 'submitted'
-            };
-
-            // Send to server
-            const response = await Http.post('/community/engagement', aggregateData);
-
-            if (response.status === 201 || response.status === 200) {
-                Notiflix.Notify.success('Community outreach data saved successfully!');
-            }
-
-            // Update local records
-            if (editingRecord) {
-                setRecords(prev => prev.map(r =>
-                    r.id === editingRecord.id
-                        ? { ...r, ...formData, id: r.id, created_at: r.created_at, updated_at: new Date().toISOString() }
-                        : r
-                ));
+                await fetchRecords();
+                setIsModalOpen(false);
+                resetForm();
             } else {
-                const newRecord: CommunityOutreachRecord = {
-                    id: Date.now(),
-                    ...formData,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                };
-                setRecords(prev => [newRecord, ...prev]);
+                Notiflix.Notify.warning('Unexpected response from server');
             }
 
-            setIsModalOpen(false);
-            setEditingRecord(null);
-
         } catch (error: any) {
-            console.error('Error saving data:', error);
-            Notiflix.Notify.failure(error.response?.data?.message || 'Failed to save data');
+            console.error('❌ Error saving record:', error);
+            console.error('❌ Error response:', error.response);
+            console.error('❌ Error data:', error.response?.data);
+
+            if (error.response?.data?.errors) {
+                const errors = error.response.data.errors;
+                const errorMessages = Object.values(errors).flat();
+                Notiflix.Notify.failure(errorMessages.join(', '));
+                setFormErrors(errors);
+            } else if (error.response?.data?.message) {
+                Notiflix.Notify.failure(error.response.data.message);
+            } else {
+                Notiflix.Notify.failure('Failed to save record. Please try again.');
+            }
         } finally {
-            setIsSaving(false);
+            setIsLoading(false);
         }
-    }, [editingRecord]);
+    };
 
-    const handleDelete = useCallback((id: number) => {
-        setRecords(prev => prev.filter(r => r.id !== id));
-        Notiflix.Notify.success('Record deleted successfully');
-    }, []);
+    // ============================================
+    // FILTER RECORDS
+    // ============================================
+    const filteredRecords = records.filter(record => {
+        const matchesSearch =
+            record.community_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            record.chw_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            record.facility.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const handleEdit = useCallback((record: CommunityOutreachRecord) => {
-        setEditingRecord(record);
-        setIsModalOpen(true);
-    }, []);
+        const matchesFilter = filterStatus === 'all' || record.referral_status === filterStatus;
 
+        return matchesSearch && matchesFilter;
+    });
+
+    // ============================================
+    // STATS
+    // ============================================
+    const stats = {
+        total: records.length,
+        women: records.reduce((sum, r) => sum + (r.women_reached || 0), 0),
+        men: records.reduce((sum, r) => sum + (r.men_reached || 0), 0),
+        maleEngagement: records.reduce((sum, r) => sum + (r.male_engagement || 0), 0), // New stat
+        totalBeneficiaries: records.reduce((sum, r) => sum + (r.total_beneficiaries || 0), 0),
+    };
+
+    // ============================================
+    // RENDER
+    // ============================================
     return (
         <>
-            <Head title="Community Engagement" />
+            <Head title="Community Outreach" />
             <div className="space-y-6 p-6">
+                {/* Header */}
                 <div className="flex items-center justify-between p-2">
                     <div>
                         <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Community Outreach</h1>
@@ -991,40 +355,522 @@ export default function CommunityPage({ records: initialRecords = [] }: Communit
                     </div>
                     <button
                         onClick={() => {
-                            setEditingRecord(null);
+                            resetForm();
                             setIsModalOpen(true);
                         }}
                         className="h-9 px-4 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center gap-2"
-                        disabled={isSaving}
                     >
                         <Plus className="h-4 w-4" /> New Outreach
                     </button>
                 </div>
 
-                <CommunityOutreachTable
-                    records={records}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                />
+                {/* Stats Cards - Added Male Engagement */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Total Outreaches</span>
+                            <Activity className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <p className="text-2xl font-bold mt-1">{stats.total}</p>
+                    </div>
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Women Reached</span>
+                            <UserCircle className="h-4 w-4 text-pink-500" />
+                        </div>
+                        <p className="text-2xl font-bold mt-1">{stats.women}</p>
+                    </div>
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Men Reached</span>
+                            <User className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <p className="text-2xl font-bold mt-1">{stats.men}</p>
+                    </div>
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Male Engagement</span>
+                            <UsersRound className="h-4 w-4 text-purple-500" />
+                        </div>
+                        <p className="text-2xl font-bold mt-1">{stats.maleEngagement}</p>
+                    </div>
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Total Beneficiaries</span>
+                            <Users className="h-4 w-4 text-green-500" />
+                        </div>
+                        <p className="text-2xl font-bold mt-1">{stats.totalBeneficiaries}</p>
+                    </div>
+                </div>
 
-                <CommunityOutreachModal
-                    open={isModalOpen}
-                    onOpenChange={() => {
-                        setIsModalOpen(false);
-                        setEditingRecord(null);
-                    }}
-                    editingRecord={editingRecord}
-                    onSave={handleSave}
-                />
+                {/* Search and Filter */}
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex-1 min-w-[200px] relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by community, CHW, or facility..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-3 h-9 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    >
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="not_required">Not Required</option>
+                    </select>
+                </div>
 
-                {/*<img src={bg} style={{width:600}}/>*/}
+                {/* Table - Added Male Engagement column */}
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Community</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">CHW</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Women</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Men</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Male Eng.</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase w-20">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredRecords.length === 0 ? (
+                                <tr>
+                                    <td colSpan={10} className="px-3 py-8 text-center text-sm text-gray-500">
+                                        No records found
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredRecords.map(record => (
+                                    <tr key={record.id} className="hover:bg-gray-50">
+                                        <td className="px-3 py-2 text-sm">
+                                            {format(new Date(record.outreach_date), 'MMM d, yyyy')}
+                                        </td>
+                                        <td className="px-3 py-2 text-sm font-medium">{record.community_name}</td>
+                                        <td className="px-3 py-2 text-sm">{record.chw_name}</td>
+                                        <td className="px-3 py-2 text-sm">{record.outreach_type}</td>
+                                        <td className="px-3 py-2 text-sm">{record.women_reached || 0}</td>
+                                        <td className="px-3 py-2 text-sm">{record.men_reached || 0}</td>
+                                        <td className="px-3 py-2 text-sm font-medium text-purple-600">
+                                            {record.male_engagement || 0}
+                                        </td>
+                                        <td className="px-3 py-2 text-sm font-semibold">{record.total_beneficiaries || 0}</td>
+                                        <td className="px-3 py-2">
+                                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                                record.referral_status === 'completed'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : record.referral_status === 'pending'
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : 'bg-gray-100 text-gray-800'
+                                            }`}>
+                                                {record.referral_status.charAt(0).toUpperCase() + record.referral_status.slice(1)}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <button
+                                                    onClick={() => handleEdit(record)}
+                                                    className="p-1 rounded hover:bg-gray-100"
+                                                    title="Edit"
+                                                >
+                                                    <Edit className="h-4 w-4 text-gray-500" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(record.id)}
+                                                    className="p-1 rounded hover:bg-red-50"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* ============================================
+                    MODAL
+                    ============================================ */}
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/40 backdrop-blur-sm">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+                            {/* Header */}
+                            <div className="flex-shrink-0 border-b px-4 py-3 bg-white rounded-t-lg">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                            <Building2 className="h-4 w-4 text-blue-600" />
+                                            {editingRecord ? 'Edit Outreach Record' : 'New Community Outreach'}
+                                        </h2>
+                                        <p className="text-[10px] text-gray-500">
+                                            {editingRecord ? 'Update existing outreach record' : 'Record new community outreach activity'}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => { setIsModalOpen(false); resetForm(); }}
+                                        className="rounded p-1 hover:bg-gray-100"
+                                    >
+                                        <X className="h-4 w-4 text-gray-500" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Form */}
+                            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4">
+                                <div className="space-y-4">
+                                    {/* ==========================================
+                                        OUTREACH DETAILS
+                                        ========================================== */}
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <MapPin className="h-3.5 w-3.5 text-blue-600" />
+                                            Outreach Details
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Outreach Date <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={outreachDate}
+                                                    onChange={(e) => setOutreachDate(e.target.value)}
+                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 ${
+                                                        formErrors.outreachDate ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                />
+                                                {formErrors.outreachDate && (
+                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.outreachDate}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Community Name <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={communityName}
+                                                    onChange={(e) => setCommunityName(e.target.value)}
+                                                    placeholder="Enter community name"
+                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 ${
+                                                        formErrors.communityName ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                />
+                                                {formErrors.communityName && (
+                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.communityName}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    CHW Name <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={chwName}
+                                                    onChange={(e) => setChwName(e.target.value)}
+                                                    placeholder="Enter CHW name"
+                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 ${
+                                                        formErrors.chwName ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                />
+                                                {formErrors.chwName && (
+                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.chwName}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Outreach Type <span className="text-red-500">*</span>
+                                                </label>
+                                                <select
+                                                    value={outreachType}
+                                                    onChange={(e) => setOutreachType(e.target.value)}
+                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 bg-white ${
+                                                        formErrors.outreachType ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                >
+                                                    <option value="">Select Outreach Type</option>
+                                                    <option value="Market">Market</option>
+                                                    <option value="Church">Church</option>
+                                                    <option value="School">School</option>
+                                                    <option value="Community Meeting">Community Meeting</option>
+                                                    <option value="Door to Door">Door to Door</option>
+                                                    <option value="Health Fair">Health Fair</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                                {formErrors.outreachType && (
+                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.outreachType}</p>
+                                                )}
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Facility <span className="text-red-500">*</span>
+                                                </label>
+                                                <select
+                                                    value={facility}
+                                                    onChange={(e) => setFacility(e.target.value)}
+                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 bg-white ${
+                                                        formErrors.facility ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                >
+                                                    <option value="">Select Facility</option>
+                                                    <option value="Chawama Clinic">Chawama Clinic</option>
+                                                    <option value="Kanyama Clinic">Kanyama Clinic</option>
+                                                    <option value="University Teaching Hospital">University Teaching Hospital</option>
+                                                    <option value="Levy Mwanawasa Hospital">Levy Mwanawasa Hospital</option>
+                                                    <option value="Chipata Central Hospital">Chipata Central Hospital</option>
+                                                    <option value="Lundazi District Hospital">Lundazi District Hospital</option>
+                                                </select>
+                                                {formErrors.facility && (
+                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.facility}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* ==========================================
+                                        SERVICES PROVIDED
+                                        ========================================== */}
+                                    <div className="border-t pt-3">
+                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <Stethoscope className="h-3.5 w-3.5 text-green-600" />
+                                            Services Provided
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {SERVICE_OPTIONS.map((service) => (
+                                                <label key={service} className="flex items-center gap-2 p-2 border border-gray-200 rounded hover:bg-gray-50 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedServices.includes(service)}
+                                                        onChange={() => toggleService(service)}
+                                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                    <span className="text-sm text-gray-700">{service}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {formErrors.selectedServices && (
+                                            <p className="text-[10px] text-red-500 mt-1">{formErrors.selectedServices}</p>
+                                        )}
+                                    </div>
+
+                                    {/* ==========================================
+                                        OUTPUTS
+                                        ========================================== */}
+                                    <div className="border-t pt-3">
+                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <CheckSquare className="h-3.5 w-3.5 text-purple-600" />
+                                            Outputs
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Referred for Screening
+                                                </label>
+                                                <select
+                                                    value={referredForScreening}
+                                                    onChange={(e) => setReferredForScreening(e.target.value)}
+                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white"
+                                                >
+                                                    <option value="">Select</option>
+                                                    <option value="yes">Yes</option>
+                                                    <option value="no">No</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Awareness Session Conducted
+                                                </label>
+                                                <select
+                                                    value={awarenessSessionConducted}
+                                                    onChange={(e) => setAwarenessSessionConducted(e.target.value)}
+                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white"
+                                                >
+                                                    <option value="">Select</option>
+                                                    <option value="yes">Yes</option>
+                                                    <option value="no">No</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* ==========================================
+                                        NUMBER OF PEOPLE REACHED
+                                        ========================================== */}
+                                    <div className="border-t pt-3">
+                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <Users className="h-3.5 w-3.5 text-orange-600" />
+                                            Number of People Reached
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Women Reached
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={womenReached}
+                                                    onChange={(e) => setWomenReached(Number(e.target.value))}
+                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Men Reached
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={menReached}
+                                                    onChange={(e) => setMenReached(Number(e.target.value))}
+                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Male Engagement <span className="text-purple-600">*</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={maleEngagement}
+                                                    onChange={(e) => setMaleEngagement(Number(e.target.value))}
+                                                    className="w-full h-9 px-3 text-sm border border-purple-300 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                                                    placeholder="Number of men engaged"
+                                                />
+                                                <p className="text-[10px] text-gray-400 mt-0.5">Number of men actively engaged in programs</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* ==========================================
+                                        REFERRAL INFORMATION
+                                        ========================================== */}
+                                    <div className="border-t pt-3">
+                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <UserPlus className="h-3.5 w-3.5 text-red-600" />
+                                            Referral Information
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                    Referral Required
+                                                </label>
+                                                <select
+                                                    value={referralRequired}
+                                                    onChange={(e) => setReferralRequired(e.target.value)}
+                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white"
+                                                >
+                                                    <option value="">Select</option>
+                                                    <option value="yes">Yes</option>
+                                                    <option value="no">No</option>
+                                                </select>
+                                            </div>
+                                            {referralRequired === 'yes' && (
+                                                <>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Facility Referred To
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={referredFacility}
+                                                            onChange={(e) => setReferredFacility(e.target.value)}
+                                                            placeholder="Enter facility name"
+                                                            className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Referral Date
+                                                        </label>
+                                                        <input
+                                                            type="date"
+                                                            value={referralDate}
+                                                            onChange={(e) => setReferralDate(e.target.value)}
+                                                            className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Referral Outcome
+                                                        </label>
+                                                        <select
+                                                            value={referralOutcome}
+                                                            onChange={(e) => setReferralOutcome(e.target.value)}
+                                                            className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white"
+                                                        >
+                                                            <option value="">Select Outcome</option>
+                                                            <option value="Completed">Completed</option>
+                                                            <option value="Pending">Pending</option>
+                                                            <option value="Cancelled">Cancelled</option>
+                                                            <option value="Not Applicable">Not Applicable</option>
+                                                        </select>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+
+                            {/* Footer */}
+                            <div className="flex-shrink-0 border-t px-6 py-3 bg-gray-50 rounded-b-lg flex justify-between items-center">
+                                <div className="text-[10px] text-gray-500">
+                                    {selectedServices.length} service(s) selected | Male Engagement: {maleEngagement}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setIsModalOpen(false); resetForm(); }}
+                                        className="h-8 px-4 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                                        disabled={isLoading}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        onClick={handleSubmit}
+                                        className="h-8 px-4 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 flex items-center gap-1.5"
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            'Save Record'
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );
 }
 
-CommunityPage.layout = (page: React.ReactNode) => (
-    <AppLayout breadcrumbs={[{ title: 'Dashboard', href: dashboard() }, { title: 'Community Engagement', href: '/community' }]}>
+CommunityOutreach.layout = (page: React.ReactNode) => (
+    <AppLayout breadcrumbs={[{ title: 'Dashboard', href: dashboard() }, { title: 'Community Outreach', href: '/community-outreach' }]}>
         {page}
     </AppLayout>
 );

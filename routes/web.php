@@ -1,81 +1,141 @@
 <?php
 
-use App\Http\Controllers\Pathology\laboratoryController as LaboratoryController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+use App\Http\Controllers\CommunityOutreachController;
 use App\Http\Controllers\Patients\CreateController as PatientCreate;
+use App\Http\Controllers\Consultancies\ConsultancyController;
+use App\Http\Controllers\Pathology\LaboratoryController;
 
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\CommunityEngagement\AggregateController::class,'dashboard']);// Fixed: Was missing slash in path
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard', [
+            'data' => [],
+        ]);
+    })->name('dashboard');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Patient
+    |--------------------------------------------------------------------------
+    */
+
     Route::prefix('patient')->group(function () {
-        Route::get('/create', [PatientCreate::class, 'index']); // Fixed: Class name must be fully qualified
+        Route::get('/create', [PatientCreate::class, 'index'])
+            ->name('patient.create');
     });
 
-    Route::get('/referrals',function (){
-        return \Inertia\Inertia::render('Referral/referral',[
-            'referral' =>  []
-        ]);
-    });
-    /**
-     *
-     * mental routes
-     */
-    Route::get('/mental-health',function (){
-        return \Inertia\Inertia::render('Mental/mental',[
-            'referral' =>  []
-        ]);
-    });
-    /***
-     *  Consulktancy
-     *
-     */
-    Route::get('/consultancy/{facilityId}',[\App\Http\Controllers\Consultancies\ConsultancyController::class,'viewConsultancy']);
-    /**
-     *  Mortality
-     */
-    Route::get('/mortality',function (){
-        return \Inertia\Inertia::render('Mortality/review',[
-            'referral' =>  []
-        ]);
-    });
-    /**
-     *
-     *  Admissions
-     */
-    Route::get('/admissions',function (){
-        return \Inertia\Inertia::render('admissions/admission',[
-            'referral' =>  []
-        ]);
-    });
-    /**
-     * Discharge routes
-    **/
-    Route::get('/discharges',function (){
-        return \Inertia\Inertia::render('Discharges/discharges',[
-            'discharges' =>  []
-        ]);
-    });
-    Route::get('/community',function (){
-        return \Inertia\Inertia::render('Community/community',[
-            'aggregates' => \App\Models\CommunityAggregate::all()
-        ]);
-    });
-    Route::get('/referrals',function (){
-        return \Inertia\Inertia::render('Appointments/appointments');
-    });
+    /*
+    |--------------------------------------------------------------------------
+    | Community
+    |--------------------------------------------------------------------------
+    */
 
-    Route::get('/appointments',function (){
-        return \Inertia\Inertia::render('Appointments/appointments');
-    });
+    Route::get('/community', function () {
+        return Inertia::render('Community/community', [
+            'aggregates' => \App\Models\CommunityAggregate::all(),
+        ]);
+    })->name('community');
 
-    /**
-     * laboratory
-     */
+    Route::resource('community-outreach', CommunityOutreachController::class)
+        ->except(['create', 'edit']);
 
-    // In routes/web.php or routes/api.php
+    /*
+    |--------------------------------------------------------------------------
+    | Consultancies
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/consultancy/{facilityId}', [ConsultancyController::class, 'viewConsultancy'])
+        ->name('consultancy.index');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Referrals
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/referrals', function () {
+        return Inertia::render('Referral/referral', [
+            'referral' => [],
+        ]);
+    })->name('referrals');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mental Health
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/mental-health', function () {
+        return Inertia::render('Mental/mental', [
+            'referral' => [],
+        ]);
+    })->name('mental-health');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mortality
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/mortality', function () {
+        return Inertia::render('Mortality/review', [
+            'referral' => [],
+        ]);
+    })->name('mortality');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admissions
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/admissions', function () {
+        return Inertia::render('Admissions/admission');
+    })->name('admissions');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Discharges
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/discharges', function () {
+        return Inertia::render('Discharges/discharges', [
+            'discharges' => [],
+        ]);
+    })->name('discharges');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Appointments
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/appointments', function () {
+        return Inertia::render('Appointments/appointments');
+    })->name('appointments');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Laboratory
+    |--------------------------------------------------------------------------
+    */
+
     Route::prefix('laboratory')->group(function () {
-       Route::get('/orders', [LaboratoryController::class, 'viewLaboratoryOrders']);
+        Route::get('/orders', [LaboratoryController::class, 'viewLaboratoryOrders'])
+            ->name('laboratory.orders');
     });
 });
 

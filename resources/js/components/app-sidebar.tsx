@@ -46,7 +46,7 @@ import {
     FileText,
     Pill,
     MessageCircle,
-    ChevronRight, UserPlus, MicroscopeIcon, StethoscopeIcon
+    ChevronRight, UserPlus, MicroscopeIcon, StethoscopeIcon, ChartBarIcon, BarChart2Icon
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
@@ -192,6 +192,20 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.FACILITY_MANAGER,
             ],
         },
+        {
+            title: 'Reports',
+            href: '/',
+            icon: BarChart2Icon,
+            roles: [
+                ROLE_IDS.ADMINISTRATOR,
+                ROLE_IDS.DHO,
+                ROLE_IDS.FACILITY_MANAGER,
+                ROLE_IDS.CLINICIAN,
+                ROLE_IDS.NURSE,
+                ROLE_IDS.COUNSELLOR,
+                ROLE_IDS.CHW,
+            ],
+        },
         // {
         //     title: 'Follow Up',
         //     href: '/follow-up',
@@ -247,18 +261,18 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
         //         ROLE_IDS.NURSE,
         //     ],
         // },
-        // {
-        //     title: 'Mortality Review',
-        //     href: '/mortality',
-        //     icon: Skull,
-        //     roles: [
-        //         ROLE_IDS.ADMINISTRATOR,
-        //         ROLE_IDS.CLINICIAN,
-        //         ROLE_IDS.FACILITY_MANAGER,
-        //         ROLE_IDS.DHO,
-        //         ROLE_IDS.MEL_OFFICER,
-        //     ],
-        // },
+        {
+            title: 'Reports',
+            href: '/',
+            icon: ChartBarIcon,
+            roles: [
+                ROLE_IDS.ADMINISTRATOR,
+                ROLE_IDS.CLINICIAN,
+                ROLE_IDS.FACILITY_MANAGER,
+                ROLE_IDS.DHO,
+                ROLE_IDS.MEL_OFFICER,
+            ],
+        },
         {
             title: 'Facilities',
             href: '/facilities',
@@ -340,6 +354,12 @@ const getPatientNavItems = (patientUuid: string): NavItem[] => [
         href: `/patients/${patientUuid}/appointments`,
         icon: CalendarClock,
         description: 'Upcoming appointments',
+    },
+    {
+        title: 'Risk Assessment',
+        href: `/patients/${patientUuid}/risk-assessment`,
+        icon: ShieldCheck,
+        description: 'Risk evaluation',
     },
     {
         title: 'Risk Assessment',
@@ -575,7 +595,7 @@ export function AppSidebar({ patient, isPatientView }: AppSidebarProps) {
                                             onClick={() => setActivePatientHref(item.href)}
                                         />
                                     );
-                                })}
+                                })}test_orders
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>

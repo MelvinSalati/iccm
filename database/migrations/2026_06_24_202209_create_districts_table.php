@@ -11,22 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('districts', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('province_id')
-                ->constrained('provinces')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
-            $table->string('name');
-            $table->string('code', 10)->nullable()->unique();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-
-            // Add index for faster queries
-            $table->index('province_id');
-            $table->index('name');
-            $table->index('code');
-        });
+//        Schema::create('districts', function (Blueprint $table) {
+//            $table->id();
+//            $table->foreignId('province_id')
+//                ->constrained('provinces')
+//                ->onDelete('cascade')
+//                ->onUpdate('cascade');
+//            $table->string('name');
+//            $table->string('code', 10)->nullable()->unique();
+//            $table->boolean('is_active')->default(true);
+//            $table->timestamps();
+//
+//            // Add index for faster queries
+//            $table->index('province_id');
+//            $table->index('name');
+//            $table->index('code');
+//        });
     }
 
     /**

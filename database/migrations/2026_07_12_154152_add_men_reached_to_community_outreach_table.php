@@ -11,7 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::table('community_outreaches', function (Blueprint $table) {
+            $table->integer('male_engagement')->default(0);
+        });
     }
 
     /**
@@ -19,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('community_outreach', function (Blueprint $table) {
+            //
+        });
     }
 };

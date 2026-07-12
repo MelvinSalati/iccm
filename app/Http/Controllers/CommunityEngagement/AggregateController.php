@@ -15,10 +15,14 @@ class AggregateController extends Controller
 
     public function dashboard()
     {
+        Log::info('🚀 Dashboard method called');
+
         // Get all aggregates with relationships
         $aggregates = CommunityAggregate::with(['facility', 'assessedBy'])
             ->orderBy('assessment_date', 'desc')
             ->get();
+
+        Log::info('📊 Aggregates fetched:', ['count' => $aggregates->count()]);
 
         // Calculate KPIs from aggregate data - handle null values
         $totalParticipants = $aggregates->sum('total_participants') ?? 0;
@@ -39,6 +43,15 @@ class AggregateController extends Controller
         $totalMeetings = $aggregates->sum('community_meetings_held') ?? 0;
         $totalHouseholdVisits = $aggregates->sum('household_visits') ?? 0;
 
+        Log::info('📈 KPI totals:', [
+            'totalParticipants' => $totalParticipants,
+            'totalCervicalScreening' => $totalCervicalScreening,
+            'totalHIVScreening' => $totalHIVScreening,
+            'totalReferralsMade' => $totalReferralsMade,
+            'totalFollowUpsCompleted' => $totalFollowUpsCompleted,
+            'totalHealthWorkers' => $totalHealthWorkers,
+        ]);
+
         // Calculate age group totals
         $age15_24 = $aggregates->sum('age_15_24') ?? 0;
         $age25_34 = $aggregates->sum('age_25_34') ?? 0;
@@ -46,13 +59,23 @@ class AggregateController extends Controller
         $age45_54 = $aggregates->sum('age_45_54') ?? 0;
         $age55Plus = $aggregates->sum('age_55_plus') ?? 0;
 
+        Log::info('👥 Age groups:', [
+            'age15_24' => $age15_24,
+            'age25_34' => $age25_34,
+            'age35_44' => $age35_44,
+            'age45_54' => $age45_54,
+            'age55Plus' => $age55Plus,
+        ]);
+
         // Calculate totals
         $totalFemales = $aggregates->sum('total_females') ?? 0;
         $totalMales = $aggregates->sum('total_males') ?? 0;
 
-        // Get weekly trends (last 7 days) - FIXED to include all dates
+        // Get weekly trends (last 7 days)
         $startDate = now()->subDays(6)->toDateString();
         $endDate = now()->toDateString();
+
+        Log::info('📅 Date range:', ['start' => $startDate, 'end' => $endDate]);
 
         $weeklyTrendsRaw = CommunityAggregate::whereBetween('assessment_date', [$startDate, $endDate])
             ->selectRaw('DATE(assessment_date) as date,
@@ -65,6 +88,8 @@ class AggregateController extends Controller
             ->orderBy('date', 'asc')
             ->get()
             ->keyBy('date');
+
+        Log::info('📊 Weekly trends raw:', ['count' => $weeklyTrendsRaw->count()]);
 
         // Create complete 7-day dataset with zeros for missing dates
         $weeklyTrends = collect(range(6, 0))->map(function ($daysAgo) use ($weeklyTrendsRaw) {
@@ -83,7 +108,9 @@ class AggregateController extends Controller
             ];
         });
 
-        // Prepare KPI data - ICONS AS STRINGS
+        Log::info('📊 Weekly trends final:', ['count' => $weeklyTrends->count()]);
+
+        // Prepare KPI data
         $kpis = [
             [
                 'id' => '1',
@@ -153,6 +180,8 @@ class AggregateController extends Controller
             ],
         ];
 
+        Log::info('📈 KPIs prepared:', ['count' => count($kpis)]);
+
         // Prepare HIV data
         $hivPositive = $aggregates->where('hiv_screening', '>', 0)->count();
         $hivNegative = max(0, $totalParticipants - $hivPositive);
@@ -164,12 +193,16 @@ class AggregateController extends Controller
             ['name' => 'Unknown', 'value' => $hivUnknown, 'color' => '#94A3B8'],
         ];
 
+        Log::info('🔄 HIV data:', $hivDisaggregation);
+
         // Prepare disability data
         $disabilityDisaggregation = [
             ['name' => 'With Disability', 'value' => 0, 'color' => '#2563EB'],
             ['name' => 'Without Disability', 'value' => $totalParticipants, 'color' => '#F59E0B'],
             ['name' => 'Not Recorded', 'value' => 0, 'color' => '#94A3B8'],
         ];
+
+        Log::info('♿ Disability data:', $disabilityDisaggregation);
 
         // Prepare age groups
         $ageGroups = [
@@ -181,7 +214,7 @@ class AggregateController extends Controller
             ['name' => '65+', 'value' => $age55Plus, 'color' => '#EF4444'],
         ];
 
-        // Filter out age groups with zero values (optional)
+        // Filter out age groups with zero values
         $ageGroups = array_filter($ageGroups, function($group) {
             return $group['value'] > 0;
         });
@@ -192,15 +225,11 @@ class AggregateController extends Controller
                 ['name' => 'No Data', 'value' => 1, 'color' => '#94A3B8'],
             ];
         }
-Log::info([]);
-        Log::info('Dashboard data:', [
-            'kpis_count' => count($kpis),
-            'weeklyTrends_count' => $weeklyTrends->count(),
-            'aggregates_count' => $aggregates->count(),
-            'has_data' => !empty($data)
-        ]);
 
-        return Inertia::render('dashboard', [
+        Log::info('👥 Age groups final:', ['count' => count($ageGroups)]);
+
+        // Prepare final data
+        $finalData = [
             'aggregates' => $aggregates,
             'kpis' => $kpis,
             'weeklyTrends' => $weeklyTrends,
@@ -215,7 +244,20 @@ Log::info([]);
                 'activeDistricts' => 0,
                 'totalRecords' => $aggregates->count(),
             ]
+        ];
+
+        Log::info('✅ Final data being sent to dashboard:', [
+            'kpis_count' => count($finalData['kpis']),
+            'weeklyTrends_count' => count($finalData['weeklyTrends']),
+            'hivDisaggregation_count' => count($finalData['hivDisaggregation']),
+            'ageGroups_count' => count($finalData['ageGroups']),
+            'totalRecords' => $finalData['metadata']['totalRecords'],
         ]);
+
+        // Log the actual data (be careful with large datasets)
+        Log::info('📦 Full data payload:', $finalData);
+
+        return Inertia::render('dashboard', $finalData);
     }
     /**
      * Display a listing of community aggregates.

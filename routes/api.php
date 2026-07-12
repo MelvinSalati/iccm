@@ -18,9 +18,12 @@ Route::prefix('v1/registry')->group(function () {
 
 
 Route::prefix('v1/patients')->group(function () {
+
+
    /**
    *   start a visit return to patients
     * */
+    Route::post('/register',[PatientController::class,'store']);
    Route::post('/{patientUuid}/visit', [CreateVisitAction::class, 'execute']);
     Route::post('/{patientuuid}/visit/{visitId}/screening/integrated', [\App\Http\Controllers\IntegratedScreeningController::class, 'store']);
     // Current vitals
@@ -34,14 +37,26 @@ Route::prefix('v1/patients')->group(function () {
 
     // Vitals for specific visit
     Route::get('/{patientuuid}/visit/{visitId}/vitals', [VitalsController::class, 'forVisit'])->name('vitals.for-visit');
-
-    // Store vitals (for a visit)
+    Route::post('{patientuuid}/referral',[PatientController::class,'manageClientTransfer']);
+    // Store vitals (/for a visit)
     Route::post('/{patientuuid}/visit/{visitId}/vitals', [VitalsController::class, 'store'])->name('vitals.store');
-// Route::post('/{patientuuid}/l', [LaboratoryController::class, 'store']);
+
     // Update specific vitals record
     Route::put('/{patientuuid}/vitals/{vitalId}', [VitalsController::class, 'update'])->name('vitals.update');
 });
+// routes/api.php
 
+use App\Http\Controllers\CommunityOutreachController;
+
+// Community Outreach Routes
+Route::prefix('v1/community-outreach')->group(function () {
+    Route::get('/', [CommunityOutreachController::class, 'index']);
+    Route::post('/', [CommunityOutreachController::class, 'store']);
+    Route::get('/statistics', [CommunityOutreachController::class, 'statistics']);
+    Route::get('/{id}', [CommunityOutreachController::class, 'show']);
+    Route::put('/{id}', [CommunityOutreachController::class, 'update']);
+    Route::delete('/{id}', [CommunityOutreachController::class, 'destroy']);
+});
 /*
  *  Appointments
  * **/

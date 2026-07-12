@@ -2,81 +2,100 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Fortify\Contracts\PasskeyUser;
-use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements PasskeyUser
+class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that are mass assignable.
      *
-     * @return array<string, string>
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
-        'email',
-        'password',
-
         'first_name',
         'last_name',
-        'employee_number',
-
+        'email',
+        'password',
+        'username',
         'phone',
         'alternative_phone',
-
         'gender',
         'date_of_birth',
         'address',
-
         'designation',
         'cadre',
         'professional_registration_no',
         'department',
-
         'province_id',
         'district_id',
         'facility_id',
-
+        'employee_number',
         'employment_date',
-
         'is_active',
         'is_verified',
-
+        'role_id',
         'profile_photo',
-
         'settings',
         'metadata',
+        'remember_token',
+        'email_verified_at',
+        'last_login_at',
+        'last_login_ip',
     ];
-    protected function casts(): array
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'date_of_birth' => 'date',
+        'employment_date' => 'date',
+        'last_login_at' => 'datetime',
+        'is_active' => 'boolean',
+        'is_verified' => 'boolean',
+        'settings' => 'array',
+        'metadata' => 'array',
+    ];
+
+    // Relationships
+    public function province()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'two_factor_confirmed_at' => 'datetime',
+        return $this->belongsTo(Province::class);
+    }
 
-           'date_of_birth' => 'date',
-           'employment_date' => 'date',
+    public function district()
+    {
+        return $this->belongsTo(District::class);
+    }
 
-           'is_active' => 'boolean',
-           'is_verified' => 'boolean',
+    public function facility()
+    {
+        return $this->belongsTo(Facility::class);
+    }
 
-           'last_login_at' => 'datetime',
-
-           'settings' => 'array',
-           'metadata' => 'array',
-       ];
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
     }
 }

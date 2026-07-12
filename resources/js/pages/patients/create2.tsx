@@ -651,65 +651,8 @@ export default function Create() {
         return Object.keys(errors).length === 0;
     };
 
-    // ✅ Show Success Notification
-    const showSuccessNotification = (message: string) => {
-        Notify.success(message, {
-            position: 'right-top',
-            timeout: 4000,
-            cssAnimationStyle: 'fade',
-            showOnlyTheLastOne: true,
-            clickToClose: true,
-            borderRadius: '8px',
-            fontSize: '14px',
-            success: {
-                background: '#10B981',
-                textColor: '#FFFFFF',
-                notiflixIconColor: '#FFFFFF',
-            },
-        });
-    };
+    // Submit form using Inertia router
 
-    // ✅ Show Error Notification
-    const showErrorNotification = (message: string) => {
-        Notify.failure(message, {
-            position: 'right-top',
-            timeout: 5000,
-            cssAnimationStyle: 'fade',
-            showOnlyTheLastOne: true,
-            clickToClose: true,
-            borderRadius: '8px',
-            fontSize: '14px',
-            failure: {
-                background: '#EF4444',
-                textColor: '#FFFFFF',
-                notiflixIconColor: '#FFFFFF',
-            },
-        });
-    };
-
-    // ✅ Show Warning Notification
-    const showWarningNotification = (message: string) => {
-        Notify.warning(message, {
-            position: 'right-top',
-            timeout: 3000,
-            cssAnimationStyle: 'fade',
-            showOnlyTheLastOne: true,
-            clickToClose: true,
-        });
-    };
-
-    // ✅ Show Info Notification
-    const showInfoNotification = (message: string) => {
-        Notify.info(message, {
-            position: 'right-top',
-            timeout: 2000,
-            cssAnimationStyle: 'fade',
-            showOnlyTheLastOne: true,
-            clickToClose: true,
-        });
-    };
-
-    // Submit form using Http.post
     const handleSubmit = async () => {
         // 1. Validate form
         if (!validateForm()) {
@@ -729,7 +672,7 @@ export default function Create() {
                 }
 
                 // Show validation error notification
-                showWarningNotification('Please fix the highlighted fields');
+                Notify.warning('Please fix the highlighted fields');
             }
             return;
         }
@@ -753,7 +696,9 @@ export default function Create() {
         console.log('📤 Submitting patient data:', submissionData);
 
         // 4. Show loading notification
-        showInfoNotification('Saving patient...');
+        Notify.info('Saving patient...', {
+            timeout: 2000,
+        });
 
         try {
             // 5. Submit with Http.post
@@ -763,9 +708,11 @@ export default function Create() {
 
             // Check if request was successful
             if (response.data?.success || response.status === 200 || response.status === 201) {
-                // ✅ Show SUCCESS notification
-                const successMessage = response.data?.message || '✅ Patient registered successfully!';
-                showSuccessNotification(successMessage);
+                // Show success notification
+                Notify.success(response.data?.message || 'Patient created successfully!', {
+                    position: 'right-top',
+                    timeout: 3000,
+                });
 
                 // Close modal and reset form
                 setIsModalOpen(false);
@@ -779,13 +726,18 @@ export default function Create() {
                 });
             } else {
                 // Handle unexpected response
-                showWarningNotification('Unexpected response from server');
+                Notify.warning('Unexpected response from server', {
+                    position: 'right-top',
+                    timeout: 3000,
+                });
             }
         } catch (error: any) {
             console.error('❌ Error:', error);
 
             // Handle different error types
             if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
                 const responseData = error.response.data;
 
                 if (responseData?.errors) {
@@ -793,7 +745,11 @@ export default function Create() {
                     const errorMessages = Object.values(responseData.errors).flat();
                     const errorMessage = errorMessages.join(', ') || 'Validation failed';
 
-                    showErrorNotification(errorMessage);
+                    Notify.failure(errorMessage, {
+                        position: 'right-top',
+                        timeout: 5000,
+                    });
+
                     setError(errorMessage);
 
                     // Focus on first error field
@@ -824,20 +780,32 @@ export default function Create() {
                     }
                 } else if (responseData?.message) {
                     // Custom error message from backend
-                    showErrorNotification(responseData.message);
+                    Notify.failure(responseData.message, {
+                        position: 'right-top',
+                        timeout: 5000,
+                    });
                     setError(responseData.message);
                 } else {
                     // Generic server error
-                    showErrorNotification(error.response.statusText || 'Server error occurred');
+                    Notify.failure(error.response.statusText || 'Server error occurred', {
+                        position: 'right-top',
+                        timeout: 5000,
+                    });
                     setError('Server error occurred');
                 }
             } else if (error.request) {
                 // The request was made but no response was received
-                showErrorNotification('No response from server. Please check your connection.');
+                Notify.failure('No response from server. Please check your connection.', {
+                    position: 'right-top',
+                    timeout: 5000,
+                });
                 setError('Network error - no response from server');
             } else {
                 // Something happened in setting up the request that triggered an Error
-                showErrorNotification(error.message || 'An unexpected error occurred');
+                Notify.failure(error.message || 'An unexpected error occurred', {
+                    position: 'right-top',
+                    timeout: 5000,
+                });
                 setError(error.message || 'An unexpected error occurred');
             }
         } finally {
@@ -860,7 +828,7 @@ export default function Create() {
     const totalTabs = tabs.length;
 
     // ============================================
-    // RENDER FUNCTIONS (kept as before)
+    // RENDER FUNCTIONS
     // ============================================
 
     const renderDemographics = () => (

@@ -1,6 +1,6 @@
 // resources/js/pages/dashboard/index.tsx
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import { format, subDays } from 'date-fns';
 import {
@@ -15,8 +15,6 @@ import {
     ArrowRightLeft,
     Skull,
     Activity,
-    Clock,
-    ChevronRight,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { dashboard } from '@/routes';
 
 // ============================================================================
-// Types
+// Types - Match the data structure from the controller
 // ============================================================================
 
 interface KPI {
@@ -57,8 +55,7 @@ interface ChartData {
     color?: string;
 }
 
-interface DashboardProps {
-    aggregates?: any[];
+interface DashboardData {
     kpis?: KPI[];
     weeklyTrends?: TrendData[];
     hivDisaggregation?: ChartData[];
@@ -72,131 +69,59 @@ interface DashboardProps {
         activeDistricts: number;
         totalRecords: number;
     };
+    aggregates?: {
+        total_screened: number;
+        hpv_positive: number;
+        via_positive: number;
+        via_negative: number;
+        hpv_negative: number;
+        treatment: number;
+        referral: number;
+        hiv_positive: number;
+        hiv_negative: number;
+        disability: number;
+        mortality: number;
+    };
+}
+
+interface SharedData {
+    users?: any[];
+    dashboard?: DashboardData;
+}
+
+interface PageProps {
+    auth?: {
+        user?: any;
+    };
+    sharedData?: SharedData;
+    errors?: Record<string, any>;
+    name?: string;
+    sidebarOpen?: boolean;
 }
 
 // ============================================================================
-// Skeleton Components
+// Default Data (Fallback when no data from controller)
 // ============================================================================
 
-// KPI Card Skeleton
-const KPICardSkeleton: React.FC = () => {
-    return (
-        <Card className="overflow-hidden h-full border border-slate-200 dark:border-slate-700 animate-pulse">
-            <CardContent className="p-2.5">
-                <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                        <div className="h-2.5 w-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                        <div className="mt-1 h-5 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                    </div>
-                    <div className="h-7 w-7 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                        <div className="h-3 w-3 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                        <div className="h-2 w-10 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                    </div>
-                    <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                </div>
-                <div className="mt-2">
-                    <div className="h-7 w-full bg-slate-200 dark:bg-slate-700 rounded"></div>
-                </div>
-                <div className="mt-1 flex justify-end">
-                    <div className="h-2 w-6 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-};
-
-// Bar Chart Skeleton
-const BarChartSkeleton: React.FC<{ height?: number }> = ({ height = 110 }) => {
-    const bars = Array.from({ length: 7 }, () => ({
-        height: 20 + Math.random() * 60
-    }));
-
-    return (
-        <div className="w-full animate-pulse" style={{ height: `${height}px` }}>
-            <div className="flex h-full items-end gap-1.5">
-                {bars.map((bar, index) => (
-                    <div key={index} className="flex flex-1 flex-col items-center gap-1">
-                        <div
-                            className="w-full rounded-t bg-slate-200 dark:bg-slate-700"
-                            style={{ height: `${bar.height}%`, minHeight: '4px' }}
-                        />
-                        <div className="h-2 w-4 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-// Donut Chart Skeleton
-const DonutChartSkeleton: React.FC<{ size?: number }> = ({ size = 90 }) => {
-    return (
-        <div className="flex flex-col items-center animate-pulse">
-            <div className="relative" style={{ width: size, height: size }}>
-                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-                    <circle cx={size/2} cy={size/2} r={size/2 - 6} fill="none" stroke="#e2e8f0" strokeWidth="8" />
-                    <circle cx={size/2} cy={size/2} r={size/2 - 14} fill="white" className="dark:fill-slate-800" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="h-4 w-8 bg-slate-200 dark:bg-slate-700 rounded mx-auto"></div>
-                        <div className="h-2 w-6 bg-slate-200 dark:bg-slate-700 rounded mx-auto mt-0.5"></div>
-                    </div>
-                </div>
-            </div>
-            <div className="mt-1.5 flex flex-wrap justify-center gap-1.5">
-                {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-0.5">
-                        <div className="h-1.5 w-1.5 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                        <div className="h-2 w-10 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                        <div className="h-2 w-6 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-// Horizontal Bar Chart Skeleton
-const HorizontalBarChartSkeleton: React.FC<{ height?: number }> = ({ height = 130 }) => {
-    const bars = Array.from({ length: 6 }, () => ({
-        width: 30 + Math.random() * 60
-    }));
-
-    return (
-        <div className="w-full animate-pulse" style={{ height: `${height}px` }}>
-            <div className="space-y-1.5">
-                {bars.map((bar, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                        <div className="w-10 text-right">
-                            <div className="h-2 w-8 bg-slate-200 dark:bg-slate-700 rounded ml-auto"></div>
-                        </div>
-                        <div className="flex-1">
-                            <div className="relative h-4 w-full rounded bg-slate-100 dark:bg-slate-700">
-                                <div
-                                    className="absolute left-0 top-0 h-full rounded bg-slate-200 dark:bg-slate-600"
-                                    style={{ width: `${bar.width}%` }}
-                                />
-                            </div>
-                        </div>
-                        <div className="w-8 text-right">
-                            <div className="h-2 w-6 bg-slate-200 dark:bg-slate-700 rounded ml-auto"></div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
+const today = new Date();
+const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = subDays(today, 6 - i);
+    return {
+        date: format(date, 'yyyy-MM-dd'),
+        day: format(date, 'EEE'),
+        screened: Math.floor(Math.random() * 100) + 50,
+        viaPositive: Math.floor(Math.random() * 30) + 10,
+        hpvPositive: Math.floor(Math.random() * 40) + 15,
+        treated: Math.floor(Math.random() * 35) + 10,
+        followUpCompleted: Math.floor(Math.random() * 30) + 8
+    };
+});
 
 // ============================================================================
-// Icon mapping
+// Icon Mapping - Convert string icon names to React components
 // ============================================================================
 
-const getIcon = (iconName: string, className: string = "h-4 w-4 text-blue-600") => {
+const getIcon = (iconName: string, className: string = "h-4 w-4") => {
     const icons: Record<string, React.ReactNode> = {
         'users': <Users className={className} />,
         'microscope': <Microscope className={className} />,
@@ -204,22 +129,20 @@ const getIcon = (iconName: string, className: string = "h-4 w-4 text-blue-600") 
         'check-circle': <CheckCircle className={className} />,
         'arrow-right-left': <ArrowRightLeft className={className} />,
         'skull': <Skull className={className} />,
+        'activity': <Activity className={className} />,
     };
     return icons[iconName] || <Users className={className} />;
 };
 
 // ============================================================================
-// Chart Components
+// Chart Components (Compact)
 // ============================================================================
 
+// Bar Chart Component
 const BarChart: React.FC<{
     data: TrendData[];
     height?: number;
 }> = ({ data, height = 120 }) => {
-    if (!data || data.length === 0) {
-        return <BarChartSkeleton height={height} />;
-    }
-
     const maxValue = Math.max(...data.map(d => d.screened), 1);
 
     return (
@@ -229,14 +152,16 @@ const BarChart: React.FC<{
                     const heightPercent = (item.screened / maxValue) * 100;
                     return (
                         <div key={index} className="flex flex-1 flex-col items-center gap-1">
-                            <div
-                                className="w-full rounded-t transition-all duration-300 hover:opacity-80"
-                                style={{
-                                    height: `${Math.max(4, heightPercent)}%`,
-                                    backgroundColor: '#2563EB',
-                                    minHeight: '4px'
-                                }}
-                            />
+                            <div className="relative w-full group">
+                                <div
+                                    className="w-full rounded-t transition-all duration-300 hover:opacity-80"
+                                    style={{
+                                        height: `${Math.max(4, heightPercent)}%`,
+                                        backgroundColor: '#2563EB',
+                                        minHeight: '4px'
+                                    }}
+                                />
+                            </div>
                             <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400">
                                 {item.day}
                             </span>
@@ -248,6 +173,7 @@ const BarChart: React.FC<{
     );
 };
 
+// Area Chart Component (Sparkline)
 const AreaChart: React.FC<{
     data: number[];
     color?: string;
@@ -255,8 +181,8 @@ const AreaChart: React.FC<{
 }> = ({ data, color = '#2563EB', height = 35 }) => {
     if (!data || data.length === 0 || data.every(v => v === 0)) {
         return (
-            <div className="relative animate-pulse" style={{ height: `${height}px` }}>
-                <div className="h-full w-full bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div className="relative" style={{ height: `${height}px` }}>
+                <div className="h-full w-full bg-slate-100 dark:bg-slate-700 rounded"></div>
             </div>
         );
     }
@@ -281,14 +207,14 @@ const AreaChart: React.FC<{
         <div className="relative" style={{ height: `${height}px` }}>
             <svg className="h-full w-full overflow-visible">
                 <defs>
-                    <linearGradient id={`area-gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id={`area-gradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor={color} stopOpacity={0.25} />
                         <stop offset="100%" stopColor={color} stopOpacity={0.02} />
                     </linearGradient>
                 </defs>
                 <path
                     d={areaD}
-                    fill={`url(#area-gradient-${color})`}
+                    fill={`url(#area-gradient-${color.replace('#', '')})`}
                     className="transition-all"
                 />
                 <path
@@ -313,12 +239,19 @@ const AreaChart: React.FC<{
     );
 };
 
+// Horizontal Bar Chart for Age Groups
 const HorizontalBarChart: React.FC<{
     data: ChartData[];
     height?: number;
 }> = ({ data, height = 150 }) => {
     if (!data || data.length === 0) {
-        return <HorizontalBarChartSkeleton height={height} />;
+        return (
+            <div className="w-full" style={{ height: `${height}px` }}>
+                <div className="flex items-center justify-center h-full text-slate-400 text-xs">
+                    No age group data available
+                </div>
+            </div>
+        );
     }
 
     const maxValue = Math.max(...data.map(d => d.value), 1);
@@ -363,20 +296,29 @@ const HorizontalBarChart: React.FC<{
     );
 };
 
+// Donut/Pie Chart Component (Compact)
 const DonutChart: React.FC<{
     data: ChartData[];
     size?: number;
 }> = ({ data, size = 100 }) => {
     if (!data || data.length === 0) {
-        return <DonutChartSkeleton size={size} />;
+        return (
+            <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+                <span className="text-xs text-slate-400">No data</span>
+            </div>
+        );
     }
 
     const total = data.reduce((sum, d) => sum + d.value, 0);
-    let currentAngle = 0;
-
     if (total === 0) {
-        return <DonutChartSkeleton size={size} />;
+        return (
+            <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+                <span className="text-xs text-slate-400">No data</span>
+            </div>
+        );
     }
+
+    let currentAngle = 0;
 
     return (
         <div className="flex flex-col items-center">
@@ -438,7 +380,7 @@ const DonutChart: React.FC<{
 };
 
 // ============================================================================
-// KPI Card Component
+// KPI Card Component (Compact)
 // ============================================================================
 
 const KPICard: React.FC<{ kpi: KPI }> = ({ kpi }) => {
@@ -447,6 +389,8 @@ const KPICard: React.FC<{ kpi: KPI }> = ({ kpi }) => {
         down: <TrendingDown className="h-3 w-3 text-red-500" />,
         neutral: <Minus className="h-3 w-3 text-slate-500" />,
     };
+
+    const iconColor = kpi.color || '#2563EB';
 
     return (
         <Card className="overflow-hidden h-full hover:shadow-md transition-shadow border border-slate-200 dark:border-slate-700">
@@ -460,8 +404,8 @@ const KPICard: React.FC<{ kpi: KPI }> = ({ kpi }) => {
                             {kpi.formattedValue || kpi.value}
                         </p>
                     </div>
-                    <div className={`rounded-full p-1.5 shrink-0 ml-1`} style={{ backgroundColor: `${kpi.color}15` }}>
-                        {getIcon(kpi.icon || 'users', "h-4 w-4")}
+                    <div className={`rounded-full p-1.5 shrink-0 ml-1`} style={{ backgroundColor: `${iconColor}15` }}>
+                        {getIcon(kpi.icon || 'users', `h-4 w-4`)}
                     </div>
                 </div>
 
@@ -478,14 +422,14 @@ const KPICard: React.FC<{ kpi: KPI }> = ({ kpi }) => {
                         <span className="text-[6px] text-slate-400">vs prev</span>
                     </div>
                     <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400">
-                        {kpi.comparison || '0 vs last week'}
+                        {kpi.comparison || '0 vs last period'}
                     </span>
                 </div>
 
                 <div className="mt-1.5">
                     <AreaChart
                         data={kpi.sparklineData || [0,0,0,0,0,0,0]}
-                        color={kpi.color || '#2563EB'}
+                        color={iconColor}
                         height={28}
                     />
                 </div>
@@ -505,40 +449,22 @@ const KPICard: React.FC<{ kpi: KPI }> = ({ kpi }) => {
 // ============================================================================
 
 export default function Dashboard() {
+    const { props } = usePage<PageProps>();
 
-    const { props } = usePage();
-    const dashboardData = props as DashboardProps;
+    // Log props for debugging
+    console.log('📊 Full Props:', props);
 
-    const [loading, setLoading] = useState(true);
-    const [showAllData, setShowAllData] = useState(false);
+    // Extract dashboard data from sharedData
+    const dashboardData = props?.sharedData?.dashboard || {};
 
-    const dataPeriod  = [
-        {
-            period:'today',
-            title: 'Todays'
-        },{
-            period:'weekly',
-            title: 'Weekly'
-        },{
-            period:'monthly',
-            title: 'Monthly'
-        }
+    console.log('📈 Dashboard Data:', dashboardData);
 
-    ]
-    // Simulate loading
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 1500);
-        return () => clearTimeout(timer);
-    }, []);
-
-    // Use data from controller or fallback to defaults
-    const kpis = dashboardData?.kpis || [];
-    const weeklyTrends = dashboardData?.weeklyTrends || [];
-    const hivData = dashboardData?.hivDisaggregation || [];
-    const disabilityData = dashboardData?.disabilityDisaggregation || [];
-    const ageGroups = dashboardData?.ageGroups || [];
+    // Use data from sharedData or fallback to defaults
+    const kpis = dashboardData?.kpis && dashboardData.kpis.length > 0 ? dashboardData.kpis : [];
+    const weeklyTrends = dashboardData?.weeklyTrends && dashboardData.weeklyTrends.length > 0 ? dashboardData.weeklyTrends : last7Days;
+    const hivData = dashboardData?.hivDisaggregation && dashboardData.hivDisaggregation.length > 0 ? dashboardData.hivDisaggregation : [];
+    const disabilityData = dashboardData?.disabilityDisaggregation && dashboardData.disabilityDisaggregation.length > 0 ? dashboardData.disabilityDisaggregation : [];
+    const ageGroups = dashboardData?.ageGroups && dashboardData.ageGroups.length > 0 ? dashboardData.ageGroups : [];
     const metadata = dashboardData?.metadata || {
         lastSync: new Date().toISOString(),
         dataSource: 'System',
@@ -547,184 +473,91 @@ export default function Dashboard() {
         activeDistricts: 0,
         totalRecords: 0
     };
+    const aggregates = dashboardData?.aggregates || {
+        total_screened: 0,
+        hpv_positive: 0,
+        via_positive: 0,
+        via_negative: 0,
+        hpv_negative: 0,
+        treatment: 0,
+        referral: 0,
+        hiv_positive: 0,
+        hiv_negative: 0,
+        disability: 0,
+        mortality: 0
+    };
 
-    // Check if we have data - if not, show skeletons
-    const hasData = kpis.length > 0 && weeklyTrends.length > 0;
+    const [loading, setLoading] = useState(false);
+    const hasData = kpis.length > 0;
+
+    const handleRefresh = () => {
+        setLoading(true);
+        setTimeout(() => setLoading(false), 1000);
+    };
+
     const weekTotal = weeklyTrends.reduce((sum, d) => sum + (d.screened || 0), 0);
 
-    // Show skeletons while loading OR if no data
-    if (loading || !hasData) {
-        let item;
+    // If no data from controller, show a message
+    if (!hasData) {
         return (
             <>
-                <Head title="Dashboard | Loading..." />
+                <Head title="Dashboard" />
                 <div className="min-h-screen bg-slate-50 p-3 dark:bg-slate-900">
                     <div className="mx-auto max-w-full">
-                        {/* Header */}
-                        <div className="mb-3 flex flex-wrap items-center justify-between ">
-                            <div>
-                               <div className={"bg-slate-100 w-full gap-8 flex"}>
-                                   {dataPeriod.map((item)=>(
-                                       <Button   size={"xs"}  className={""} onClick={()=>{alert(item.period)}}>{item.title}</Button>
-                                   ))}
-                               </div>
-                                <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                                    {format(subDays(new Date(), 6), 'MMM d')} - {format(new Date(), 'MMM d, yyyy')}
-                                </p>
-                                <p className="text-[8px] text-slate-400 mt-0.5">
-                                    Loading data...
-                                </p>
-                            </div>
-                            <Button variant="outline" size="sm" className="h-7 px-2.5 text-[10px]" onClick={() => window.location.reload()}>
-                                <RefreshCw className="mr-1.5 h-3 w-3" />
+                        <div className="flex items-center justify-between mb-3">
+                            <h1 className="text-base font-bold text-slate-900 dark:text-white">
+                                Weekly Analytics Dashboard
+                            </h1>
+                            <Button variant="outline" size="sm" className="h-7 px-2.5 text-[10px]" onClick={handleRefresh}>
+                                <RefreshCw className={`mr-1.5 h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
                                 Refresh
                             </Button>
                         </div>
-
-                        {/* System Status Bar - Skeleton */}
-                        <div className="mb-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 flex items-center justify-between animate-pulse">
-                            <div className="flex items-center gap-2">
-                                <div className="h-3 w-3 bg-slate-300 dark:bg-slate-600 rounded"></div>
-                                <div className="h-2 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
-                                <div className="h-2 w-16 bg-slate-300 dark:bg-slate-600 rounded"></div>
-                                <div className="h-2 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
-                            </div>
-                            <div className="h-4 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
-                        </div>
-
-                        {/* KPI Grid Skeletons */}
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 mb-3">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <div key={i} className="w-full">
-                                    <KPICardSkeleton />
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Charts Skeletons */}
-                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 mb-3">
-                            <div className="lg:col-span-2">
-                                <Card className="h-full border border-slate-200 dark:border-slate-700">
-                                    <CardHeader className="p-2.5 pb-1">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                                                <div className="h-2 w-20 bg-slate-200 dark:bg-slate-700 rounded mt-1 animate-pulse"></div>
-                                            </div>
-                                            <div className="h-4 w-12 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="p-2.5 pt-1">
-                                        <div className="flex flex-wrap justify-center gap-1.5 mb-1">
-                                            {[1,2,3,4,5].map((i) => (
-                                                <div key={i} className="flex items-center gap-0.5">
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                                                    <div className="h-2 w-8 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <BarChartSkeleton height={110} />
-                                    </CardContent>
-                                </Card>
-                            </div>
-                            <div className="lg:col-span-1">
-                                <Card className="h-full border border-slate-200 dark:border-slate-700">
-                                    <CardHeader className="p-2.5 pb-1">
-                                        <div className="h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                                        <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded mt-1 animate-pulse"></div>
-                                    </CardHeader>
-                                    <CardContent className="p-2.5 pt-1 flex items-center justify-center">
-                                        <DonutChartSkeleton size={90} />
-                                    </CardContent>
-                                </Card>
-                            </div>
-                            <div className="lg:col-span-1">
-                                <Card className="h-full border border-slate-200 dark:border-slate-700">
-                                    <CardHeader className="p-2.5 pb-1">
-                                        <div className="h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                                        <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded mt-1 animate-pulse"></div>
-                                    </CardHeader>
-                                    <CardContent className="p-2.5 pt-1 flex items-center justify-center">
-                                        <DonutChartSkeleton size={90} />
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </div>
-
-                        {/* Age Groups Skeleton */}
-                        <div className="mb-3">
-                            <Card className="border border-slate-200 dark:border-slate-700">
-                                <CardHeader className="p-2.5 pb-1">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <div className="h-3 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                                            <div className="h-2 w-24 bg-slate-200 dark:bg-slate-700 rounded mt-1 animate-pulse"></div>
-                                        </div>
-                                        <div className="h-4 w-12 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                        <Card className="border border-slate-200 dark:border-slate-700">
+                            <CardContent className="p-8 text-center">
+                                <div className="flex flex-col items-center gap-3">
+                                    <Activity className="h-12 w-12 text-slate-300" />
+                                    <h3 className="text-lg font-semibold text-slate-700">No Dashboard Data</h3>
+                                    <p className="text-sm text-slate-500 max-w-md">
+                                        No data available for the selected period. Please check your database or try a different time range.
+                                    </p>
+                                    <div className="text-xs text-slate-400 mt-2">
+                                        <p>Facilities: {metadata.activeFacilities}</p>
+                                        <p>Districts: {metadata.activeDistricts}</p>
+                                        <p>Total Records: {metadata.totalRecords}</p>
                                     </div>
-                                </CardHeader>
-                                <CardContent className="p-2.5 pt-1">
-                                    <HorizontalBarChartSkeleton height={130} />
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Footer Skeleton */}
-                        <div className="rounded-lg bg-white p-2 shadow-sm dark:bg-slate-800 border border-slate-200 dark:border-slate-700 animate-pulse">
-                            <div className="flex flex-wrap items-center justify-between gap-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <div className="h-2 w-24 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                                    <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                                    <div className="h-2 w-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                                    <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                                    <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* "Continue using the system" message */}
-                        <div className="mt-4 text-center">
-                            <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                                <Activity className="h-3 w-3" />
-                                <span>Loading data from the system...</span>
-                                <span className="text-slate-300 mx-1">|</span>
-                                <ChevronRight className="h-3 w-3" />
-                                <span className="text-blue-500">Continue using the system</span>
-                            </p>
-                        </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
             </>
         );
     }
 
-    // If data exists, show the full dashboard
     return (
         <>
             <Head title="Weekly Dashboard | National Health Intelligence" />
 
             <div className="min-h-screen bg-slate-50 p-3 dark:bg-slate-900">
                 <div className="mx-auto max-w-full">
-                    {/* Header */}
+                    {/* Header - Compact */}
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <div>
                             <h1 className="text-base font-bold text-slate-900 dark:text-white">
-                                Community Health Dashboard
+                                Weekly Analytics Dashboard
                             </h1>
                             <p className="text-[10px] text-slate-500 dark:text-slate-400">
                                 {format(subDays(new Date(), 6), 'MMM d')} - {format(new Date(), 'MMM d, yyyy')}
                             </p>
                             {metadata.totalRecords > 0 && (
                                 <p className="text-[8px] text-slate-400 mt-0.5">
-                                    {metadata.totalRecords} records from {metadata.activeFacilities} facilities
+                                    {metadata.totalRecords.toLocaleString()} records from {metadata.activeFacilities} facilities
                                 </p>
                             )}
                         </div>
-                        <Button variant="outline" size="sm" className="h-7 px-2.5 text-[10px]" onClick={() => window.location.reload()}>
-                            <RefreshCw className="mr-1.5 h-3 w-3" />
+                        <Button variant="outline" size="sm" className="h-7 px-2.5 text-[10px]" onClick={handleRefresh}>
+                            <RefreshCw className={`mr-1.5 h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
                     </div>
@@ -735,17 +568,16 @@ export default function Dashboard() {
                             <Activity className="h-3 w-3" />
                             <span>System active</span>
                             <span className="text-blue-300 dark:text-blue-700">|</span>
-                            <span>{metadata.totalRecords} records loaded</span>
+                            <span>{metadata.totalRecords.toLocaleString()} records loaded</span>
                             <span className="text-blue-300 dark:text-blue-700">|</span>
                             <span>Last sync: {format(new Date(metadata.lastSync), 'HH:mm')}</span>
                         </div>
-                        <Button variant="ghost" size="sm" className="h-5 text-[9px] text-blue-600 hover:text-blue-700 hover:bg-blue-100/50">
-                            View All Data
-                            <ChevronRight className="h-3 w-3 ml-0.5" />
-                        </Button>
+                        <span className="text-[9px] text-blue-600">
+                            {metadata.reportingPeriod}
+                        </span>
                     </div>
 
-                    {/* KPI Grid */}
+                    {/* KPI Grid - 6 columns */}
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 mb-3">
                         {kpis.map((kpi) => (
                             <div key={kpi.id} className="w-full">
@@ -754,8 +586,9 @@ export default function Dashboard() {
                         ))}
                     </div>
 
-                    {/* Charts Section */}
+                    {/* Charts Section - Compact */}
                     <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 mb-3">
+                        {/* Bar Chart - Daily Trends (takes 2 columns) */}
                         <div className="lg:col-span-2">
                             <Card className="h-full border border-slate-200 dark:border-slate-700">
                                 <CardHeader className="p-2.5 pb-1">
@@ -799,6 +632,7 @@ export default function Dashboard() {
                             </Card>
                         </div>
 
+                        {/* HIV Status Pie (takes 1 column) */}
                         <div className="lg:col-span-1">
                             <Card className="h-full border border-slate-200 dark:border-slate-700">
                                 <CardHeader className="p-2.5 pb-1">
@@ -811,6 +645,7 @@ export default function Dashboard() {
                             </Card>
                         </div>
 
+                        {/* Disability Pie (takes 1 column) */}
                         <div className="lg:col-span-1">
                             <Card className="h-full border border-slate-200 dark:border-slate-700">
                                 <CardHeader className="p-2.5 pb-1">
@@ -824,27 +659,29 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Age Groups */}
-                    <div className="mb-3">
-                        <Card className="border border-slate-200 dark:border-slate-700">
-                            <CardHeader className="p-2.5 pb-1">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <CardTitle className="text-[10px] font-semibold">Age Group Distribution</CardTitle>
-                                        <CardDescription className="text-[8px]">Screening by age group</CardDescription>
+                    {/* Horizontal Bar Chart - Age Groups (Full Width) */}
+                    {ageGroups.length > 0 && (
+                        <div className="mb-3">
+                            <Card className="border border-slate-200 dark:border-slate-700">
+                                <CardHeader className="p-2.5 pb-1">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-[10px] font-semibold">Age Group Distribution</CardTitle>
+                                            <CardDescription className="text-[8px]">Screening by age group</CardDescription>
+                                        </div>
+                                        <Badge variant="outline" className="text-[6px] px-1">
+                                            Total: {ageGroups.reduce((sum, d) => sum + d.value, 0).toLocaleString()}
+                                        </Badge>
                                     </div>
-                                    <Badge variant="outline" className="text-[6px] px-1">
-                                        Total: {ageGroups.reduce((sum, d) => sum + d.value, 0).toLocaleString()}
-                                    </Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-2.5 pt-1">
-                                <HorizontalBarChart data={ageGroups} height={130} />
-                            </CardContent>
-                        </Card>
-                    </div>
+                                </CardHeader>
+                                <CardContent className="p-2.5 pt-1">
+                                    <HorizontalBarChart data={ageGroups} height={130} />
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
-                    {/* Footer */}
+                    {/* Footer - Compact */}
                     <div className="rounded-lg bg-white p-2 shadow-sm dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                         <div className="flex flex-wrap items-center justify-between gap-1 text-[7px] text-slate-500 dark:text-slate-400">
                             <div className="flex flex-wrap items-center gap-2">
@@ -862,15 +699,11 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* "Continue using the system" message */}
-                    <div className="mt-4 text-center">
-                        <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                            <Activity className="h-3 w-3" />
-                            <span>System is active and ready</span>
-                            <span className="text-slate-300 mx-1">|</span>
-                            <ChevronRight className="h-3 w-3" />
-                            <span className="text-blue-500">Continue using the system</span>
-                        </p>
+                    {/* Aggregates Summary (hidden but available) */}
+                    <div className="hidden">
+                        {aggregates && (
+                            <pre>{JSON.stringify(aggregates, null, 2)}</pre>
+                        )}
                     </div>
                 </div>
             </div>
