@@ -1,3 +1,5 @@
+// resources/js/pages/consultations/index.tsx
+
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -26,7 +28,13 @@ import {
     Minimize,
     Move,
     Plus,
-    Minus
+    Minus,
+    Hash,
+    Building,
+    Phone,
+    Mail,
+    FileText,
+    Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePage } from '@inertiajs/react';
@@ -394,7 +402,18 @@ function ConsultationModal({
                                 <Stethoscope className="h-5 w-5 text-blue-600" />
                                 <div>
                                     <h2 className="text-base font-semibold text-gray-900">Consultation Review</h2>
-                                    <p className="text-xs text-gray-500">{consultation.consultation_uuid}</p>
+                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                        <span>{consultation.consultation_uuid}</span>
+                                        {consultation.visit_id && (
+                                            <>
+                                                <span className="text-gray-300">|</span>
+                                                <span className="flex items-center gap-1">
+                                                    <Hash className="h-3 w-3" />
+                                                    Visit #{consultation.visit_id}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
@@ -406,7 +425,7 @@ function ConsultationModal({
                     {/* Body */}
                     <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
                         <div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                            {/* Column 1 - Image */}
+                            {/* Column 1 - Image & Info */}
                             <div className="space-y-3">
                                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                                     <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -454,10 +473,25 @@ function ConsultationModal({
                                                 <User className="h-4 w-4 text-gray-500" />
                                                 <div>
                                                     <p className="text-sm font-medium text-gray-900">{consultation.patient_name}</p>
-                                                    <p className="text-xs text-gray-500">{consultation.patient_id}</p>
+                                                    <p className="text-xs text-gray-500">ID: {consultation.patient_id}</p>
                                                 </div>
                                             </div>
                                         </div>
+                                        {consultation.visit_id && (
+                                            <div className="col-span-2 bg-blue-50 rounded px-2 py-1 border border-blue-100">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Hash className="h-3.5 w-3.5 text-blue-500" />
+                                                    <span className="text-xs font-medium text-blue-700">
+                                                        Visit ID: {consultation.visit_id}
+                                                    </span>
+                                                    {consultation.patient_appointment && (
+                                                        <span className="text-xs text-blue-500 ml-auto">
+                                                            {format(new Date(consultation.patient_appointment), 'MMM d, yyyy')}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div>
                                             <p className="text-xs font-medium text-gray-500 uppercase">Facility</p>
                                             <p className="text-sm text-gray-800">{consultation.facility_name}</p>
@@ -476,6 +510,12 @@ function ConsultationModal({
                                                 <p className="text-sm text-gray-800">{consultation.assigned_to_name}</p>
                                             </div>
                                         )}
+                                        <div className="col-span-2">
+                                            <p className="text-xs font-medium text-gray-500 uppercase">Created</p>
+                                            <p className="text-sm text-gray-800">
+                                                {format(new Date(consultation.created_at), 'MMM d, yyyy h:mm a')}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -509,6 +549,11 @@ function ConsultationModal({
                                         rows={3}
                                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                                     />
+                                    {consultation.comment && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Previous: {consultation.comment}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex items-start space-x-2 pt-1">
@@ -604,12 +649,17 @@ export default function Consultations() {
     const [currentPage, setCurrentPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const itemsPerPage = 10;
-    const {consultationEvents}  =  usePage().props;
-    console.log(consultationEvents)
+    const { consultationEvents = [] } = usePage().props;
+
+    console.log('Consultation Events:', consultationEvents);
+
     const filteredData = useMemo(() => {
+        if (!consultationEvents || !Array.isArray(consultationEvents)) return [];
+
         return consultationEvents.filter(item => {
-            const matchesSearch = item.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.patient_id.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = item.patient_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.patient_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (item.visit_id?.toString().includes(searchTerm) || false);
             const matchesStatus = statusFilter === 'all' || item.consultation_status === statusFilter;
             return matchesSearch && matchesStatus;
         });
@@ -653,10 +703,11 @@ export default function Consultations() {
     };
 
     const statusFilters = [
-        { key: 'all', label: 'All', count: consultationEvents.length, color: 'bg-gray-500' },
-        { key: 'Pending', label: 'Pending', count: consultationEvents.filter(c => c.consultation_status === 'Pending').length, color: 'bg-yellow-500' },
-        { key: 'In Progress', label: 'In Progress', count: consultationEvents.filter(c => c.consultation_status === 'In Progress').length, color: 'bg-blue-500' },
-        { key: 'Completed', label: 'Completed', count: consultationEvents.filter(c => c.consultation_status === 'Completed').length, color: 'bg-green-500' },
+        { key: 'all', label: 'All', count: consultationEvents?.length || 0, color: 'bg-gray-500' },
+        { key: 'Pending', label: 'Pending', count: (consultationEvents || []).filter(c => c.consultation_status === 'Pending').length, color: 'bg-yellow-500' },
+        { key: 'In Progress', label: 'In Progress', count: (consultationEvents || []).filter(c => c.consultation_status === 'In Progress').length, color: 'bg-blue-500' },
+        { key: 'Completed', label: 'Completed', count: (consultationEvents || []).filter(c => c.consultation_status === 'Completed').length, color: 'bg-green-500' },
+        { key: 'Cancelled', label: 'Cancelled', count: (consultationEvents || []).filter(c => c.consultation_status === 'Cancelled').length, color: 'bg-red-500' },
     ];
 
     return (
@@ -712,13 +763,13 @@ export default function Consultations() {
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search patient..."
+                            placeholder="Search patient or visit..."
                             value={searchTerm}
                             onChange={(e) => {
                                 setSearchTerm(e.target.value);
                                 setCurrentPage(1);
                             }}
-                            className="w-full sm:w-56 h-9 pl-9 pr-3 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full sm:w-64 h-9 pl-9 pr-3 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                     </div>
                 </div>
@@ -730,6 +781,7 @@ export default function Consultations() {
                             <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                                <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visit</th>
                                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility</th>
                                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Appointment</th>
                                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -741,7 +793,7 @@ export default function Consultations() {
                             <tbody className="bg-white divide-y divide-gray-200">
                             {paginatedData.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-3 py-8 text-center text-sm text-gray-500">
+                                    <td colSpan={8} className="px-3 py-8 text-center text-sm text-gray-500">
                                         No consultations found
                                     </td>
                                 </tr>
@@ -754,19 +806,29 @@ export default function Consultations() {
                                                 <p className="text-xs text-gray-500">{consultation.patient_id}</p>
                                             </div>
                                         </td>
+                                        <td className="px-3 py-2.5">
+                                            {consultation.visit_id ? (
+                                                <span className="inline-flex items-center gap-1 text-sm font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                                                    <Hash className="h-3 w-3" />
+                                                    {consultation.visit_id}
+                                                </span>
+                                            ) : (
+                                                <span className="text-sm text-gray-400">—</span>
+                                            )}
+                                        </td>
                                         <td className="px-3 py-2.5 text-sm text-gray-700">{consultation.facility_name}</td>
                                         <td className="px-3 py-2.5 text-sm text-gray-700">
                                             {consultation.patient_appointment ? (
                                                 format(new Date(consultation.patient_appointment), 'MMM d, h:mm a')
                                             ) : (
-                                                <span className="text-gray-400">-</span>
+                                                <span className="text-gray-400">—</span>
                                             )}
                                         </td>
                                         <td className="px-3 py-2.5">
-                                                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded ${getStatusColor(consultation.consultation_status)}`}>
-                                                    {getStatusIcon(consultation.consultation_status)}
-                                                    {consultation.consultation_status}
-                                                </span>
+                                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded ${getStatusColor(consultation.consultation_status)}`}>
+                                                {getStatusIcon(consultation.consultation_status)}
+                                                {consultation.consultation_status}
+                                            </span>
                                         </td>
                                         <td className="px-3 py-2.5">
                                             {consultation.cervical_cancer_image_url ? (
@@ -781,11 +843,11 @@ export default function Consultations() {
                                         <td className="px-3 py-2.5">
                                             {consultation.sms_to_dr ? (
                                                 <span className="inline-flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                                                        <CheckCircle className="h-3.5 w-3.5" />
-                                                        Sent
-                                                    </span>
+                                                    <CheckCircle className="h-3.5 w-3.5" />
+                                                    Sent
+                                                </span>
                                             ) : (
-                                                <span className="text-sm text-gray-400">-</span>
+                                                <span className="text-sm text-gray-400">—</span>
                                             )}
                                         </td>
                                         <td className="px-3 py-2.5 text-right">

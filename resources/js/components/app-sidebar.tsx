@@ -112,23 +112,7 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
         {
             title: 'Pathology',
             href: '/laboratory/orders',
-            icon: LayoutGrid,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.DHO,
-                ROLE_IDS.FACILITY_MANAGER,
-                ROLE_IDS.MEL_OFFICER,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.NURSE,
-                ROLE_IDS.COUNSELLOR,
-                ROLE_IDS.WARD_CLERK,
-                ROLE_IDS.CHW,
-            ],
-        },
-        {
-            title: 'Dashboard',
-            href: '/dashboard',
-            icon: LayoutGrid,
+            icon: MicroscopeIcon,
             roles: [
                 ROLE_IDS.ADMINISTRATOR,
                 ROLE_IDS.DHO,
@@ -198,16 +182,6 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
             ],
         },
         {
-            title: 'Screening',
-            href: '/screening',
-            icon: ClipboardList,
-        },
-        {
-            title: 'Treatment',
-            href: '/treatment',
-            icon: Stethoscope,
-        },
-        {
             title: 'Appointments',
             href: '/appointments',
             icon: CalendarClock,
@@ -218,73 +192,73 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.FACILITY_MANAGER,
             ],
         },
-        {
-            title: 'Follow Up',
-            href: '/follow-up',
-            icon: BellRing,
-        },
-        {
-            title: 'Psychosocial Care',
-            href: '/mental-health',
-            icon: HeartPulse,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.COUNSELLOR,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.FACILITY_MANAGER,
-            ],
-        },
-        {
-            title: 'NCD Management',
-            href: '/ncd',
-            icon: Activity,
-        },
-        {
-            title: 'Referrals',
-            href: '/referrals',
-            icon: ArrowRightLeft,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.CHW,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.NURSE,
-                ROLE_IDS.FACILITY_MANAGER,
-            ],
-        },
-        {
-            title: 'Admissions',
-            href: '/admissions',
-            icon: Bed,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.WARD_CLERK,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.NURSE,
-            ],
-        },
-        {
-            title: 'Discharges',
-            href: '/discharges',
-            icon: FileHeart,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.WARD_CLERK,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.NURSE,
-            ],
-        },
-        {
-            title: 'Mortality Review',
-            href: '/mortality',
-            icon: Skull,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.FACILITY_MANAGER,
-                ROLE_IDS.DHO,
-                ROLE_IDS.MEL_OFFICER,
-            ],
-        },
+        // {
+        //     title: 'Follow Up',
+        //     href: '/follow-up',
+        //     icon: BellRing,
+        // },
+        // {
+        //     title: 'Psychosocial Care',
+        //     href: '/mental-health',
+        //     icon: HeartPulse,
+        //     roles: [
+        //         ROLE_IDS.ADMINISTRATOR,
+        //         ROLE_IDS.COUNSELLOR,
+        //         ROLE_IDS.CLINICIAN,
+        //         ROLE_IDS.FACILITY_MANAGER,
+        //     ],
+        // },
+        // {
+        //     title: 'NCD Management',
+        //     href: '/ncd',
+        //     icon: Activity,
+        // },
+        // {
+        //     title: 'Referrals',
+        //     href: '/referrals',
+        //     icon: ArrowRightLeft,
+        //     roles: [
+        //         ROLE_IDS.ADMINISTRATOR,
+        //         ROLE_IDS.CHW,
+        //         ROLE_IDS.CLINICIAN,
+        //         ROLE_IDS.NURSE,
+        //         ROLE_IDS.FACILITY_MANAGER,
+        //     ],
+        // },
+        // {
+        //     title: 'Admissions',
+        //     href: '/admissions',
+        //     icon: Bed,
+        //     roles: [
+        //         ROLE_IDS.ADMINISTRATOR,
+        //         ROLE_IDS.WARD_CLERK,
+        //         ROLE_IDS.CLINICIAN,
+        //         ROLE_IDS.NURSE,
+        //     ],
+        // },
+        // {
+        //     title: 'Discharges',
+        //     href: '/discharges',
+        //     icon: FileHeart,
+        //     roles: [
+        //         ROLE_IDS.ADMINISTRATOR,
+        //         ROLE_IDS.WARD_CLERK,
+        //         ROLE_IDS.CLINICIAN,
+        //         ROLE_IDS.NURSE,
+        //     ],
+        // },
+        // {
+        //     title: 'Mortality Review',
+        //     href: '/mortality',
+        //     icon: Skull,
+        //     roles: [
+        //         ROLE_IDS.ADMINISTRATOR,
+        //         ROLE_IDS.CLINICIAN,
+        //         ROLE_IDS.FACILITY_MANAGER,
+        //         ROLE_IDS.DHO,
+        //         ROLE_IDS.MEL_OFFICER,
+        //     ],
+        // },
         {
             title: 'Facilities',
             href: '/facilities',
@@ -608,9 +582,7 @@ export function AppSidebar({ patient, isPatientView }: AppSidebarProps) {
                 ) : (
                     // Main navigation
                     <SidebarGroup>
-                        <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
-                            Main Navigation
-                        </SidebarGroupLabel>
+
                         <SidebarGroupContent>
                             <SidebarMenu className="gap-0.5">
                                 {visibleItems.map((item) => {

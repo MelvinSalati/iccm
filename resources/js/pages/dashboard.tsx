@@ -505,12 +505,26 @@ const KPICard: React.FC<{ kpi: KPI }> = ({ kpi }) => {
 // ============================================================================
 
 export default function Dashboard() {
+
     const { props } = usePage();
     const dashboardData = props as DashboardProps;
 
     const [loading, setLoading] = useState(true);
     const [showAllData, setShowAllData] = useState(false);
 
+    const dataPeriod  = [
+        {
+            period:'today',
+            title: 'Todays'
+        },{
+            period:'weekly',
+            title: 'Weekly'
+        },{
+            period:'monthly',
+            title: 'Monthly'
+        }
+
+    ]
     // Simulate loading
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -540,17 +554,20 @@ export default function Dashboard() {
 
     // Show skeletons while loading OR if no data
     if (loading || !hasData) {
+        let item;
         return (
             <>
                 <Head title="Dashboard | Loading..." />
                 <div className="min-h-screen bg-slate-50 p-3 dark:bg-slate-900">
                     <div className="mx-auto max-w-full">
                         {/* Header */}
-                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div className="mb-3 flex flex-wrap items-center justify-between ">
                             <div>
-                                <h1 className="text-base font-bold text-slate-900 dark:text-white">
-                                    Community Health Dashboard
-                                </h1>
+                               <div className={"bg-slate-100 w-full gap-8 flex"}>
+                                   {dataPeriod.map((item)=>(
+                                       <Button   size={"xs"}  className={""} onClick={()=>{alert(item.period)}}>{item.title}</Button>
+                                   ))}
+                               </div>
                                 <p className="text-[10px] text-slate-500 dark:text-slate-400">
                                     {format(subDays(new Date(), 6), 'MMM d')} - {format(new Date(), 'MMM d, yyyy')}
                                 </p>
