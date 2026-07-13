@@ -65,7 +65,7 @@ interface ConsultationEvent {
 }
 
 // ============================================
-// IMAGE URL HELPER - WORKS ON LOCAL & CLOUD
+// IMAGE URL HELPER
 // ============================================
 const getImageUrl = (url: string | null): string | null => {
     if (!url) return null;
@@ -75,27 +75,18 @@ const getImageUrl = (url: string | null): string | null => {
         return url;
     }
 
-    // Clean the path - remove any prefixes
-    let path = url;
-    path = path.replace(/^\/?storage\//, '');
-    path = path.replace(/^\/?public\//, '');
-    path = path.replace(/^\/?images\//, '');
-    path = path.trim();
-
-    // Detect if we're on cloud (production)
-    const isCloud = typeof window !== 'undefined' && (
-        window.location.hostname.includes('laravel.cloud') ||
-        window.location.hostname.includes('cloud') ||
-        process.env.NODE_ENV === 'production'
-    );
-
-    if (isCloud) {
-        // On cloud - use /images/ route
-        return `/images/${encodeURIComponent(path)}`;
-    } else {
-        // On local - use /storage/ route
-        return `/storage/${encodeURIComponent(path)}`;
+    // If it already starts with /storage/
+    if (url.startsWith('/storage/')) {
+        return url;
     }
+
+    // If it starts with storage/ (no leading slash)
+    if (url.startsWith('storage/')) {
+        return '/' + url;
+    }
+
+    // For any other path, assume it's a storage path
+    return '/storage/' + url;
 };
 
 // ============================================
@@ -144,7 +135,6 @@ function ThumbnailImage({ imageUrl, onView }: { imageUrl: string | null; onView:
                     }`}
                     onLoad={() => setLoading(false)}
                     onError={() => {
-                        console.error('❌ Thumbnail load error:', fixedUrl);
                         setError(true);
                         setLoading(false);
                     }}
@@ -174,9 +164,6 @@ function ConsultationImage({
     const [retryCount, setRetryCount] = useState(0);
 
     const fixedUrl = getImageUrl(imageUrl);
-
-    console.log('📸 Image URL:', imageUrl);
-    console.log('📸 Fixed URL:', fixedUrl);
 
     if (!imageUrl || !fixedUrl) {
         return (
@@ -234,25 +221,19 @@ function ConsultationImage({
                 }`}
                 onClick={onView}
                 onLoad={() => {
-                    console.log('✅ Image loaded successfully:', fixedUrl);
                     setLoading(false);
                     setError(false);
                     setErrorDetails('');
                 }}
                 onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    console.error('❌ Image load error:', fixedUrl);
-                    console.error('❌ Error event:', e);
-                    console.error('❌ Image src:', target.src);
-
                     if (fixedUrl && fixedUrl.length < 50) {
                         setErrorDetails('URL appears truncated');
-                    } else if (fixedUrl && !fixedUrl.includes('/images/') && !fixedUrl.includes('/storage/')) {
-                        setErrorDetails('Missing /images/ or /storage/ prefix');
+                    } else if (fixedUrl && !fixedUrl.includes('/storage/')) {
+                        setErrorDetails('Missing /storage/ prefix');
                     } else {
                         setErrorDetails('File may not exist or is corrupted');
                     }
-
                     setError(true);
                     setLoading(false);
                 }}
@@ -626,9 +607,6 @@ function ConsultationModal({
         });
     };
 
-    console.log('🖼️ Consultation Image URL:', consultation.cervical_cancer_image_url);
-    console.log('🖼️ Fixed URL:', getImageUrl(consultation.cervical_cancer_image_url));
-
     return (
         <>
             <div className="fixed inset-0 bg-black/40 z-50" onClick={onClose} />
@@ -869,8 +847,6 @@ export default function Consultations() {
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const itemsPerPage = 10;
     const { consultationEvents = [] } = usePage().props;
-
-    console.log('Consultation Events:', consultationEvents);
 
     const filteredData = useMemo(() => {
         if (!consultationEvents || !Array.isArray(consultationEvents)) return [];

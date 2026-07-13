@@ -40,7 +40,7 @@ return [
     */
 
     'debug' => (bool) env('APP_DEBUG', false),
-
+    'image_route_prefix' => env('IMAGE_ROUTE_PREFIX', 'storage'),
     /*
     |--------------------------------------------------------------------------
     | Application URL
