@@ -17,12 +17,14 @@ Route::prefix('v1/registry')->group(function () {
 });
 
 
+
 Route::prefix('v1/patients')->group(function () {
 
 
    /**
    *   start a visit return to patients
     * */
+    Route::post('{patientUuid}/lab-orders', [LaboratoryController::class, 'createOrder']);
     Route::post('/register',[PatientController::class,'store']);
    Route::post('/{patientUuid}/visit', [CreateVisitAction::class, 'execute']);
     Route::post('/{patientuuid}/visit/{visitId}/screening/integrated', [\App\Http\Controllers\IntegratedScreeningController::class, 'store']);

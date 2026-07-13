@@ -1,4 +1,4 @@
-import AppLogoIcon from '@/components/app-logo-icon';
+import logo from '../pages/assets/images/eCancer.png'
 
 export default function AppLogo() {
     return (
@@ -6,12 +6,10 @@ export default function AppLogo() {
             <style>{`
                 @keyframes logoFloat {
                     0%,100% {
-                        transform: translateY(0px) rotate(0deg);
-                        box-shadow: 0 0 0 rgba(37,99,235,.2);
+                        transform: translateY(0px);
                     }
                     50% {
-                        transform: translateY(-4px) rotate(3deg);
-                        box-shadow: 0 0 20px rgba(37,99,235,.45);
+                        transform: translateY(-3px);
                     }
                 }
 
@@ -21,27 +19,27 @@ export default function AppLogo() {
             `}</style>
 
             <div className="flex items-center gap-3">
-                <div
+                <img
+                    src={logo}
+                    alt="SGHPP-ECCIHIS"
                     className="
                         logo-animation
-                        flex h-10 w-10 items-center justify-center
-                        rounded-lg
-                        bg-blue-600
-                        text-white
-                        transition-all
+                        h-11
+                        w-11
+                        object-contain
+                        transition-transform
                         duration-300
                         hover:scale-110
-                        hover:rotate-6
-                        hover:shadow-xl
-                        cursor-pointer
                     "
-                >
-                    <AppLogoIcon className="size-5 fill-current" />
-                </div>
+                />
 
-                <div className="grid flex-1 text-left text-sm bg-blue-6000">
-                    <span className="truncate font-semibold tracking-wide leading-tight">
+                <div className="flex flex-col leading-tight">
+                    <span className="font-semibold tracking-wide text-gray-900 dark:text-white">
                         SGHPP-ECCIHIS
+                    </span>
+
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500">
+                        Cervical Cancer Information System
                     </span>
                 </div>
             </div>

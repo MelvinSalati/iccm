@@ -7,11 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Consultancy;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class ConsultancyController extends Controller
 {
     public function createConsultancy(Request $request){
-       return  Consultancy::create($request->all());
+        return  Consultancy::create($request->all());
     }
 
     public function viewConsultancy($facilityId)
@@ -31,6 +32,21 @@ class ConsultancyController extends Controller
             ->orderBy('consultations.created_at', 'desc')
             ->get()
             ->map(function ($consultation) {
+                // ============================================
+                // FIX: Use Storage::url() for proper URL generation
+                // ============================================
+                $imageUrl = null;
+                if ($consultation->cervical_cancer_image_url) {
+                    // Clean the path
+                    $path = $consultation->cervical_cancer_image_url;
+                    $path = str_replace('storage/', '', $path);
+                    $path = str_replace('public/', '', $path);
+                    $path = ltrim($path, '/');
+
+                    // Use Storage::url() to generate the correct URL
+                    $imageUrl = Storage::url($path);
+                }
+
                 return [
                     'id' => $consultation->id,
                     'consultation_uuid' => $consultation->consultation_uuid,
@@ -41,7 +57,7 @@ class ConsultancyController extends Controller
                     'patient_first_name' => $consultation->patient_first_name ?? null,
                     'patient_last_name' => $consultation->patient_last_name ?? null,
                     'visit_id' => $consultation->visit_number ?? $consultation->visit_id,
-                    'cervical_cancer_image_url' => $consultation->cervical_cancer_image_url ? asset($consultation->cervical_cancer_image_url) : null,
+                    'cervical_cancer_image_url' => $imageUrl,
                     'sms_to_dr' => (bool) $consultation->sms_to_dr,
                     'assigned_to_user_id' => $consultation->assigned_to_user_id,
                     'assigned_to_name' => $consultation->assignedTo ?
@@ -65,6 +81,7 @@ class ConsultancyController extends Controller
             'consultationEvents' => $consultationEvents
         ]);
     }
+
     public function updateConsultancy(Request $request, $id){
         return Consultancy::where('id', $id)->update($request->all());
     }

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::index
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
 export const index = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::index
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
 index.url = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ index.url = (args: { facilityId: string | number } | [facilityId: string | numbe
 
 /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::index
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
 index.get = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ index.get = (args: { facilityId: string | number } | [facilityId: string | numbe
 })
 /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::index
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
 index.head = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ index.head = (args: { facilityId: string | number } | [facilityId: string | numb
 
     /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::index
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
     const indexForm = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ index.head = (args: { facilityId: string | number } | [facilityId: string | numb
 
             /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::index
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
         indexForm.get = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ index.head = (args: { facilityId: string | number } | [facilityId: string | numb
         })
             /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::index
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
         indexForm.head = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

@@ -2,14 +2,29 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 use App\Http\Controllers\CommunityOutreachController;
 use App\Http\Controllers\Patients\CreateController as PatientCreate;
 use App\Http\Controllers\Consultancies\ConsultancyController;
 use App\Http\Controllers\Pathology\LaboratoryController;
+use App\Http\Controllers\ImageController;
 
+// ============================================
+// IMAGE ROUTE - Place this BEFORE any auth middleware
+// ============================================
+Route::get('/storage/{path}', [ImageController::class, 'show'])
+    ->where('path', '.*')
+    ->name('image.show');
+
+// ============================================
+// PUBLIC ROUTES
+// ============================================
 Route::inertia('/', 'welcome')->name('home');
 
+// ============================================
+// AUTHENTICATED ROUTES
+// ============================================
 Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
@@ -137,6 +152,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/orders', [LaboratoryController::class, 'viewLaboratoryOrders'])
             ->name('laboratory.orders');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consultations
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/consultations', function () {
+        return Inertia::render('consultations', [
+            'consultationEvents' => \App\Models\Consultation::all(),
+        ]);
+    })->name('consultations');
+});
+
+Route::get('manage-reports',function (){
+    Inertia::render('Reports/index.tsx');
 });
 
 require __DIR__.'/settings.php';

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::viewConsultancy
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
 export const viewConsultancy = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ viewConsultancy.definition = {
 
 /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::viewConsultancy
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
 viewConsultancy.url = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ viewConsultancy.url = (args: { facilityId: string | number } | [facilityId: stri
 
 /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::viewConsultancy
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
 viewConsultancy.get = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ viewConsultancy.get = (args: { facilityId: string | number } | [facilityId: stri
 })
 /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::viewConsultancy
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
 viewConsultancy.head = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ viewConsultancy.head = (args: { facilityId: string | number } | [facilityId: str
 
     /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::viewConsultancy
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
     const viewConsultancyForm = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ viewConsultancy.head = (args: { facilityId: string | number } | [facilityId: str
 
             /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::viewConsultancy
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
         viewConsultancyForm.get = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ viewConsultancy.head = (args: { facilityId: string | number } | [facilityId: str
         })
             /**
 * @see \App\Http\Controllers\Consultancies\ConsultancyController::viewConsultancy
- * @see app/Http/Controllers/Consultancies/ConsultancyController.php:17
+ * @see app/Http/Controllers/Consultancies/ConsultancyController.php:18
  * @route '/consultancy/{facilityId}'
  */
         viewConsultancyForm.head = (args: { facilityId: string | number } | [facilityId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

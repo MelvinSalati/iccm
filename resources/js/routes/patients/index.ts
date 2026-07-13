@@ -78,7 +78,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     index.form = indexForm
 /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:14
  * @route '/patients/search'
  */
 export const search = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -92,7 +92,7 @@ search.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:14
  * @route '/patients/search'
  */
 search.url = (options?: RouteQueryOptions) => {
@@ -100,7 +100,7 @@ search.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:14
  * @route '/patients/search'
  */
 search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -108,7 +108,7 @@ search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:14
  * @route '/patients/search'
  */
 search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -117,7 +117,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:14
  * @route '/patients/search'
  */
     const searchForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -126,7 +126,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:14
  * @route '/patients/search'
  */
         searchForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -134,7 +134,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:14
  * @route '/patients/search'
  */
         searchForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -149,7 +149,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     search.form = searchForm
 /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:17
  * @route '/patients/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -163,7 +163,7 @@ create.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:17
  * @route '/patients/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -171,7 +171,7 @@ create.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:17
  * @route '/patients/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -179,7 +179,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:17
  * @route '/patients/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -188,7 +188,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:17
  * @route '/patients/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -197,7 +197,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:17
  * @route '/patients/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -205,7 +205,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see [serialized-closure]:2
+ * @see routes/Patient.php:17
  * @route '/patients/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

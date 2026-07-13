@@ -1,4 +1,5 @@
 // resources/js/pages/pathology/laboratory-orders.jsx
+
 import AppLayout from '@/layouts/app-layout';
 import { usePage, router } from '@inertiajs/react';
 import Http from '@/utils/Http';
@@ -31,25 +32,52 @@ import {
     Clock,
     CheckCircle,
     XCircle,
-    AlertCircle
+    AlertCircle,
+    User,
+    Building,
+    Phone,
+    Calendar as CalendarIcon,
+    Activity,
+    UserCircle,
+    Stethoscope,
+    ClipboardList,
+    TrendingUp,
+    Users,
+    Filter,
+    Download,
+    Plus,
+    Edit,
+    Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
 import SampleQualityAssessmentModal from './components/modals/SampleQualityAssessmentModal';
 import ResultsEntryModal from './components/modals/ResultsEntryModal';
 
-// Dummy data for testing
+// Dummy data for testing (fallback when no data from server)
 const DUMMY_ORDERS = [
     {
         id: 1,
         laboratory_uuid: 'LAB-2024-001',
         patient_id: 101,
+        patient_name: 'Sarah Mwansa',
+        patient_first_name: 'Sarah',
+        patient_last_name: 'Mwansa',
+        patient_date_of_birth: '1990-05-15',
+        patient_gender: 'female',
+        patient_phone: '+260971234567',
         facility_id: 1,
+        facility_name: 'University Teaching Hospital',
         ordered_by: 5,
+        ordered_by_name: 'Dr. James Banda',
         results: null,
         status: 'pending',
         processed_by: null,
+        processed_by_name: null,
         comment: 'Routine blood work requested',
+        priority: 'routine',
+        test_count: 3,
+        test_names: 'CBC, Lipid Profile, FBS',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     },
@@ -57,12 +85,24 @@ const DUMMY_ORDERS = [
         id: 2,
         laboratory_uuid: 'LAB-2024-002',
         patient_id: 102,
+        patient_name: 'John Chanda',
+        patient_first_name: 'John',
+        patient_last_name: 'Chanda',
+        patient_date_of_birth: '1985-10-20',
+        patient_gender: 'male',
+        patient_phone: '+260972345678',
         facility_id: 2,
+        facility_name: 'Chipata Central Hospital',
         ordered_by: 3,
+        ordered_by_name: 'Dr. Mary Zulu',
         results: 'All values normal. No abnormalities detected.',
         status: 'completed',
         processed_by: 7,
+        processed_by_name: 'Dr. Peter Phiri',
         comment: 'Results reviewed and approved',
+        priority: 'routine',
+        test_count: 2,
+        test_names: 'HIV Test, Syphilis Test',
         created_at: new Date(Date.now() - 86400000).toISOString(),
         updated_at: new Date(Date.now() - 86400000).toISOString()
     },
@@ -70,122 +110,55 @@ const DUMMY_ORDERS = [
         id: 3,
         laboratory_uuid: 'LAB-2024-003',
         patient_id: 103,
+        patient_name: 'Grace Banda',
+        patient_first_name: 'Grace',
+        patient_last_name: 'Banda',
+        patient_date_of_birth: '1995-03-08',
+        patient_gender: 'female',
+        patient_phone: '+260973456789',
         facility_id: 1,
+        facility_name: 'University Teaching Hospital',
         ordered_by: 5,
+        ordered_by_name: 'Dr. James Banda',
         results: null,
         status: 'pending',
         processed_by: null,
+        processed_by_name: null,
         comment: 'Urgent: Troponin levels requested',
+        priority: 'urgent',
+        test_count: 1,
+        test_names: 'Troponin',
         created_at: new Date(Date.now() - 3600000).toISOString(),
         updated_at: new Date(Date.now() - 3600000).toISOString()
     },
     {
-        id: 4,
-        laboratory_uuid: 'LAB-2024-004',
+        id: 1001,
+        laboratory_uuid: 'LAB-2024-1001',
         patient_id: 104,
-        facility_id: 3,
-        ordered_by: 8,
-        results: 'Elevated cholesterol levels detected. Follow-up recommended.',
-        status: 'completed',
-        processed_by: 7,
-        comment: 'Results sent to referring physician',
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-        updated_at: new Date(Date.now() - 172800000).toISOString()
-    },
-    {
-        id: 5,
-        laboratory_uuid: 'LAB-2024-005',
-        patient_id: 105,
-        facility_id: 2,
-        ordered_by: 3,
-        results: null,
-        status: 'rejected',
-        processed_by: 9,
-        comment: 'Sample hemolyzed. New sample required.',
-        created_at: new Date(Date.now() - 259200000).toISOString(),
-        updated_at: new Date(Date.now() - 259200000).toISOString()
-    },
-    {
-        id: 6,
-        laboratory_uuid: 'LAB-2024-006',
-        patient_id: 106,
+        patient_name: 'Mary Banda',
+        patient_first_name: 'Mary',
+        patient_last_name: 'Banda',
+        patient_date_of_birth: '1987-04-12',
+        patient_gender: 'female',
+        patient_phone: '+260977700001',
         facility_id: 1,
-        ordered_by: 5,
-        results: 'CBC results within normal range. WBC: 7.2, RBC: 5.1',
-        status: 'completed',
-        processed_by: 10,
-        comment: 'Normal complete blood count',
-        created_at: new Date(Date.now() - 345600000).toISOString(),
-        updated_at: new Date(Date.now() - 345600000).toISOString()
-    },
-    {
-        id: 7,
-        laboratory_uuid: 'LAB-2024-007',
-        patient_id: 107,
-        facility_id: 3,
-        ordered_by: 8,
+        facility_name: 'University Teaching Hospital',
+        ordered_by: 6,
+        ordered_by_name: 'Dr. Musonda Chilufya',
         results: null,
         status: 'pending',
         processed_by: null,
-        comment: 'HIV screening test requested',
-        created_at: new Date(Date.now() - 7200000).toISOString(),
-        updated_at: new Date(Date.now() - 7200000).toISOString()
-    },
-    {
-        id: 8,
-        laboratory_uuid: 'LAB-2024-008',
-        patient_id: 108,
-        facility_id: 2,
-        ordered_by: 3,
-        results: 'Glucose: 95 mg/dL (normal)',
-        status: 'completed',
-        processed_by: 7,
-        comment: 'Fasting blood sugar completed',
-        created_at: new Date(Date.now() - 432000000).toISOString(),
-        updated_at: new Date(Date.now() - 432000000).toISOString()
-    },
-    {
-        id: 9,
-        laboratory_uuid: 'LAB-2024-009',
-        patient_id: 109,
-        facility_id: 1,
-        ordered_by: 5,
-        results: null,
-        status: 'rejected',
-        processed_by: 9,
-        comment: 'Insufficient sample volume. Please recollect.',
-        created_at: new Date(Date.now() - 518400000).toISOString(),
-        updated_at: new Date(Date.now() - 518400000).toISOString()
-    },
-    {
-        id: 10,
-        laboratory_uuid: 'LAB-2024-010',
-        patient_id: 110,
-        facility_id: 3,
-        ordered_by: 8,
-        results: 'Thyroid function test: TSH 3.2 mIU/L (normal)',
-        status: 'completed',
-        processed_by: 10,
-        comment: 'Thyroid panel completed',
-        created_at: new Date(Date.now() - 604800000).toISOString(),
-        updated_at: new Date(Date.now() - 604800000).toISOString()
-    },
-    {
-        id: 11,
-        laboratory_uuid: 'LAB-2024-011',
-        patient_id: 111,
-        facility_id: 2,
-        ordered_by: 3,
-        results: null,
-        status: 'pending',
-        processed_by: null,
-        comment: 'Urinalysis requested for UTI screening',
-        created_at: new Date(Date.now() - 1800000).toISOString(),
-        updated_at: new Date(Date.now() - 1800000).toISOString()
+        processed_by_name: null,
+        comment: 'Tissue biopsy for histopathological examination',
+        priority: 'urgent',
+        test_count: 1,
+        test_names: 'Histopathology',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
     }
 ];
 
-// Status Badge with Dot - Using Tailwind CSS badge styles
+// Status Badge with Dot
 const StatusBadge = ({ status }: { status: string }) => {
     const statusConfig = {
         pending: {
@@ -246,7 +219,124 @@ const StatusBadge = ({ status }: { status: string }) => {
     );
 };
 
-// Order Details Modal
+// Priority Badge
+const PriorityBadge = ({ priority }: { priority: string }) => {
+    const priorityConfig = {
+        routine: {
+            bg: 'bg-blue-50',
+            text: 'text-blue-700',
+            border: 'border-blue-200',
+            label: 'Routine'
+        },
+        urgent: {
+            bg: 'bg-orange-50',
+            text: 'text-orange-700',
+            border: 'border-orange-200',
+            label: 'Urgent'
+        },
+        stat: {
+            bg: 'bg-red-50',
+            text: 'text-red-700',
+            border: 'border-red-200',
+            label: 'STAT'
+        },
+    };
+
+    const config = priorityConfig[priority as keyof typeof priorityConfig] || priorityConfig.routine;
+
+    return (
+        <span className={cn(
+            'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
+            config.bg,
+            config.text,
+            config.border
+        )}>
+            {config.label}
+        </span>
+    );
+};
+
+// ============================================
+// UNIFORM MODAL COMPONENT
+// ============================================
+interface UniformModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    icon?: React.ReactNode;
+    children: React.ReactNode;
+    footer?: React.ReactNode;
+    size?: 'sm' | 'md' | 'lg' | 'xl';
+    maxHeight?: string;
+}
+
+const UniformModal: React.FC<UniformModalProps> = ({
+                                                       isOpen,
+                                                       onClose,
+                                                       title,
+                                                       icon,
+                                                       children,
+                                                       footer,
+                                                       size = 'lg',
+                                                       maxHeight = '90vh'
+                                                   }) => {
+    if (!isOpen) return null;
+
+    const sizeClasses = {
+        sm: 'max-w-md',
+        md: 'max-w-lg',
+        lg: 'max-w-3xl',
+        xl: 'max-w-4xl'
+    };
+
+    return (
+        <>
+            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className={cn(
+                    "bg-white rounded-xl shadow-2xl w-full max-h-[90vh] flex flex-col",
+                    sizeClasses[size]
+                )} style={{ maxHeight }}>
+                    {/* Header */}
+                    <div className="flex-shrink-0 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between bg-white rounded-t-xl">
+                        <div className="flex items-center gap-2.5">
+                            {icon && (
+                                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                    {icon}
+                                </div>
+                            )}
+                            <div>
+                                <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+                            </div>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                            <X className="h-4 w-4 text-slate-500" />
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto px-5 py-4">
+                        {children}
+                    </div>
+
+                    {/* Footer */}
+                    {footer && (
+                        <div className="flex-shrink-0 border-t border-slate-200 px-5 py-3 bg-slate-50/50 rounded-b-xl">
+                            {footer}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
+    );
+};
+
+// ============================================
+// ORDER DETAILS MODAL (UNIFORM)
+// ============================================
 const OrderDetailsModal = ({
                                order,
                                isOpen,
@@ -260,101 +350,17 @@ const OrderDetailsModal = ({
     onQualityAssessment: (order: any) => void;
     onResultsEntry: (order: any) => void;
 }) => {
-    if (!isOpen || !order) return null;
+    if (!order) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                    <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                        <FlaskConical className="h-5 w-5 text-blue-600" />
-                        Order Details
-                    </h3>
-                    <button
-                        onClick={onClose}
-                        className="p-1 rounded-md hover:bg-slate-100 transition-colors"
-                    >
-                        <X className="h-5 w-5 text-slate-500" />
-                    </button>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Order ID</p>
-                            <p className="text-sm font-medium text-slate-900 mt-1">#{order.id}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Status</p>
-                            <div className="mt-1">
-                                <StatusBadge status={order.status} />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p className="text-xs font-medium text-slate-500">Patient</p>
-                        <div className="flex items-center gap-2 mt-1">
-                            <Avatar className="h-8 w-8">
-                                <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
-                                    P{order.patient_id}
-                                </AvatarFallback>
-                            </Avatar>
-                            <p className="text-sm font-medium text-slate-900">Patient #{order.patient_id}</p>
-                        </div>
-                    </div>
-
-                    {order.laboratory_uuid && (
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Order Number</p>
-                            <p className="text-sm text-slate-900 mt-1 font-mono text-xs">{order.laboratory_uuid}</p>
-                        </div>
-                    )}
-
-                    {order.ordered_by && (
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Ordered By</p>
-                            <p className="text-sm text-slate-900 mt-1">User #{order.ordered_by}</p>
-                        </div>
-                    )}
-
-                    {order.facility_id && (
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Facility</p>
-                            <p className="text-sm text-slate-900 mt-1">Facility #{order.facility_id}</p>
-                        </div>
-                    )}
-
-                    {order.results && (
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Results</p>
-                            <p className="text-sm text-slate-700 mt-1 bg-slate-50 p-2 rounded-md border border-slate-200">
-                                {order.results}
-                            </p>
-                        </div>
-                    )}
-
-                    {order.comment && (
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Comment</p>
-                            <p className="text-sm text-slate-700 mt-1 bg-slate-50 p-2 rounded-md border border-slate-200">
-                                {order.comment}
-                            </p>
-                        </div>
-                    )}
-
-                    <div>
-                        <p className="text-xs font-medium text-slate-500">Created</p>
-                        <p className="text-sm text-slate-900 mt-1">
-                            {order.created_at ? format(parseISO(order.created_at), 'PPP p') : '—'}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex flex-col sm:flex-row gap-2 p-4 border-t border-slate-200 bg-slate-50">
+        <UniformModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Order Details"
+            icon={<FlaskConical className="h-4 w-4" />}
+            size="lg"
+            footer={
+                <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                         variant="outline"
                         size="sm"
@@ -364,7 +370,7 @@ const OrderDetailsModal = ({
                         Close
                     </Button>
                     {order.status !== 'completed' && order.status !== 'rejected' && (
-                        <>
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -375,7 +381,7 @@ const OrderDetailsModal = ({
                                 }}
                             >
                                 <FileText className="h-3.5 w-3.5 mr-1.5" />
-                                Quality
+                                Quality Assessment
                             </Button>
                             <Button
                                 size="sm"
@@ -386,18 +392,140 @@ const OrderDetailsModal = ({
                                 }}
                             >
                                 <FlaskConical className="h-3.5 w-3.5 mr-1.5" />
-                                Results
+                                Enter Results
                             </Button>
-                        </>
+                        </div>
                     )}
                 </div>
+            }
+        >
+            <div className="space-y-4">
+                {/* Order Info Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Order ID</p>
+                        <p className="text-sm font-semibold text-slate-900 mt-0.5">#{order.id}</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Status</p>
+                        <div className="mt-0.5">
+                            <StatusBadge status={order.status} />
+                        </div>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Priority</p>
+                        <div className="mt-0.5">
+                            <PriorityBadge priority={order.priority || 'routine'} />
+                        </div>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Order Number</p>
+                        <p className="text-sm font-mono text-slate-900 mt-0.5">{order.laboratory_uuid || '—'}</p>
+                    </div>
+                </div>
+
+                {/* Patient Info */}
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <h4 className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5" />
+                        Patient Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2">
+                            <p className="text-[10px] text-blue-600">Name</p>
+                            <p className="text-sm font-medium text-slate-900">{order.patient_name || 'Unknown'}</p>
+                        </div>
+                        {order.patient_date_of_birth && (
+                            <div>
+                                <p className="text-[10px] text-blue-600">Date of Birth</p>
+                                <p className="text-sm text-slate-900">
+                                    {format(parseISO(order.patient_date_of_birth), 'MMM d, yyyy')}
+                                </p>
+                            </div>
+                        )}
+                        {order.patient_gender && (
+                            <div>
+                                <p className="text-[10px] text-blue-600">Gender</p>
+                                <p className="text-sm text-slate-900 capitalize">{order.patient_gender}</p>
+                            </div>
+                        )}
+                        {order.patient_phone && (
+                            <div className="col-span-2">
+                                <p className="text-[10px] text-blue-600">Phone</p>
+                                <p className="text-sm text-slate-900">{order.patient_phone}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Facility & Staff */}
+                <div className="grid grid-cols-2 gap-2">
+                    {order.facility_name && (
+                        <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Facility</p>
+                            <p className="text-sm text-slate-900 mt-0.5 flex items-center gap-1">
+                                <Building className="h-3.5 w-3.5 text-slate-400" />
+                                {order.facility_name}
+                            </p>
+                        </div>
+                    )}
+                    {order.ordered_by_name && (
+                        <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Ordered By</p>
+                            <p className="text-sm text-slate-900 mt-0.5">{order.ordered_by_name}</p>
+                        </div>
+                    )}
+                    {order.processed_by_name && (
+                        <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Processed By</p>
+                            <p className="text-sm text-slate-900 mt-0.5">{order.processed_by_name}</p>
+                        </div>
+                    )}
+                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Created</p>
+                        <p className="text-sm text-slate-900 mt-0.5">
+                            {order.created_at ? format(parseISO(order.created_at), 'MMM d, yyyy h:mm a') : '—'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Tests */}
+                {order.test_names && (
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
+                            Tests ({order.test_count || 0})
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {order.test_names.split(',').map((test: string, index: number) => (
+                                <span key={index} className="inline-flex items-center px-2.5 py-1 rounded text-xs bg-blue-50 text-blue-700 border border-blue-200">
+                                    {test.trim()}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Results */}
+                {order.results && (
+                    <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                        <p className="text-[10px] font-medium text-green-700 uppercase tracking-wider">Results</p>
+                        <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">{order.results}</p>
+                    </div>
+                )}
+
+                {/* Comment */}
+                {order.comment && (
+                    <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                        <p className="text-[10px] font-medium text-amber-700 uppercase tracking-wider">Comment</p>
+                        <p className="text-sm text-slate-700 mt-1">{order.comment}</p>
+                    </div>
+                )}
             </div>
-        </div>
+        </UniformModal>
     );
 };
 
 export default function LabOrders() {
-    // Use dummy data if no orders provided
     const { orders: initialOrders, auth } = usePage().props;
     const [orders, setOrders] = useState(initialOrders?.length ? initialOrders : DUMMY_ORDERS);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -452,9 +580,9 @@ export default function LabOrders() {
         if (searchTerm.trim()) {
             const term = searchTerm.toLowerCase().trim();
             filtered = filtered.filter(order =>
-                order.id.toString().includes(term) ||
+                order.id?.toString().includes(term) ||
                 (order.laboratory_uuid || '').toLowerCase().includes(term) ||
-                order.patient_id.toString().includes(term)
+                (order.patient_name || '').toLowerCase().includes(term)
             );
         }
 
@@ -579,7 +707,7 @@ export default function LabOrders() {
                 </span>
             </div>
 
-            {/* Filter Buttons - Compact */}
+            {/* Filter Buttons */}
             <div className="flex flex-wrap gap-1.5">
                 <Button
                     variant={filterPeriod === 'today' ? 'default' : 'outline'}
@@ -619,7 +747,7 @@ export default function LabOrders() {
                 </Button>
             </div>
 
-            {/* Status Filter Buttons - Compact */}
+            {/* Status Filter Buttons */}
             <div className="flex flex-wrap gap-1.5">
                 <Button
                     variant={statusFilter === 'all' ? 'default' : 'outline'}
@@ -670,7 +798,7 @@ export default function LabOrders() {
             {/* Search */}
             <div className="relative w-full sm:w-56">
                 <Input
-                    placeholder="Search orders..."
+                    placeholder="Search by patient or order..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-8 h-7 text-xs"
@@ -695,16 +823,17 @@ export default function LabOrders() {
                             <TableRow className="bg-slate-50">
                                 <TableHead className="w-[80px] text-xs font-medium">Order</TableHead>
                                 <TableHead className="w-[130px] text-xs font-medium">Order #</TableHead>
-                                <TableHead className="w-[90px] text-xs font-medium">Patient</TableHead>
+                                <TableHead className="w-[200px] text-xs font-medium">Patient</TableHead>
+                                <TableHead className="w-[100px] text-xs font-medium">Priority</TableHead>
                                 <TableHead className="w-[110px] text-xs font-medium">Created</TableHead>
-                                <TableHead className="text-right w-[140px] text-xs font-medium">Status</TableHead>
+                                <TableHead className="text-center w-[140px] text-xs font-medium">Status</TableHead>
                                 <TableHead className="w-[100px] text-right text-xs font-medium">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {paginatedOrders.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-6 text-slate-500">
+                                    <TableCell colSpan={7} className="text-center py-6 text-slate-500">
                                         <div className="flex flex-col items-center gap-1">
                                             <FlaskConical className="h-6 w-6 text-slate-300" />
                                             <p className="text-sm">No orders found</p>
@@ -725,15 +854,18 @@ export default function LabOrders() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6">
+                                                <Avatar className="h-7 w-7">
                                                     <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px] font-medium">
-                                                        P{order.patient_id}
+                                                        {order.patient_name ? order.patient_name.charAt(0).toUpperCase() : 'P'}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <span className="text-xs text-slate-700">
-                                                    #{order.patient_id}
+                                                <span className="text-sm font-medium text-slate-900">
+                                                    {order.patient_name || 'Unknown'}
                                                 </span>
                                             </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <PriorityBadge priority={order.priority || 'routine'} />
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col">
@@ -745,7 +877,7 @@ export default function LabOrders() {
                                                 </span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-center">
                                             <StatusBadge status={order.status} />
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -796,7 +928,7 @@ export default function LabOrders() {
                     </Table>
                 </div>
 
-                {/* Pagination - Compact */}
+                {/* Pagination */}
                 {totalPages > 1 && (
                     <div className="flex items-center justify-between px-3 py-2 border-t bg-slate-50">
                         <div className="text-xs text-slate-500">
@@ -841,11 +973,10 @@ export default function LabOrders() {
                                 <>
                                     {currentPage > 3 && (
                                         <>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handlePageChange(1)}
-                                                className="h-6 w-6 p-0 text-xs"
+                                            <Button                                                variant="outline"
+                                                                                                   size="sm"
+                                                                                                   onClick={() => handlePageChange(1)}
+                                                                                                   className="h-6 w-6 p-0 text-xs"
                                             >
                                                 1
                                             </Button>

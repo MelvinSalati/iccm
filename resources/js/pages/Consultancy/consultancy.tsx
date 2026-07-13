@@ -34,7 +34,8 @@ import {
     Phone,
     Mail,
     FileText,
-    Activity
+    Activity,
+    ImageOff
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePage } from '@inertiajs/react';
@@ -64,6 +65,199 @@ interface ConsultationEvent {
 }
 
 // ============================================
+// IMAGE URL HELPER
+// ============================================
+const getImageUrl = (url: string | null): string | null => {
+    if (!url) return null;
+
+    // If it's already a full URL (starts with http)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+
+    // If it already starts with /storage/
+    if (url.startsWith('/storage/')) {
+        return url;
+    }
+
+    // If it starts with storage/ (no leading slash)
+    if (url.startsWith('storage/')) {
+        return '/' + url;
+    }
+
+    // For any other path, assume it's a storage path
+    return '/storage/' + url;
+};
+
+// ============================================
+// THUMBNAIL IMAGE COMPONENT
+// ============================================
+function ThumbnailImage({ imageUrl, onView }: { imageUrl: string | null; onView: () => void }) {
+    const [error, setError] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const fixedUrl = getImageUrl(imageUrl);
+
+    if (!imageUrl || !fixedUrl) {
+        return (
+            <div className="flex items-center gap-1.5 text-gray-400">
+                <ImageOff className="h-4 w-4" />
+                <span className="text-sm">No image</span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center gap-1.5 text-red-400">
+                <ImageOff className="h-4 w-4" />
+                <span className="text-sm">Broken</span>
+            </div>
+        );
+    }
+
+    return (
+        <button
+            onClick={onView}
+            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 transition-colors group"
+        >
+            <div className="relative">
+                {loading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500" />
+                    </div>
+                )}
+                <img
+                    src={fixedUrl}
+                    alt="Cervical image"
+                    className={`h-8 w-8 object-cover rounded border border-gray-200 group-hover:border-blue-400 transition-colors ${
+                        loading ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    onLoad={() => setLoading(false)}
+                    onError={() => {
+                        setError(true);
+                        setLoading(false);
+                    }}
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded" />
+            </div>
+            <span className="text-sm">View</span>
+        </button>
+    );
+}
+
+// ============================================
+// CONSULTATION IMAGE COMPONENT
+// ============================================
+function ConsultationImage({
+                               imageUrl,
+                               patientName,
+                               onView
+                           }: {
+    imageUrl: string | null;
+    patientName: string;
+    onView: () => void;
+}) {
+    const [error, setError] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [errorDetails, setErrorDetails] = useState<string>('');
+    const [retryCount, setRetryCount] = useState(0);
+
+    const fixedUrl = getImageUrl(imageUrl);
+
+    if (!imageUrl || !fixedUrl) {
+        return (
+            <div className="flex items-center justify-center h-24 bg-gray-100 rounded border-2 border-dashed border-gray-300">
+                <div className="text-center">
+                    <ImageOff className="h-6 w-6 text-gray-300 mx-auto mb-1" />
+                    <p className="text-sm text-gray-400">No image</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-24 bg-red-50 rounded border border-red-200 p-2">
+                <ImageOff className="h-6 w-6 text-red-400 mb-1" />
+                <p className="text-xs text-red-500 text-center">Image failed to load</p>
+                <p className="text-[10px] text-gray-400 mt-1 truncate max-w-full">
+                    {fixedUrl}
+                </p>
+                {errorDetails && (
+                    <p className="text-[10px] text-red-400 mt-1">{errorDetails}</p>
+                )}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setError(false);
+                        setLoading(true);
+                        setRetryCount(prev => prev + 1);
+                        const img = document.querySelector('img.consultation-image') as HTMLImageElement;
+                        if (img) {
+                            img.src = fixedUrl + '?t=' + Date.now();
+                        }
+                    }}
+                    className="mt-1 text-xs text-blue-500 hover:text-blue-700 underline"
+                >
+                    Retry ({retryCount})
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative group rounded border border-gray-200 bg-white overflow-hidden">
+            {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
+                </div>
+            )}
+            <img
+                src={fixedUrl}
+                alt={`Cervical cancer image for ${patientName}`}
+                className={`consultation-image w-full h-auto max-h-[220px] object-contain cursor-pointer transition-opacity duration-300 ${
+                    loading ? 'opacity-0' : 'opacity-100'
+                }`}
+                onClick={onView}
+                onLoad={() => {
+                    setLoading(false);
+                    setError(false);
+                    setErrorDetails('');
+                }}
+                onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (fixedUrl && fixedUrl.length < 50) {
+                        setErrorDetails('URL appears truncated');
+                    } else if (fixedUrl && !fixedUrl.includes('/storage/')) {
+                        setErrorDetails('Missing /storage/ prefix');
+                    } else {
+                        setErrorDetails('File may not exist or is corrupted');
+                    }
+                    setError(true);
+                    setLoading(false);
+                }}
+            />
+            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button
+                    type="button"
+                    onClick={onView}
+                    className="px-3 py-1.5 bg-white text-gray-900 text-sm font-medium rounded hover:bg-gray-100 flex items-center gap-2"
+                >
+                    <Eye className="h-4 w-4" />
+                    View Full
+                </button>
+            </div>
+            {!loading && !error && (
+                <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
+                    Click to view
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ============================================
 // IMAGE VIEWER COMPONENT
 // ============================================
 function ImageViewer({ imageUrl, onClose }: { imageUrl: string; onClose: () => void }) {
@@ -79,10 +273,13 @@ function ImageViewer({ imageUrl, onClose }: { imageUrl: string; onClose: () => v
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isMagnifierActive, setIsMagnifierActive] = useState(false);
     const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0 });
+    const [imageError, setImageError] = useState(false);
 
     const MIN_SCALE = 0.5;
     const MAX_SCALE = 5;
     const ZOOM_STEP = 0.1;
+
+    const fixedUrl = getImageUrl(imageUrl);
 
     const handleZoomIn = () => {
         setScale(prev => Math.min(prev + ZOOM_STEP, MAX_SCALE));
@@ -186,6 +383,27 @@ function ImageViewer({ imageUrl, onClose }: { imageUrl: string; onClose: () => v
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
+
+    if (!fixedUrl || imageError) {
+        return (
+            <>
+                <div className="fixed inset-0 bg-black/80 z-[60]" onClick={onClose} />
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl p-8 text-center">
+                        <ImageOff className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-white mb-2">Image Not Available</h3>
+                        <p className="text-gray-400 mb-4">The image could not be loaded or does not exist.</p>
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
@@ -311,7 +529,7 @@ function ImageViewer({ imageUrl, onClose }: { imageUrl: string; onClose: () => v
                         >
                             <img
                                 ref={imageRef}
-                                src={imageUrl}
+                                src={fixedUrl}
                                 alt="Cervical cancer image"
                                 className="select-none"
                                 style={{
@@ -322,6 +540,7 @@ function ImageViewer({ imageUrl, onClose }: { imageUrl: string; onClose: () => v
                                     objectFit: 'contain'
                                 }}
                                 draggable={false}
+                                onError={() => setImageError(true)}
                             />
                         </div>
 
@@ -337,7 +556,7 @@ function ImageViewer({ imageUrl, onClose }: { imageUrl: string; onClose: () => v
                                 <div
                                     className="w-full h-full"
                                     style={{
-                                        backgroundImage: `url(${imageUrl})`,
+                                        backgroundImage: `url(${fixedUrl})`,
                                         backgroundPosition: `${magnifierPos.x}% ${magnifierPos.y}%`,
                                         backgroundSize: `${scale * 400}%`,
                                         backgroundRepeat: 'no-repeat',
@@ -359,7 +578,7 @@ function ImageViewer({ imageUrl, onClose }: { imageUrl: string; onClose: () => v
 }
 
 // ============================================
-// VIEW/EDIT MODAL COMPONENT
+// CONSULTATION MODAL COMPONENT
 // ============================================
 function ConsultationModal({
                                consultation,
@@ -437,33 +656,11 @@ function ConsultationModal({
                                             </span>
                                         )}
                                     </div>
-                                    {consultation.cervical_cancer_image_url ? (
-                                        <div className="relative group rounded border border-gray-200 bg-white overflow-hidden">
-                                            <img
-                                                src={consultation.cervical_cancer_image_url}
-                                                alt="Cervical cancer image"
-                                                className="w-full h-auto max-h-[220px] object-contain cursor-pointer"
-                                                onClick={() => setShowImageViewer(true)}
-                                            />
-                                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowImageViewer(true)}
-                                                    className="px-3 py-1.5 bg-white text-gray-900 text-sm font-medium rounded hover:bg-gray-100 flex items-center gap-2"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                    View Full
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-center h-24 bg-white rounded border-2 border-dashed border-gray-300">
-                                            <div className="text-center">
-                                                <Paperclip className="h-6 w-6 text-gray-300 mx-auto mb-1" />
-                                                <p className="text-sm text-gray-400">No image attached</p>
-                                            </div>
-                                        </div>
-                                    )}
+                                    <ConsultationImage
+                                        imageUrl={consultation.cervical_cancer_image_url}
+                                        patientName={consultation.patient_name}
+                                        onView={() => setShowImageViewer(true)}
+                                    />
                                 </div>
 
                                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
@@ -651,8 +848,6 @@ export default function Consultations() {
     const itemsPerPage = 10;
     const { consultationEvents = [] } = usePage().props;
 
-    console.log('Consultation Events:', consultationEvents);
-
     const filteredData = useMemo(() => {
         if (!consultationEvents || !Array.isArray(consultationEvents)) return [];
 
@@ -831,14 +1026,10 @@ export default function Consultations() {
                                             </span>
                                         </td>
                                         <td className="px-3 py-2.5">
-                                            {consultation.cervical_cancer_image_url ? (
-                                                <div className="flex items-center gap-1.5 text-blue-600" title="Has attachment">
-                                                    <Paperclip className="h-4 w-4" />
-                                                    <span className="text-sm">Yes</span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm text-gray-400">No</span>
-                                            )}
+                                            <ThumbnailImage
+                                                imageUrl={consultation.cervical_cancer_image_url}
+                                                onView={() => handleView(consultation)}
+                                            />
                                         </td>
                                         <td className="px-3 py-2.5">
                                             {consultation.sms_to_dr ? (

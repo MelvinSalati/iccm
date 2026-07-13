@@ -1,876 +1,725 @@
-// resources/js/pages/community-outreach/index.tsx
+// resources/js/pages/dashboard/index.tsx
 
-import { useState, useEffect } from 'react';
-import { Head } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
+import { format, subDays } from 'date-fns';
 import {
-    Plus,
-    Edit,
-    Trash2,
-    X,
-    MapPin,
+    RefreshCw,
+    TrendingUp,
+    TrendingDown,
+    Minus,
     Users,
-    Activity,
-    ArrowRight,
-    Loader2,
-    User,
-    UserCircle,
-    Calendar,
-    Search,
-    Filter,
     Eye,
-    Building2,
-    Stethoscope,
-    CheckSquare,
-    UserPlus,
-    UsersRound
+    Microscope,
+    CheckCircle,
+    ArrowRightLeft,
+    Skull,
+    Activity,
 } from 'lucide-react';
-import { format } from 'date-fns';
-import AppLayout from '@/layouts/app-layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { dashboard } from '@/routes';
-import Http from '@/utils/Http';
-import Notiflix from 'notiflix';
 
-// ============================================
-// TYPES
-// ============================================
-export interface CommunityOutreachRecord {
-    id: number;
-    outreach_date: string;
-    community_name: string;
-    chw_name: string;
-    outreach_type: string;
-    facility: string;
-    services: string[];
-    women_reached: number;
-    men_reached: number;
-    total_beneficiaries: number;
-    awareness_session_conducted: boolean;
-    referred_for_screening: boolean;
-    referral_required: boolean;
-    referred_facility?: string;
-    referral_date?: string;
-    referral_outcome?: string;
-    referral_status: 'pending' | 'completed' | 'not_required';
-    male_engagement: number; // New field
-    created_at: string;
-    updated_at: string;
+// ============================================================================
+// Types - Match the data structure from the controller
+// ============================================================================
+
+interface KPI {
+    id: string;
+    title: string;
+    value: number | string;
+    icon: string;
+    trend: number;
+    trendDirection: 'up' | 'down' | 'neutral';
+    color: string;
+    sparklineData: number[];
+    comparison: string;
+    formattedValue?: string;
 }
 
-// Service options
-const SERVICE_OPTIONS = [
-    'Cervical Cancer Education',
-    'HPV Vaccination',
-    'Blood Pressure Screening',
-    'Blood Sugar Screening',
-    'Mental Health Awareness'
-];
+interface TrendData {
+    date: string;
+    day: string;
+    screened: number;
+    viaPositive: number;
+    hpvPositive: number;
+    treated: number;
+    followUpCompleted: number;
+}
 
-// ============================================
-// MAIN COMPONENT
-// ============================================
-export default function CommunityOutreach({ records: initialRecords = [] }: { records?: CommunityOutreachRecord[] }) {
-    const [records, setRecords] = useState<CommunityOutreachRecord[]>(initialRecords);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingRecord, setEditingRecord] = useState<CommunityOutreachRecord | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<string>('all');
+interface ChartData {
+    name: string;
+    value: number;
+    percentage?: number;
+    color?: string;
+}
 
-    // ============================================
-    // INDIVIDUAL USESTATE FOR EACH INPUT
-    // ============================================
-
-    // Outreach Details
-    const [outreachDate, setOutreachDate] = useState('');
-    const [communityName, setCommunityName] = useState('');
-    const [chwName, setChwName] = useState('');
-    const [outreachType, setOutreachType] = useState('');
-    const [facility, setFacility] = useState('');
-
-    // Services Provided (checkbox array)
-    const [selectedServices, setSelectedServices] = useState<string[]>([]);
-
-    // Outputs
-    const [referredForScreening, setReferredForScreening] = useState('');
-    const [awarenessSessionConducted, setAwarenessSessionConducted] = useState('');
-
-    // Number of People Reached
-    const [womenReached, setWomenReached] = useState<number>(0);
-    const [menReached, setMenReached] = useState<number>(0);
-    const [maleEngagement, setMaleEngagement] = useState<number>(0); // NEW FIELD
-
-    // Referral Information
-    const [referralRequired, setReferralRequired] = useState('');
-    const [referredFacility, setReferredFacility] = useState('');
-    const [referralDate, setReferralDate] = useState('');
-    const [referralOutcome, setReferralOutcome] = useState('');
-
-    // ============================================
-    // FORM VALIDATION
-    // ============================================
-    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-    const validateForm = () => {
-        const errors: Record<string, string> = {};
-
-        if (!outreachDate) errors.outreachDate = 'Outreach Date is required';
-        if (!communityName.trim()) errors.communityName = 'Community Name is required';
-        if (!chwName.trim()) errors.chwName = 'CHW Name is required';
-        if (!outreachType) errors.outreachType = 'Outreach Type is required';
-        if (!facility) errors.facility = 'Facility is required';
-        if (selectedServices.length === 0) errors.selectedServices = 'Select at least one service';
-
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
+interface DashboardData {
+    kpis?: KPI[];
+    weeklyTrends?: TrendData[];
+    hivDisaggregation?: ChartData[];
+    disabilityDisaggregation?: ChartData[];
+    ageGroups?: ChartData[];
+    metadata?: {
+        lastSync: string;
+        dataSource: string;
+        reportingPeriod: string;
+        activeFacilities: number;
+        activeDistricts: number;
+        totalRecords: number;
     };
-
-    // ============================================
-    // RESET FORM
-    // ============================================
-    const resetForm = () => {
-        setOutreachDate('');
-        setCommunityName('');
-        setChwName('');
-        setOutreachType('');
-        setFacility('');
-        setSelectedServices([]);
-        setReferredForScreening('');
-        setAwarenessSessionConducted('');
-        setWomenReached(0);
-        setMenReached(0);
-        setMaleEngagement(0); // Reset new field
-        setReferralRequired('');
-        setReferredFacility('');
-        setReferralDate('');
-        setReferralOutcome('');
-        setFormErrors({});
-        setEditingRecord(null);
+    aggregates?: {
+        total_screened: number;
+        hpv_positive: number;
+        via_positive: number;
+        via_negative: number;
+        hpv_negative: number;
+        treatment: number;
+        referral: number;
+        hiv_positive: number;
+        hiv_negative: number;
+        disability: number;
+        mortality: number;
     };
+}
 
-    // ============================================
-    // FETCH RECORDS
-    // ============================================
-    const fetchRecords = async () => {
-        try {
-            const response = await Http.get('/community-outreach');
-            console.log('📊 GET /community-outreach - Response:', response.data);
-            if (response.data?.data) {
-                setRecords(response.data.data);
-            } else if (response.data?.length !== undefined) {
-                setRecords(response.data);
-            }
-        } catch (error) {
-            console.error('❌ Error fetching records:', error);
-        }
+interface SharedData {
+    users?: any[];
+    dashboard?: DashboardData;
+}
+
+interface PageProps {
+    auth?: {
+        user?: any;
     };
+    sharedData?: SharedData;
+    errors?: Record<string, any>;
+    name?: string;
+    sidebarOpen?: boolean;
+}
 
-    // ============================================
-    // HANDLE EDIT
-    // ============================================
-    const handleEdit = (record: CommunityOutreachRecord) => {
-        setEditingRecord(record);
-        setOutreachDate(record.outreach_date || '');
-        setCommunityName(record.community_name || '');
-        setChwName(record.chw_name || '');
-        setOutreachType(record.outreach_type || '');
-        setFacility(record.facility || '');
-        setSelectedServices(record.services || []);
-        setReferredForScreening(record.referred_for_screening ? 'yes' : 'no');
-        setAwarenessSessionConducted(record.awareness_session_conducted ? 'yes' : 'no');
-        setWomenReached(record.women_reached || 0);
-        setMenReached(record.men_reached || 0);
-        setMaleEngagement(record.male_engagement || 0); // Edit new field
-        setReferralRequired(record.referral_required ? 'yes' : 'no');
-        setReferredFacility(record.referred_facility || '');
-        setReferralDate(record.referral_date || '');
-        setReferralOutcome(record.referral_outcome || '');
-        setIsModalOpen(true);
+// ============================================================================
+// Default Data (Fallback when no data from controller)
+// ============================================================================
+
+const today = new Date();
+const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = subDays(today, 6 - i);
+    return {
+        date: format(date, 'yyyy-MM-dd'),
+        day: format(date, 'EEE'),
+        screened: Math.floor(Math.random() * 100) + 50,
+        viaPositive: Math.floor(Math.random() * 30) + 10,
+        hpvPositive: Math.floor(Math.random() * 40) + 15,
+        treated: Math.floor(Math.random() * 35) + 10,
+        followUpCompleted: Math.floor(Math.random() * 30) + 8
     };
+});
 
-    // ============================================
-    // HANDLE DELETE
-    // ============================================
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this record?')) return;
+// ============================================================================
+// Icon Mapping - Convert string icon names to React components
+// ============================================================================
 
-        try {
-            console.log('🗑️ DELETE /community-outreach/' + id);
-            await Http.delete(`/community-outreach/${id}`);
-            Notiflix.Notify.success('Record deleted successfully');
-            setRecords(prev => prev.filter(r => r.id !== id));
-        } catch (error) {
-            console.error('Error deleting record:', error);
-            Notiflix.Notify.failure('Failed to delete record');
-        }
+const getIcon = (iconName: string, className: string = "h-4 w-4") => {
+    const icons: Record<string, React.ReactNode> = {
+        'users': <Users className={className} />,
+        'microscope': <Microscope className={className} />,
+        'eye': <Eye className={className} />,
+        'check-circle': <CheckCircle className={className} />,
+        'arrow-right-left': <ArrowRightLeft className={className} />,
+        'skull': <Skull className={className} />,
+        'activity': <Activity className={className} />,
     };
+    return icons[iconName] || <Users className={className} />;
+};
 
-    // ============================================
-    // TOGGLE SERVICE SELECTION
-    // ============================================
-    const toggleService = (service: string) => {
-        setSelectedServices(prev =>
-            prev.includes(service)
-                ? prev.filter(s => s !== service)
-                : [...prev, service]
+// ============================================================================
+// Chart Components (Compact)
+// ============================================================================
+
+// Bar Chart Component
+const BarChart: React.FC<{
+    data: TrendData[];
+    height?: number;
+}> = ({ data, height = 120 }) => {
+    const maxValue = Math.max(...data.map(d => d.screened), 1);
+
+    return (
+        <div className="w-full" style={{ height: `${height}px` }}>
+            <div className="flex h-full items-end gap-1.5">
+                {data.map((item, index) => {
+                    const heightPercent = (item.screened / maxValue) * 100;
+                    return (
+                        <div key={index} className="flex flex-1 flex-col items-center gap-1">
+                            <div className="relative w-full group">
+                                <div
+                                    className="w-full rounded-t transition-all duration-300 hover:opacity-80"
+                                    style={{
+                                        height: `${Math.max(4, heightPercent)}%`,
+                                        backgroundColor: '#2563EB',
+                                        minHeight: '4px'
+                                    }}
+                                />
+                            </div>
+                            <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400">
+                                {item.day}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+// Area Chart Component (Sparkline)
+const AreaChart: React.FC<{
+    data: number[];
+    color?: string;
+    height?: number;
+}> = ({ data, color = '#2563EB', height = 35 }) => {
+    if (!data || data.length === 0 || data.every(v => v === 0)) {
+        return (
+            <div className="relative" style={{ height: `${height}px` }}>
+                <div className="h-full w-full bg-slate-100 dark:bg-slate-700 rounded"></div>
+            </div>
         );
+    }
+
+    const max = Math.max(...data, 1);
+    const points = data.map((value, index) => ({
+        x: (index / (data.length - 1)) * 100,
+        y: 100 - (value / max) * 100
+    }));
+
+    const pathD = points.reduce((acc, point, i) => {
+        if (i === 0) return `M ${point.x} ${point.y}`;
+        return `${acc} L ${point.x} ${point.y}`;
+    }, '');
+
+    const areaD = points.reduce((acc, point, i) => {
+        if (i === 0) return `M ${point.x} 100 L ${point.x} ${point.y}`;
+        return `${acc} L ${point.x} ${point.y}`;
+    }, '') + ` L 100 100 Z`;
+
+    return (
+        <div className="relative" style={{ height: `${height}px` }}>
+            <svg className="h-full w-full overflow-visible">
+                <defs>
+                    <linearGradient id={`area-gradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+                        <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+                    </linearGradient>
+                </defs>
+                <path
+                    d={areaD}
+                    fill={`url(#area-gradient-${color.replace('#', '')})`}
+                    className="transition-all"
+                />
+                <path
+                    d={pathD}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={1.5}
+                    className="transition-all"
+                />
+                {points.map((point, i) => (
+                    <circle
+                        key={i}
+                        cx={`${point.x}%`}
+                        cy={`${point.y}%`}
+                        r="2"
+                        fill={color}
+                        className="transition-all"
+                    />
+                ))}
+            </svg>
+        </div>
+    );
+};
+
+// Horizontal Bar Chart for Age Groups
+const HorizontalBarChart: React.FC<{
+    data: ChartData[];
+    height?: number;
+}> = ({ data, height = 150 }) => {
+    if (!data || data.length === 0) {
+        return (
+            <div className="w-full" style={{ height: `${height}px` }}>
+                <div className="flex items-center justify-center h-full text-slate-400 text-xs">
+                    No age group data available
+                </div>
+            </div>
+        );
+    }
+
+    const maxValue = Math.max(...data.map(d => d.value), 1);
+
+    return (
+        <div className="w-full" style={{ height: `${height}px` }}>
+            <div className="space-y-1.5">
+                {data.map((item, index) => {
+                    const widthPercent = (item.value / maxValue) * 100;
+                    return (
+                        <div key={index} className="flex items-center gap-2">
+                            <div className="w-10 text-right">
+                                <span className="text-[8px] font-medium text-slate-500 dark:text-slate-400">
+                                    {item.name}
+                                </span>
+                            </div>
+                            <div className="flex-1">
+                                <div className="relative h-4 w-full rounded bg-slate-100 dark:bg-slate-700">
+                                    <div
+                                        className="absolute left-0 top-0 h-full rounded transition-all duration-500"
+                                        style={{
+                                            width: `${Math.max(2, widthPercent)}%`,
+                                            backgroundColor: item.color || '#94A3B8',
+                                        }}
+                                    >
+                                        <span className="absolute right-1 top-0.5 text-[7px] text-white font-medium">
+                                            {item.value}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="w-8 text-right">
+                                <span className="text-[7px] text-slate-400">
+                                    {((item.value / maxValue) * 100).toFixed(0)}%
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+// Donut/Pie Chart Component (Compact)
+const DonutChart: React.FC<{
+    data: ChartData[];
+    size?: number;
+}> = ({ data, size = 100 }) => {
+    if (!data || data.length === 0) {
+        return (
+            <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+                <span className="text-xs text-slate-400">No data</span>
+            </div>
+        );
+    }
+
+    const total = data.reduce((sum, d) => sum + d.value, 0);
+    if (total === 0) {
+        return (
+            <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+                <span className="text-xs text-slate-400">No data</span>
+            </div>
+        );
+    }
+
+    let currentAngle = 0;
+
+    return (
+        <div className="flex flex-col items-center">
+            <div className="relative" style={{ width: size, height: size }}>
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                    {data.map((item, index) => {
+                        const percentage = (item.value / total) * 100;
+                        const angle = (percentage / 100) * 360;
+                        const startAngle = currentAngle;
+                        const endAngle = startAngle + angle;
+                        currentAngle = endAngle;
+
+                        const x1 = size / 2 + (size / 2 - 6) * Math.cos((startAngle - 90) * Math.PI / 180);
+                        const y1 = size / 2 + (size / 2 - 6) * Math.sin((startAngle - 90) * Math.PI / 180);
+                        const x2 = size / 2 + (size / 2 - 6) * Math.cos((endAngle - 90) * Math.PI / 180);
+                        const y2 = size / 2 + (size / 2 - 6) * Math.sin((endAngle - 90) * Math.PI / 180);
+                        const largeArc = angle > 180 ? 1 : 0;
+
+                        return (
+                            <path
+                                key={index}
+                                d={`M ${size/2} ${size/2} L ${x1} ${y1} A ${size/2 - 6} ${size/2 - 6} 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                                fill={item.color || '#94A3B8'}
+                                stroke="white"
+                                strokeWidth="1.5"
+                                className="transition-opacity hover:opacity-80 cursor-pointer"
+                            />
+                        );
+                    })}
+                    <circle cx={size/2} cy={size/2} r={size/2 - 14} fill="white" className="dark:fill-slate-800" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">
+                            {total.toLocaleString()}
+                        </div>
+                        <div className="text-[6px] text-slate-500 dark:text-slate-400">Total</div>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-1.5 flex flex-wrap justify-center gap-1.5">
+                {data.map((item, index) => (
+                    <div key={index} className="flex items-center gap-0.5">
+                        <div
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{ backgroundColor: item.color || '#94A3B8' }}
+                        />
+                        <span className="text-[7px] text-slate-600 dark:text-slate-300">
+                            {item.name}
+                        </span>
+                        <span className="text-[7px] font-medium">
+                            {((item.value / total) * 100).toFixed(0)}%
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// ============================================================================
+// KPI Card Component (Compact)
+// ============================================================================
+
+const KPICard: React.FC<{ kpi: KPI }> = ({ kpi }) => {
+    const trendIcon = {
+        up: <TrendingUp className="h-3 w-3 text-green-500" />,
+        down: <TrendingDown className="h-3 w-3 text-red-500" />,
+        neutral: <Minus className="h-3 w-3 text-slate-500" />,
     };
 
-    // ============================================
-    // HANDLE SUBMIT
-    // ============================================
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const iconColor = kpi.color || '#2563EB';
 
-        if (!validateForm()) {
-            Notiflix.Notify.warning('Please fix the highlighted fields');
-            return;
-        }
+    return (
+        <Card className="overflow-hidden h-full hover:shadow-md transition-shadow border border-slate-200 dark:border-slate-700">
+            <CardContent className="p-2.5">
+                <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[8px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                            {kpi.title}
+                        </p>
+                        <p className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">
+                            {kpi.formattedValue || kpi.value}
+                        </p>
+                    </div>
+                    <div className={`rounded-full p-1.5 shrink-0 ml-1`} style={{ backgroundColor: `${iconColor}15` }}>
+                        {getIcon(kpi.icon || 'users', `h-4 w-4`)}
+                    </div>
+                </div>
 
-        setIsLoading(true);
+                <div className="mt-1 flex items-center justify-between">
+                    <div className="flex items-center gap-0.5">
+                        {trendIcon[kpi.trendDirection || 'neutral']}
+                        <span className={`text-[8px] font-medium ${
+                            kpi.trendDirection === 'up' ? 'text-green-600 dark:text-green-400' :
+                                kpi.trendDirection === 'down' ? 'text-red-600 dark:text-red-400' :
+                                    'text-slate-500 dark:text-slate-400'
+                        }`}>
+                            {kpi.trend > 0 ? '+' : ''}{kpi.trend}%
+                        </span>
+                        <span className="text-[6px] text-slate-400">vs prev</span>
+                    </div>
+                    <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400">
+                        {kpi.comparison || '0 vs last period'}
+                    </span>
+                </div>
 
-        try {
-            const totalBeneficiaries = (womenReached || 0) + (menReached || 0);
+                <div className="mt-1.5">
+                    <AreaChart
+                        data={kpi.sparklineData || [0,0,0,0,0,0,0]}
+                        color={iconColor}
+                        height={28}
+                    />
+                </div>
 
-            const payload = {
-                outreach_date: outreachDate,
-                outreach_type: outreachType,
-                community_name: communityName,
-                chw_name: chwName,
-                facility: facility,
-                services: selectedServices,
-                women_reached: womenReached || 0,
-                men_reached: menReached || 0,
-                male_engagement: maleEngagement || 0, // NEW FIELD
-                total_beneficiaries: totalBeneficiaries,
-                awareness_session_conducted: awarenessSessionConducted === 'yes',
-                referred_for_screening: referredForScreening === 'yes',
-                referral_required: referralRequired === 'yes',
-                referred_facility: referralRequired === 'yes' ? referredFacility : null,
-                referral_date: referralRequired === 'yes' ? referralDate : null,
-                referral_outcome: referralRequired === 'yes' ? referralOutcome : null,
-                referral_status: referralRequired === 'yes'
-                    ? (referralOutcome ? 'completed' : 'pending')
-                    : 'not_required',
-            };
+                <div className="mt-0.5 flex justify-end">
+                    <Badge variant="outline" className="text-[6px] px-1 py-0 h-3 text-slate-400">
+                        7d
+                    </Badge>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
 
-            const url = editingRecord
-                ? `/community-outreach/${editingRecord.id}`
-                : '/community-outreach';
+// ============================================================================
+// Main Dashboard Component
+// ============================================================================
 
-            const method = editingRecord ? 'PUT' : 'POST';
+export default function Dashboard() {
+    const { props } = usePage<PageProps>();
 
-            // ============================================
-            // CONSOLE LOGGING
-            // ============================================
-            console.log('================================================');
-            console.log('📤 COMMUNITY OUTREACH REQUEST');
-            console.log('================================================');
-            console.log('📍 ENDPOINT:', url);
-            console.log('📌 METHOD:', method);
-            console.log('📦 PAYLOAD:', JSON.stringify(payload, null, 2));
-            console.log('================================================');
+    // Log props for debugging
+    console.log('📊 Full Props:', props);
 
-            let response;
-            if (editingRecord) {
-                response = await Http.put(url, payload);
-            } else {
-                response = await Http.post(url, payload);
-            }
+    // Extract dashboard data from sharedData
+    const dashboardData = props?.sharedData?.dashboard || {};
 
-            console.log('================================================');
-            console.log('📥 COMMUNITY OUTREACH RESPONSE');
-            console.log('================================================');
-            console.log('📊 STATUS:', response.status);
-            console.log('📦 DATA:', JSON.stringify(response.data, null, 2));
-            console.log('================================================');
+    console.log('📈 Dashboard Data:', dashboardData);
 
-            if (response.status === 200 || response.status === 201) {
-                Notiflix.Notify.success(
-                    editingRecord ? 'Record updated successfully!' : 'Record created successfully!'
-                );
-                await fetchRecords();
-                setIsModalOpen(false);
-                resetForm();
-            } else {
-                Notiflix.Notify.warning('Unexpected response from server');
-            }
-
-        } catch (error: any) {
-            console.error('❌ Error saving record:', error);
-            console.error('❌ Error response:', error.response);
-            console.error('❌ Error data:', error.response?.data);
-
-            if (error.response?.data?.errors) {
-                const errors = error.response.data.errors;
-                const errorMessages = Object.values(errors).flat();
-                Notiflix.Notify.failure(errorMessages.join(', '));
-                setFormErrors(errors);
-            } else if (error.response?.data?.message) {
-                Notiflix.Notify.failure(error.response.data.message);
-            } else {
-                Notiflix.Notify.failure('Failed to save record. Please try again.');
-            }
-        } finally {
-            setIsLoading(false);
-        }
+    // Use data from sharedData or fallback to defaults
+    const kpis = dashboardData?.kpis && dashboardData.kpis.length > 0 ? dashboardData.kpis : [];
+    const weeklyTrends = dashboardData?.weeklyTrends && dashboardData.weeklyTrends.length > 0 ? dashboardData.weeklyTrends : last7Days;
+    const hivData = dashboardData?.hivDisaggregation && dashboardData.hivDisaggregation.length > 0 ? dashboardData.hivDisaggregation : [];
+    const disabilityData = dashboardData?.disabilityDisaggregation && dashboardData.disabilityDisaggregation.length > 0 ? dashboardData.disabilityDisaggregation : [];
+    const ageGroups = dashboardData?.ageGroups && dashboardData.ageGroups.length > 0 ? dashboardData.ageGroups : [];
+    const metadata = dashboardData?.metadata || {
+        lastSync: new Date().toISOString(),
+        dataSource: 'System',
+        reportingPeriod: 'Last 7 Days',
+        activeFacilities: 0,
+        activeDistricts: 0,
+        totalRecords: 0
+    };
+    const aggregates = dashboardData?.aggregates || {
+        total_screened: 0,
+        hpv_positive: 0,
+        via_positive: 0,
+        via_negative: 0,
+        hpv_negative: 0,
+        treatment: 0,
+        referral: 0,
+        hiv_positive: 0,
+        hiv_negative: 0,
+        disability: 0,
+        mortality: 0
     };
 
-    // ============================================
-    // FILTER RECORDS
-    // ============================================
-    const filteredRecords = records.filter(record => {
-        const matchesSearch =
-            record.community_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            record.chw_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            record.facility.toLowerCase().includes(searchTerm.toLowerCase());
+    const [loading, setLoading] = useState(false);
+    const hasData = kpis.length > 0;
 
-        const matchesFilter = filterStatus === 'all' || record.referral_status === filterStatus;
-
-        return matchesSearch && matchesFilter;
-    });
-
-    // ============================================
-    // STATS
-    // ============================================
-    const stats = {
-        total: records.length,
-        women: records.reduce((sum, r) => sum + (r.women_reached || 0), 0),
-        men: records.reduce((sum, r) => sum + (r.men_reached || 0), 0),
-        maleEngagement: records.reduce((sum, r) => sum + (r.male_engagement || 0), 0), // New stat
-        totalBeneficiaries: records.reduce((sum, r) => sum + (r.total_beneficiaries || 0), 0),
+    const handleRefresh = () => {
+        setLoading(true);
+        setTimeout(() => setLoading(false), 1000);
     };
 
-    // ============================================
-    // RENDER
-    // ============================================
+    const weekTotal = weeklyTrends.reduce((sum, d) => sum + (d.screened || 0), 0);
+
+    // If no data from controller, show a message
+    if (!hasData) {
+        return (
+            <>
+                <Head title="Dashboard" />
+                <div className="min-h-screen bg-slate-50 p-3 dark:bg-slate-900">
+                    <div className="mx-auto max-w-full">
+                        <div className="flex items-center justify-between mb-3">
+                            <h1 className="text-base font-bold text-slate-900 dark:text-white">
+                                Weekly Analytics Dashboard
+                            </h1>
+                            <Button variant="outline" size="sm" className="h-7 px-2.5 text-[10px]" onClick={handleRefresh}>
+                                <RefreshCw className={`mr-1.5 h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </Button>
+                        </div>
+                        <Card className="border border-slate-200 dark:border-slate-700">
+                            <CardContent className="p-8 text-center">
+                                <div className="flex flex-col items-center gap-3">
+                                    <Activity className="h-12 w-12 text-slate-300" />
+                                    <h3 className="text-lg font-semibold text-slate-700">No Dashboard Data</h3>
+                                    <p className="text-sm text-slate-500 max-w-md">
+                                        No data available for the selected period. Please check your database or try a different time range.
+                                    </p>
+                                    <div className="text-xs text-slate-400 mt-2">
+                                        <p>Facilities: {metadata.activeFacilities}</p>
+                                        <p>Districts: {metadata.activeDistricts}</p>
+                                        <p>Total Records: {metadata.totalRecords}</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
     return (
         <>
-            <Head title="Community Outreach" />
-            <div className="space-y-6 p-6">
-                {/* Header */}
-                <div className="flex items-center justify-between p-2">
-                    <div>
-                        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Community Outreach</h1>
-                        <p className="text-sm text-gray-500">Manage community outreach and engagement records</p>
-                    </div>
-                    <button
-                        onClick={() => {
-                            resetForm();
-                            setIsModalOpen(true);
-                        }}
-                        className="h-9 px-4 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center gap-2"
-                    >
-                        <Plus className="h-4 w-4" /> New Outreach
-                    </button>
-                </div>
+            <Head title="Weekly Dashboard | National Health Intelligence" />
 
-                {/* Stats Cards - Added Male Engagement */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Total Outreaches</span>
-                            <Activity className="h-4 w-4 text-blue-500" />
-                        </div>
-                        <p className="text-2xl font-bold mt-1">{stats.total}</p>
-                    </div>
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Women Reached</span>
-                            <UserCircle className="h-4 w-4 text-pink-500" />
-                        </div>
-                        <p className="text-2xl font-bold mt-1">{stats.women}</p>
-                    </div>
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Men Reached</span>
-                            <User className="h-4 w-4 text-blue-500" />
-                        </div>
-                        <p className="text-2xl font-bold mt-1">{stats.men}</p>
-                    </div>
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Male Engagement</span>
-                            <UsersRound className="h-4 w-4 text-purple-500" />
-                        </div>
-                        <p className="text-2xl font-bold mt-1">{stats.maleEngagement}</p>
-                    </div>
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Total Beneficiaries</span>
-                            <Users className="h-4 w-4 text-green-500" />
-                        </div>
-                        <p className="text-2xl font-bold mt-1">{stats.totalBeneficiaries}</p>
-                    </div>
-                </div>
-
-                {/* Search and Filter */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex-1 min-w-[200px] relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search by community, CHW, or facility..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-3 h-9 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="completed">Completed</option>
-                        <option value="not_required">Not Required</option>
-                    </select>
-                </div>
-
-                {/* Table - Added Male Engagement column */}
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Community</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">CHW</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Women</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Men</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Male Eng.</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase w-20">Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredRecords.length === 0 ? (
-                                <tr>
-                                    <td colSpan={10} className="px-3 py-8 text-center text-sm text-gray-500">
-                                        No records found
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredRecords.map(record => (
-                                    <tr key={record.id} className="hover:bg-gray-50">
-                                        <td className="px-3 py-2 text-sm">
-                                            {format(new Date(record.outreach_date), 'MMM d, yyyy')}
-                                        </td>
-                                        <td className="px-3 py-2 text-sm font-medium">{record.community_name}</td>
-                                        <td className="px-3 py-2 text-sm">{record.chw_name}</td>
-                                        <td className="px-3 py-2 text-sm">{record.outreach_type}</td>
-                                        <td className="px-3 py-2 text-sm">{record.women_reached || 0}</td>
-                                        <td className="px-3 py-2 text-sm">{record.men_reached || 0}</td>
-                                        <td className="px-3 py-2 text-sm font-medium text-purple-600">
-                                            {record.male_engagement || 0}
-                                        </td>
-                                        <td className="px-3 py-2 text-sm font-semibold">{record.total_beneficiaries || 0}</td>
-                                        <td className="px-3 py-2">
-                                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                                                record.referral_status === 'completed'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : record.referral_status === 'pending'
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-gray-100 text-gray-800'
-                                            }`}>
-                                                {record.referral_status.charAt(0).toUpperCase() + record.referral_status.slice(1)}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 py-2 text-right">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <button
-                                                    onClick={() => handleEdit(record)}
-                                                    className="p-1 rounded hover:bg-gray-100"
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="h-4 w-4 text-gray-500" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(record.id)}
-                                                    className="p-1 rounded hover:bg-red-50"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+            <div className="min-h-screen bg-slate-50 p-3 dark:bg-slate-900">
+                <div className="mx-auto max-w-full">
+                    {/* Header - Compact */}
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h1 className="text-base font-bold text-slate-900 dark:text-white">
+                                Weekly Analytics Dashboard
+                            </h1>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                {format(subDays(new Date(), 6), 'MMM d')} - {format(new Date(), 'MMM d, yyyy')}
+                            </p>
+                            {metadata.totalRecords > 0 && (
+                                <p className="text-[8px] text-slate-400 mt-0.5">
+                                    {metadata.totalRecords.toLocaleString()} records from {metadata.activeFacilities} facilities
+                                </p>
                             )}
-                            </tbody>
-                        </table>
+                        </div>
+                        <Button variant="outline" size="sm" className="h-7 px-2.5 text-[10px]" onClick={handleRefresh}>
+                            <RefreshCw className={`mr-1.5 h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
                     </div>
-                </div>
 
-                {/* ============================================
-                    MODAL
-                    ============================================ */}
-                {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/40 backdrop-blur-sm">
-                        <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-                            {/* Header */}
-                            <div className="flex-shrink-0 border-b px-4 py-3 bg-white rounded-t-lg">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                            <Building2 className="h-4 w-4 text-blue-600" />
-                                            {editingRecord ? 'Edit Outreach Record' : 'New Community Outreach'}
-                                        </h2>
-                                        <p className="text-[10px] text-gray-500">
-                                            {editingRecord ? 'Update existing outreach record' : 'Record new community outreach activity'}
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={() => { setIsModalOpen(false); resetForm(); }}
-                                        className="rounded p-1 hover:bg-gray-100"
-                                    >
-                                        <X className="h-4 w-4 text-gray-500" />
-                                    </button>
-                                </div>
+                    {/* System Status Bar */}
+                    <div className="mb-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-1.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[10px] text-blue-700 dark:text-blue-300">
+                            <Activity className="h-3 w-3" />
+                            <span>System active</span>
+                            <span className="text-blue-300 dark:text-blue-700">|</span>
+                            <span>{metadata.totalRecords.toLocaleString()} records loaded</span>
+                            <span className="text-blue-300 dark:text-blue-700">|</span>
+                            <span>Last sync: {format(new Date(metadata.lastSync), 'HH:mm')}</span>
+                        </div>
+                        <span className="text-[9px] text-blue-600">
+                            {metadata.reportingPeriod}
+                        </span>
+                    </div>
+
+                    {/* KPI Grid - 6 columns */}
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 mb-3">
+                        {kpis.map((kpi) => (
+                            <div key={kpi.id} className="w-full">
+                                <KPICard kpi={kpi} />
                             </div>
+                        ))}
+                    </div>
 
-                            {/* Form */}
-                            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4">
-                                <div className="space-y-4">
-                                    {/* ==========================================
-                                        OUTREACH DETAILS
-                                        ========================================== */}
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                            <MapPin className="h-3.5 w-3.5 text-blue-600" />
-                                            Outreach Details
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Outreach Date <span className="text-red-500">*</span>
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    value={outreachDate}
-                                                    onChange={(e) => setOutreachDate(e.target.value)}
-                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 ${
-                                                        formErrors.outreachDate ? 'border-red-500' : 'border-gray-300'
-                                                    }`}
-                                                />
-                                                {formErrors.outreachDate && (
-                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.outreachDate}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Community Name <span className="text-red-500">*</span>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={communityName}
-                                                    onChange={(e) => setCommunityName(e.target.value)}
-                                                    placeholder="Enter community name"
-                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 ${
-                                                        formErrors.communityName ? 'border-red-500' : 'border-gray-300'
-                                                    }`}
-                                                />
-                                                {formErrors.communityName && (
-                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.communityName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    CHW Name <span className="text-red-500">*</span>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={chwName}
-                                                    onChange={(e) => setChwName(e.target.value)}
-                                                    placeholder="Enter CHW name"
-                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 ${
-                                                        formErrors.chwName ? 'border-red-500' : 'border-gray-300'
-                                                    }`}
-                                                />
-                                                {formErrors.chwName && (
-                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.chwName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Outreach Type <span className="text-red-500">*</span>
-                                                </label>
-                                                <select
-                                                    value={outreachType}
-                                                    onChange={(e) => setOutreachType(e.target.value)}
-                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 bg-white ${
-                                                        formErrors.outreachType ? 'border-red-500' : 'border-gray-300'
-                                                    }`}
-                                                >
-                                                    <option value="">Select Outreach Type</option>
-                                                    <option value="Market">Market</option>
-                                                    <option value="Church">Church</option>
-                                                    <option value="School">School</option>
-                                                    <option value="Community Meeting">Community Meeting</option>
-                                                    <option value="Door to Door">Door to Door</option>
-                                                    <option value="Health Fair">Health Fair</option>
-                                                    <option value="Other">Other</option>
-                                                </select>
-                                                {formErrors.outreachType && (
-                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.outreachType}</p>
-                                                )}
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Facility <span className="text-red-500">*</span>
-                                                </label>
-                                                <select
-                                                    value={facility}
-                                                    onChange={(e) => setFacility(e.target.value)}
-                                                    className={`w-full h-9 px-3 text-sm border rounded-md focus:ring-1 focus:ring-blue-500 bg-white ${
-                                                        formErrors.facility ? 'border-red-500' : 'border-gray-300'
-                                                    }`}
-                                                >
-                                                    <option value="">Select Facility</option>
-                                                    <option value="Chawama Clinic">Chawama Clinic</option>
-                                                    <option value="Kanyama Clinic">Kanyama Clinic</option>
-                                                    <option value="University Teaching Hospital">University Teaching Hospital</option>
-                                                    <option value="Levy Mwanawasa Hospital">Levy Mwanawasa Hospital</option>
-                                                    <option value="Chipata Central Hospital">Chipata Central Hospital</option>
-                                                    <option value="Lundazi District Hospital">Lundazi District Hospital</option>
-                                                </select>
-                                                {formErrors.facility && (
-                                                    <p className="text-[10px] text-red-500 mt-0.5">{formErrors.facility}</p>
-                                                )}
-                                            </div>
+                    {/* Charts Section - Compact */}
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 mb-3">
+                        {/* Bar Chart - Daily Trends (takes 2 columns) */}
+                        <div className="lg:col-span-2">
+                            <Card className="h-full border border-slate-200 dark:border-slate-700">
+                                <CardHeader className="p-2.5 pb-1">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-[10px] font-semibold">Daily Screening Trends</CardTitle>
+                                            <CardDescription className="text-[8px]">Last 7 days</CardDescription>
                                         </div>
-                                    </div>
-
-                                    {/* ==========================================
-                                        SERVICES PROVIDED
-                                        ========================================== */}
-                                    <div className="border-t pt-3">
-                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                            <Stethoscope className="h-3.5 w-3.5 text-green-600" />
-                                            Services Provided
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {SERVICE_OPTIONS.map((service) => (
-                                                <label key={service} className="flex items-center gap-2 p-2 border border-gray-200 rounded hover:bg-gray-50 cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedServices.includes(service)}
-                                                        onChange={() => toggleService(service)}
-                                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                    />
-                                                    <span className="text-sm text-gray-700">{service}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                        {formErrors.selectedServices && (
-                                            <p className="text-[10px] text-red-500 mt-1">{formErrors.selectedServices}</p>
+                                        {weekTotal > 0 && (
+                                            <Badge variant="outline" className="text-[6px] px-1">
+                                                Total: {weekTotal.toLocaleString()}
+                                            </Badge>
                                         )}
                                     </div>
-
-                                    {/* ==========================================
-                                        OUTPUTS
-                                        ========================================== */}
-                                    <div className="border-t pt-3">
-                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                            <CheckSquare className="h-3.5 w-3.5 text-purple-600" />
-                                            Outputs
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Referred for Screening
-                                                </label>
-                                                <select
-                                                    value={referredForScreening}
-                                                    onChange={(e) => setReferredForScreening(e.target.value)}
-                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white"
-                                                >
-                                                    <option value="">Select</option>
-                                                    <option value="yes">Yes</option>
-                                                    <option value="no">No</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Awareness Session Conducted
-                                                </label>
-                                                <select
-                                                    value={awarenessSessionConducted}
-                                                    onChange={(e) => setAwarenessSessionConducted(e.target.value)}
-                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white"
-                                                >
-                                                    <option value="">Select</option>
-                                                    <option value="yes">Yes</option>
-                                                    <option value="no">No</option>
-                                                </select>
-                                            </div>
+                                </CardHeader>
+                                <CardContent className="p-2.5 pt-1">
+                                    <div className="flex flex-wrap justify-center gap-1.5 mb-1">
+                                        <div className="flex items-center gap-0.5">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                                            <span className="text-[6px] text-slate-600 dark:text-slate-300">Screened</span>
+                                        </div>
+                                        <div className="flex items-center gap-0.5">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                            <span className="text-[6px] text-slate-600 dark:text-slate-300">VIA+</span>
+                                        </div>
+                                        <div className="flex items-center gap-0.5">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-purple-600" />
+                                            <span className="text-[6px] text-slate-600 dark:text-slate-300">HPV+</span>
+                                        </div>
+                                        <div className="flex items-center gap-0.5">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                                            <span className="text-[6px] text-slate-600 dark:text-slate-300">Treated</span>
+                                        </div>
+                                        <div className="flex items-center gap-0.5">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                                            <span className="text-[6px] text-slate-600 dark:text-slate-300">Follow-ups</span>
                                         </div>
                                     </div>
+                                    <BarChart data={weeklyTrends} height={110} />
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                                    {/* ==========================================
-                                        NUMBER OF PEOPLE REACHED
-                                        ========================================== */}
-                                    <div className="border-t pt-3">
-                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                            <Users className="h-3.5 w-3.5 text-orange-600" />
-                                            Number of People Reached
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Women Reached
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={womenReached}
-                                                    onChange={(e) => setWomenReached(Number(e.target.value))}
-                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Men Reached
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={menReached}
-                                                    onChange={(e) => setMenReached(Number(e.target.value))}
-                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Male Engagement <span className="text-purple-600">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={maleEngagement}
-                                                    onChange={(e) => setMaleEngagement(Number(e.target.value))}
-                                                    className="w-full h-9 px-3 text-sm border border-purple-300 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                                                    placeholder="Number of men engaged"
-                                                />
-                                                <p className="text-[10px] text-gray-400 mt-0.5">Number of men actively engaged in programs</p>
-                                            </div>
+                        {/* HIV Status Pie (takes 1 column) */}
+                        <div className="lg:col-span-1">
+                            <Card className="h-full border border-slate-200 dark:border-slate-700">
+                                <CardHeader className="p-2.5 pb-1">
+                                    <CardTitle className="text-[10px] font-semibold">HIV Status</CardTitle>
+                                    <CardDescription className="text-[8px]">Distribution</CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-2.5 pt-1 flex items-center justify-center">
+                                    <DonutChart data={hivData} size={90} />
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Disability Pie (takes 1 column) */}
+                        <div className="lg:col-span-1">
+                            <Card className="h-full border border-slate-200 dark:border-slate-700">
+                                <CardHeader className="p-2.5 pb-1">
+                                    <CardTitle className="text-[10px] font-semibold">Disability</CardTitle>
+                                    <CardDescription className="text-[8px]">Status</CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-2.5 pt-1 flex items-center justify-center">
+                                    <DonutChart data={disabilityData} size={90} />
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+
+                    {/* Horizontal Bar Chart - Age Groups (Full Width) */}
+                    {ageGroups.length > 0 && (
+                        <div className="mb-3">
+                            <Card className="border border-slate-200 dark:border-slate-700">
+                                <CardHeader className="p-2.5 pb-1">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-[10px] font-semibold">Age Group Distribution</CardTitle>
+                                            <CardDescription className="text-[8px]">Screening by age group</CardDescription>
                                         </div>
+                                        <Badge variant="outline" className="text-[6px] px-1">
+                                            Total: {ageGroups.reduce((sum, d) => sum + d.value, 0).toLocaleString()}
+                                        </Badge>
                                     </div>
+                                </CardHeader>
+                                <CardContent className="p-2.5 pt-1">
+                                    <HorizontalBarChart data={ageGroups} height={130} />
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
-                                    {/* ==========================================
-                                        REFERRAL INFORMATION
-                                        ========================================== */}
-                                    <div className="border-t pt-3">
-                                        <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                            <UserPlus className="h-3.5 w-3.5 text-red-600" />
-                                            Referral Information
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                    Referral Required
-                                                </label>
-                                                <select
-                                                    value={referralRequired}
-                                                    onChange={(e) => setReferralRequired(e.target.value)}
-                                                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white"
-                                                >
-                                                    <option value="">Select</option>
-                                                    <option value="yes">Yes</option>
-                                                    <option value="no">No</option>
-                                                </select>
-                                            </div>
-                                            {referralRequired === 'yes' && (
-                                                <>
-                                                    <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                            Facility Referred To
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={referredFacility}
-                                                            onChange={(e) => setReferredFacility(e.target.value)}
-                                                            placeholder="Enter facility name"
-                                                            className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                            Referral Date
-                                                        </label>
-                                                        <input
-                                                            type="date"
-                                                            value={referralDate}
-                                                            onChange={(e) => setReferralDate(e.target.value)}
-                                                            className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                            Referral Outcome
-                                                        </label>
-                                                        <select
-                                                            value={referralOutcome}
-                                                            onChange={(e) => setReferralOutcome(e.target.value)}
-                                                            className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white"
-                                                        >
-                                                            <option value="">Select Outcome</option>
-                                                            <option value="Completed">Completed</option>
-                                                            <option value="Pending">Pending</option>
-                                                            <option value="Cancelled">Cancelled</option>
-                                                            <option value="Not Applicable">Not Applicable</option>
-                                                        </select>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-
-                            {/* Footer */}
-                            <div className="flex-shrink-0 border-t px-6 py-3 bg-gray-50 rounded-b-lg flex justify-between items-center">
-                                <div className="text-[10px] text-gray-500">
-                                    {selectedServices.length} service(s) selected | Male Engagement: {maleEngagement}
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => { setIsModalOpen(false); resetForm(); }}
-                                        className="h-8 px-4 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
-                                        disabled={isLoading}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        onClick={handleSubmit}
-                                        className="h-8 px-4 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 flex items-center gap-1.5"
-                                        disabled={isLoading}
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                Saving...
-                                            </>
-                                        ) : (
-                                            'Save Record'
-                                        )}
-                                    </button>
-                                </div>
+                    {/* Footer - Compact */}
+                    <div className="rounded-lg bg-white p-2 shadow-sm dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex flex-wrap items-center justify-between gap-1 text-[7px] text-slate-500 dark:text-slate-400">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span>Sync: {format(new Date(metadata.lastSync), 'MMM d, HH:mm')}</span>
+                                <span className="text-slate-300">|</span>
+                                <span>Source: {metadata.dataSource}</span>
+                                <span className="text-slate-300">|</span>
+                                <span>Period: {metadata.reportingPeriod}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <span>Facilities: <strong className="text-slate-700 dark:text-slate-300">{metadata.activeFacilities}</strong></span>
+                                <span>Districts: <strong className="text-slate-700 dark:text-slate-300">{metadata.activeDistricts}</strong></span>
+                                <span>Records: <strong className="text-slate-700 dark:text-slate-300">{metadata.totalRecords.toLocaleString()}</strong></span>
                             </div>
                         </div>
                     </div>
-                )}
+
+                    {/* Aggregates Summary (hidden but available) */}
+                    <div className="hidden">
+                        {aggregates && (
+                            <pre>{JSON.stringify(aggregates, null, 2)}</pre>
+                        )}
+                    </div>
+                </div>
             </div>
         </>
     );
 }
 
-CommunityOutreach.layout = (page: React.ReactNode) => (
-    <AppLayout breadcrumbs={[{ title: 'Dashboard', href: dashboard() }, { title: 'Community Outreach', href: '/community-outreach' }]}>
-        {page}
-    </AppLayout>
-);
+// ============================================================================
+// Page Layout Configuration
+// ============================================================================
+
+Dashboard.layout = {
+    breadcrumbs: [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+        },
+    ],
+};

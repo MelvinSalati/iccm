@@ -102,6 +102,8 @@ export function LabOrderModal({
         if (error) setError(null);
     };
 
+    // In lab-order-modal.tsx - Update the handleSubmit function
+
     const handleSubmit = async () => {
         if (selectedTests.length === 0) {
             setError('Please select at least one test');
@@ -123,18 +125,13 @@ export function LabOrderModal({
             return;
         }
 
-        if (!visitId) {
-            setError('Visit ID is required');
-            return;
-        }
-
         // Prepare data matching laboratory_orders table structure
         const orderData = {
             laboratory_uuid: generatedUUID,
             patient_id: patientId,
             facility_id: facilityId,
             ordered_by: userId,
-            visit_id: visitId, // Added visit_id
+            visit_id: visitId,
             test_ids: selectedTests,
             status: 'pending',
             comment: formData.notes || null,
@@ -158,7 +155,6 @@ export function LabOrderModal({
             setIsSubmitting(false);
         }
     };
-
     useEffect(() => {
         if (!isOpen) {
             setSelectedTests([]);

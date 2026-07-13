@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 class Patient extends Model
 {
@@ -22,6 +23,7 @@ class Patient extends Model
 
     protected $fillable = [
         'user_id',
+        'patient_uuid',
         'first_name',
         'last_name',
         'date_of_birth',
@@ -46,6 +48,29 @@ class Patient extends Model
         'risk_flags',
         'is_high_risk',
     ];
+
+    // ============================================
+    // BOOT METHOD - Auto-generate UUID
+    // ============================================
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Auto-generate UUID when creating a new patient
+        static::creating(function ($patient) {
+            if (empty($patient->patient_uuid)) {
+                $patient->patient_uuid = (string) Str::uuid();
+            }
+        });
+
+        // Ensure UUID is set if somehow it's missing before save
+        static::saving(function ($patient) {
+            if (empty($patient->patient_uuid)) {
+                $patient->patient_uuid = (string) Str::uuid();
+            }
+        });
+    }
 
     // ============================================
     // RELATIONSHIPS
@@ -130,6 +155,7 @@ class Patient extends Model
     public function visitType(){
         return $this->belongsTo(PatientVisit::class);
     }
+
     public function getPrimaryAddressAttribute(): ?PatientAddress
     {
         return $this->primaryAddress()->first();
@@ -171,7 +197,8 @@ class Patient extends Model
             $q->where('first_name', 'like', "%{$search}%")
                 ->orWhere('last_name', 'like', "%{$search}%")
                 ->orWhere('nrc_number', 'like', "%{$search}%")
-                ->orWhere('phone_number', 'like', "%{$search}%");
+                ->orWhere('phone_number', 'like', "%{$search}%")
+                ->orWhere('patient_uuid', 'like', "%{$search}%");
         });
     }
 
@@ -204,6 +231,7 @@ class Patient extends Model
     {
         return [
             'user_id' => $data['user_id'] ?? null,
+            'patient_uuid' => $data['patient_uuid'] ?? null, // Will be auto-generated if not provided
             'first_name' => $data['firstName'] ?? '',
             'last_name' => $data['lastName'] ?? '',
             'date_of_birth' => $data['dateOfBirth'] ?? null,
@@ -276,5 +304,39 @@ class Patient extends Model
             'registered_today' => self::whereDate('registered_at', today())->count(),
             'registered_this_week' => self::whereBetween('registered_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
         ];
+    }
+
+    /**
+     * Find a patient by UUID
+     */
+    public static function findByUuid(string $uuid): ?self
+    {
+        return self::where('patient_uuid', $uuid)->first();
+    }
+
+    /**
+     * Find a patient by UUID or fail
+     */
+    public static function findByUuidOrFail(string $uuid): self
+    {
+        return self::where('patient_uuid', $uuid)->firstOrFail();
+    }
+
+    /**
+     * Generate a new UUID for a patient
+     */
+    public static function generateUuid(): string
+    {
+        return (string) Str::uuid();
+    }
+
+    /**
+     * Regenerate UUID for an existing patient (use with caution)
+     */
+    public function regenerateUuid(): self
+    {
+        $this->patient_uuid = (string) Str::uuid();
+        $this->save();
+        return $this;
     }
 }

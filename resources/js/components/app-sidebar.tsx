@@ -194,7 +194,7 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
         },
         {
             title: 'Reports',
-            href: '/',
+            href: '/manage-reports',
             icon: BarChart2Icon,
             roles: [
                 ROLE_IDS.ADMINISTRATOR,
@@ -282,17 +282,17 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.DHO,
             ],
         },
-        {
-            title: 'Reports & MEL',
-            href: '/reports',
-            icon: ChartBarStacked,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.MEL_OFFICER,
-                ROLE_IDS.FACILITY_MANAGER,
-                ROLE_IDS.DHO,
-            ],
-        },
+        // {
+        //     title: 'Reports & MEL',
+        //     href: '/reports',
+        //     icon: ChartBarStacked,
+        //     roles: [
+        //         ROLE_IDS.ADMINISTRATOR,
+        //         ROLE_IDS.MEL_OFFICER,
+        //         ROLE_IDS.FACILITY_MANAGER,
+        //         ROLE_IDS.DHO,
+        //     ],
+        // },
         {
             title: 'Users & Roles',
             href: '/users',
