@@ -33,18 +33,21 @@ class ConsultancyController extends Controller
             ->get()
             ->map(function ($consultation) {
                 // ============================================
-                // FIX: Use Storage::url() for proper URL generation
+                // FIX: Use Storage::disk('public')->url()
+                // Works on both local and Laravel Cloud
                 // ============================================
                 $imageUrl = null;
                 if ($consultation->cervical_cancer_image_url) {
-                    // Clean the path
+                    // Clean the path - remove any storage/ prefix
                     $path = $consultation->cervical_cancer_image_url;
+                    $path = str_replace('/storage/', '', $path);
                     $path = str_replace('storage/', '', $path);
                     $path = str_replace('public/', '', $path);
                     $path = ltrim($path, '/');
 
-                    // Use Storage::url() to generate the correct URL
-                    $imageUrl = Storage::url($path);
+                    // Use Storage::disk('public')->url()
+                    // This works on both local and Laravel Cloud
+                    $imageUrl = Storage::disk('public')->url($path);
                 }
 
                 return [
