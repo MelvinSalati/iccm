@@ -70,10 +70,10 @@ class HandleInertiaRequests extends Middleware
 
             // Calculate KPIs
             $screenedWomen = $screenings->count();
-            $hpvPositive = $screenings->where('screening_method', 'hpv')->where('screening_results', 'positive')->count();
+            $hpvPositive = $screenings->where('screening_method', 'hpv_test')->where('screening_results', 'positive')->count();
             $viaPositive = $screenings->where('screening_method', 'via')->where('screening_results', 'positive')->count();
             $viaNegative = $screenings->where('screening_method', 'via')->where('screening_results', 'negative')->count();
-            $hpvNegative = $screenings->where('screening_method', 'hpv')->where('screening_results', 'negative')->count();
+            $hpvNegative = $screenings->where('screening_method', 'hpv_test')->where('screening_results', 'negative')->count();
 
             // Treatment and referral counts
             $treatment = $screenings->whereIn('treatment_decision', ['thermal_ablation', 'cryotherapy'])->count();

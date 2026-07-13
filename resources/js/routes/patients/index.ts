@@ -78,7 +78,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     index.form = indexForm
 /**
- * @see routes/Patient.php:14
+ * @see [serialized-closure]:2
  * @route '/patients/search'
  */
 export const search = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -92,7 +92,7 @@ search.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/Patient.php:14
+ * @see [serialized-closure]:2
  * @route '/patients/search'
  */
 search.url = (options?: RouteQueryOptions) => {
@@ -100,7 +100,7 @@ search.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/Patient.php:14
+ * @see [serialized-closure]:2
  * @route '/patients/search'
  */
 search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -108,7 +108,7 @@ search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/Patient.php:14
+ * @see [serialized-closure]:2
  * @route '/patients/search'
  */
 search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -117,7 +117,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/Patient.php:14
+ * @see [serialized-closure]:2
  * @route '/patients/search'
  */
     const searchForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -126,7 +126,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/Patient.php:14
+ * @see [serialized-closure]:2
  * @route '/patients/search'
  */
         searchForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -134,7 +134,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/Patient.php:14
+ * @see [serialized-closure]:2
  * @route '/patients/search'
  */
         searchForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -149,7 +149,7 @@ search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     search.form = searchForm
 /**
- * @see routes/Patient.php:17
+ * @see [serialized-closure]:2
  * @route '/patients/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -163,7 +163,7 @@ create.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/Patient.php:17
+ * @see [serialized-closure]:2
  * @route '/patients/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -171,7 +171,7 @@ create.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/Patient.php:17
+ * @see [serialized-closure]:2
  * @route '/patients/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -179,7 +179,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/Patient.php:17
+ * @see [serialized-closure]:2
  * @route '/patients/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -188,7 +188,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/Patient.php:17
+ * @see [serialized-closure]:2
  * @route '/patients/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -197,7 +197,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/Patient.php:17
+ * @see [serialized-closure]:2
  * @route '/patients/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -205,7 +205,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/Patient.php:17
+ * @see [serialized-closure]:2
  * @route '/patients/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -221,7 +221,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::store
- * @see app/Domains/Patients/Controllers/PatientController.php:59
+ * @see app/Domains/Patients/Controllers/PatientController.php:66
  * @route '/patients/register'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -236,7 +236,7 @@ store.definition = {
 
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::store
- * @see app/Domains/Patients/Controllers/PatientController.php:59
+ * @see app/Domains/Patients/Controllers/PatientController.php:66
  * @route '/patients/register'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -245,7 +245,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::store
- * @see app/Domains/Patients/Controllers/PatientController.php:59
+ * @see app/Domains/Patients/Controllers/PatientController.php:66
  * @route '/patients/register'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -255,7 +255,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Domains\Patients\Controllers\PatientController::store
- * @see app/Domains/Patients/Controllers/PatientController.php:59
+ * @see app/Domains/Patients/Controllers/PatientController.php:66
  * @route '/patients/register'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -265,7 +265,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Domains\Patients\Controllers\PatientController::store
- * @see app/Domains/Patients/Controllers/PatientController.php:59
+ * @see app/Domains/Patients/Controllers/PatientController.php:66
  * @route '/patients/register'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -276,7 +276,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::show
- * @see app/Domains/Patients/Controllers/PatientController.php:95
+ * @see app/Domains/Patients/Controllers/PatientController.php:102
  * @route '/patients/{uuid}'
  */
 export const show = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -291,7 +291,7 @@ show.definition = {
 
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::show
- * @see app/Domains/Patients/Controllers/PatientController.php:95
+ * @see app/Domains/Patients/Controllers/PatientController.php:102
  * @route '/patients/{uuid}'
  */
 show.url = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -319,7 +319,7 @@ show.url = (args: { uuid: string | number } | [uuid: string | number ] | string 
 
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::show
- * @see app/Domains/Patients/Controllers/PatientController.php:95
+ * @see app/Domains/Patients/Controllers/PatientController.php:102
  * @route '/patients/{uuid}'
  */
 show.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -328,7 +328,7 @@ show.get = (args: { uuid: string | number } | [uuid: string | number ] | string 
 })
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::show
- * @see app/Domains/Patients/Controllers/PatientController.php:95
+ * @see app/Domains/Patients/Controllers/PatientController.php:102
  * @route '/patients/{uuid}'
  */
 show.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -338,7 +338,7 @@ show.head = (args: { uuid: string | number } | [uuid: string | number ] | string
 
     /**
 * @see \App\Domains\Patients\Controllers\PatientController::show
- * @see app/Domains/Patients/Controllers/PatientController.php:95
+ * @see app/Domains/Patients/Controllers/PatientController.php:102
  * @route '/patients/{uuid}'
  */
     const showForm = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -348,7 +348,7 @@ show.head = (args: { uuid: string | number } | [uuid: string | number ] | string
 
             /**
 * @see \App\Domains\Patients\Controllers\PatientController::show
- * @see app/Domains/Patients/Controllers/PatientController.php:95
+ * @see app/Domains/Patients/Controllers/PatientController.php:102
  * @route '/patients/{uuid}'
  */
         showForm.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -357,7 +357,7 @@ show.head = (args: { uuid: string | number } | [uuid: string | number ] | string
         })
             /**
 * @see \App\Domains\Patients\Controllers\PatientController::show
- * @see app/Domains/Patients/Controllers/PatientController.php:95
+ * @see app/Domains/Patients/Controllers/PatientController.php:102
  * @route '/patients/{uuid}'
  */
         showForm.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -373,7 +373,7 @@ show.head = (args: { uuid: string | number } | [uuid: string | number ] | string
     show.form = showForm
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::update
- * @see app/Domains/Patients/Controllers/PatientController.php:116
+ * @see app/Domains/Patients/Controllers/PatientController.php:123
  * @route '/patients/{uuid}'
  */
 export const update = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -388,7 +388,7 @@ update.definition = {
 
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::update
- * @see app/Domains/Patients/Controllers/PatientController.php:116
+ * @see app/Domains/Patients/Controllers/PatientController.php:123
  * @route '/patients/{uuid}'
  */
 update.url = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -416,7 +416,7 @@ update.url = (args: { uuid: string | number } | [uuid: string | number ] | strin
 
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::update
- * @see app/Domains/Patients/Controllers/PatientController.php:116
+ * @see app/Domains/Patients/Controllers/PatientController.php:123
  * @route '/patients/{uuid}'
  */
 update.put = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -426,7 +426,7 @@ update.put = (args: { uuid: string | number } | [uuid: string | number ] | strin
 
     /**
 * @see \App\Domains\Patients\Controllers\PatientController::update
- * @see app/Domains/Patients/Controllers/PatientController.php:116
+ * @see app/Domains/Patients/Controllers/PatientController.php:123
  * @route '/patients/{uuid}'
  */
     const updateForm = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -441,7 +441,7 @@ update.put = (args: { uuid: string | number } | [uuid: string | number ] | strin
 
             /**
 * @see \App\Domains\Patients\Controllers\PatientController::update
- * @see app/Domains/Patients/Controllers/PatientController.php:116
+ * @see app/Domains/Patients/Controllers/PatientController.php:123
  * @route '/patients/{uuid}'
  */
         updateForm.put = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -457,7 +457,7 @@ update.put = (args: { uuid: string | number } | [uuid: string | number ] | strin
     update.form = updateForm
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::destroy
- * @see app/Domains/Patients/Controllers/PatientController.php:154
+ * @see app/Domains/Patients/Controllers/PatientController.php:161
  * @route '/patients/{uuid}'
  */
 export const destroy = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -472,7 +472,7 @@ destroy.definition = {
 
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::destroy
- * @see app/Domains/Patients/Controllers/PatientController.php:154
+ * @see app/Domains/Patients/Controllers/PatientController.php:161
  * @route '/patients/{uuid}'
  */
 destroy.url = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -500,7 +500,7 @@ destroy.url = (args: { uuid: string | number } | [uuid: string | number ] | stri
 
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::destroy
- * @see app/Domains/Patients/Controllers/PatientController.php:154
+ * @see app/Domains/Patients/Controllers/PatientController.php:161
  * @route '/patients/{uuid}'
  */
 destroy.delete = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -510,7 +510,7 @@ destroy.delete = (args: { uuid: string | number } | [uuid: string | number ] | s
 
     /**
 * @see \App\Domains\Patients\Controllers\PatientController::destroy
- * @see app/Domains/Patients/Controllers/PatientController.php:154
+ * @see app/Domains/Patients/Controllers/PatientController.php:161
  * @route '/patients/{uuid}'
  */
     const destroyForm = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -525,7 +525,7 @@ destroy.delete = (args: { uuid: string | number } | [uuid: string | number ] | s
 
             /**
 * @see \App\Domains\Patients\Controllers\PatientController::destroy
- * @see app/Domains/Patients/Controllers/PatientController.php:154
+ * @see app/Domains/Patients/Controllers/PatientController.php:161
  * @route '/patients/{uuid}'
  */
         destroyForm.delete = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

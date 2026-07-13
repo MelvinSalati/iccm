@@ -523,7 +523,7 @@ const IntegratedScreeningForm: React.FC<IntegratedScreeningFormProps> = ({
                             {imagePreview && (
                                 <div className="mt-2 relative inline-block">
                                     <img
-                                        src={imagePreview}
+                                        // src={}
                                         alt="Cervical"
                                         className="max-h-32 rounded-md border border-slate-200 object-cover"
                                     />
