@@ -10,13 +10,12 @@ use App\Http\Controllers\Consultancies\ConsultancyController;
 use App\Http\Controllers\Pathology\LaboratoryController;
 use App\Http\Controllers\ImageController;
 
-
 // ============================================
 // IMAGE ROUTE - Place this BEFORE any auth middleware
 // ============================================
-Route::get('/{path}', [ImageController::class, 'show'])
-    ->where('path', '.*')
-    ->name('image.show');
+//Route::get('/{path}', [ImageController::class, 'show'])
+//    ->where('path', '.*')
+//    ->name('image.show');
 
 // ============================================
 // PUBLIC ROUTES

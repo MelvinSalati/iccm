@@ -39,7 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     */
 
 // Main index page - list all screenings
-    Route::get('/breast-cancer', [BreastCancerController::class, 'index'])
+    Route::get('patients/{patientuuid}/breast-cancer', [BreastCancerController::class, 'index'])
         ->name('breast-cancer.index')
         ->middleware(['auth', 'verified']);
 

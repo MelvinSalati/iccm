@@ -2,72 +2,91 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\Http\Controllers\BreastCancerController::index
  * @see app/Http/Controllers/BreastCancerController.php:13
- * @route '/breast-cancer'
+ * @route '/patients/{patientuuid}/breast-cancer'
  */
-export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
+export const index = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: index.url(args, options),
     method: 'get',
 })
 
 index.definition = {
     methods: ["get","head"],
-    url: '/breast-cancer',
+    url: '/patients/{patientuuid}/breast-cancer',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\BreastCancerController::index
  * @see app/Http/Controllers/BreastCancerController.php:13
- * @route '/breast-cancer'
+ * @route '/patients/{patientuuid}/breast-cancer'
  */
-index.url = (options?: RouteQueryOptions) => {
-    return index.definition.url + queryParams(options)
+index.url = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { patientuuid: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    patientuuid: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        patientuuid: args.patientuuid,
+                }
+
+    return index.definition.url
+            .replace('{patientuuid}', parsedArgs.patientuuid.toString())
+            .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
 * @see \App\Http\Controllers\BreastCancerController::index
  * @see app/Http/Controllers/BreastCancerController.php:13
- * @route '/breast-cancer'
+ * @route '/patients/{patientuuid}/breast-cancer'
  */
-index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
+index.get = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: index.url(args, options),
     method: 'get',
 })
 /**
 * @see \App\Http\Controllers\BreastCancerController::index
  * @see app/Http/Controllers/BreastCancerController.php:13
- * @route '/breast-cancer'
+ * @route '/patients/{patientuuid}/breast-cancer'
  */
-index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: index.url(options),
+index.head = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: index.url(args, options),
     method: 'head',
 })
 
     /**
 * @see \App\Http\Controllers\BreastCancerController::index
  * @see app/Http/Controllers/BreastCancerController.php:13
- * @route '/breast-cancer'
+ * @route '/patients/{patientuuid}/breast-cancer'
  */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
+    const indexForm = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(args, options),
         method: 'get',
     })
 
             /**
 * @see \App\Http\Controllers\BreastCancerController::index
  * @see app/Http/Controllers/BreastCancerController.php:13
- * @route '/breast-cancer'
+ * @route '/patients/{patientuuid}/breast-cancer'
  */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
+        indexForm.get = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(args, options),
             method: 'get',
         })
             /**
 * @see \App\Http\Controllers\BreastCancerController::index
  * @see app/Http/Controllers/BreastCancerController.php:13
- * @route '/breast-cancer'
+ * @route '/patients/{patientuuid}/breast-cancer'
  */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
+        indexForm.head = (args: { patientuuid: string | number } | [patientuuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
                             ...(options?.query ?? options?.mergeQuery ?? {}),
