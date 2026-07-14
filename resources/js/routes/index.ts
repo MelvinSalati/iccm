@@ -793,7 +793,8 @@ discharges.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     discharges.form = dischargesForm
 /**
- * @see routes/web.php:141
+* @see \App\Http\Controllers\Appointments\AppointmentController::appointments
+ * @see app/Http/Controllers/Appointments/AppointmentController.php:32
  * @route '/appointments'
  */
 export const appointments = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -807,7 +808,8 @@ appointments.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:141
+* @see \App\Http\Controllers\Appointments\AppointmentController::appointments
+ * @see app/Http/Controllers/Appointments/AppointmentController.php:32
  * @route '/appointments'
  */
 appointments.url = (options?: RouteQueryOptions) => {
@@ -815,7 +817,8 @@ appointments.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:141
+* @see \App\Http\Controllers\Appointments\AppointmentController::appointments
+ * @see app/Http/Controllers/Appointments/AppointmentController.php:32
  * @route '/appointments'
  */
 appointments.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -823,7 +826,8 @@ appointments.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:141
+* @see \App\Http\Controllers\Appointments\AppointmentController::appointments
+ * @see app/Http/Controllers/Appointments/AppointmentController.php:32
  * @route '/appointments'
  */
 appointments.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -832,7 +836,8 @@ appointments.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:141
+* @see \App\Http\Controllers\Appointments\AppointmentController::appointments
+ * @see app/Http/Controllers/Appointments/AppointmentController.php:32
  * @route '/appointments'
  */
     const appointmentsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -841,7 +846,8 @@ appointments.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:141
+* @see \App\Http\Controllers\Appointments\AppointmentController::appointments
+ * @see app/Http/Controllers/Appointments/AppointmentController.php:32
  * @route '/appointments'
  */
         appointmentsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -849,7 +855,8 @@ appointments.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:141
+* @see \App\Http\Controllers\Appointments\AppointmentController::appointments
+ * @see app/Http/Controllers/Appointments/AppointmentController.php:32
  * @route '/appointments'
  */
         appointmentsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -864,7 +871,7 @@ appointments.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     appointments.form = appointmentsForm
 /**
- * @see routes/web.php:161
+ * @see routes/web.php:159
  * @route '/consultations'
  */
 export const consultations = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -878,7 +885,7 @@ consultations.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:161
+ * @see routes/web.php:159
  * @route '/consultations'
  */
 consultations.url = (options?: RouteQueryOptions) => {
@@ -886,7 +893,7 @@ consultations.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:161
+ * @see routes/web.php:159
  * @route '/consultations'
  */
 consultations.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -894,7 +901,7 @@ consultations.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:161
+ * @see routes/web.php:159
  * @route '/consultations'
  */
 consultations.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -903,7 +910,7 @@ consultations.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
 })
 
     /**
- * @see routes/web.php:161
+ * @see routes/web.php:159
  * @route '/consultations'
  */
     const consultationsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -912,7 +919,7 @@ consultations.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     })
 
             /**
- * @see routes/web.php:161
+ * @see routes/web.php:159
  * @route '/consultations'
  */
         consultationsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -920,7 +927,7 @@ consultations.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
             method: 'get',
         })
             /**
- * @see routes/web.php:161
+ * @see routes/web.php:159
  * @route '/consultations'
  */
         consultationsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

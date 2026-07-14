@@ -6,6 +6,7 @@ use App\Domains\Patients\Actions\PatientRegistrationAction;
 use App\Domains\Patients\Actions\PatientSearchAction;
 use App\Helpers\IdentifiersHelper;
 use App\Models\IntegratedScreening;
+use App\Models\LaboratoryOrder;
 use App\Models\Patients\Patient;
 use App\Models\Patients\PatientVisit;
 use App\Models\Patients\PatientVisitInteraction;
@@ -568,12 +569,10 @@ class PatientController extends Controller
     }
     public function lab($uuid)
     {
-        $patient = Patient::where('patient_uuid', $uuid)
-            ->firstOrFail();
-
+        $patient = IdentifiersHelper::getPatientIdByUuid($uuid);
+        $patient = LaboratoryOrder::where('patient_id', $patient)->get();
         return Inertia::render('patients/laboratory', [
-            'patient' => $patient,
-            'riskAssessment' => $patient->latestRiskAssessment,
+            'orders' => $patient,
         ]);
     }
     /**
@@ -582,10 +581,10 @@ class PatientController extends Controller
     public function labs($uuid)
     {
         $patient = Patient::where('patient_uuid', $uuid)->firstOrFail();
-
+        $pstientId = IdentifiersHelper::getPatientIdByUuid($uuid);
         return Inertia::render('patients/labs', [
             'patient' => $patient,
-            'labs' => [], // Fetch lab results from your lab results table
+            'labOrders' => LaboratoryOrder::where('patient_id',$pstientId)->get(), // Fetch lab results from your lab results table
         ]);
     }
 

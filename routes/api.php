@@ -21,6 +21,7 @@ Route::prefix('v1/registry')->group(function () {
 Route::prefix('v1/patients')->group(function () {
 
 
+    /***
    /**
    *   start a visit return to patients
     * */
@@ -77,6 +78,9 @@ Route::prefix('v1/laboratory')->group(function () {
     Route::post('/orders/{orderId}/results', [LaboratoryController::class, 'enterResults']);
 });
 
+
+
+    Route::put('v1/appointments/{id}', [AppointmentController::class, 'update']);
 
 Route::post('/v1/community-outreach',[\App\Http\Controllers\CommunityEngagement\AggregateController::class,'store']);
 Route::get('/community/engagement',[\App\Http\Controllers\CommunityEngagement\AggregateController::class,'index']);

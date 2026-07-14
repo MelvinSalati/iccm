@@ -6,6 +6,7 @@ use App\Models\Patients\PatientVisit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Patients\Patient;
 
 class Appointment extends Model
 {
@@ -50,7 +51,7 @@ class Appointment extends Model
 
     public function patient(): BelongsTo
     {
-        return $this->belongsTo(Patient::class);
+        return $this->belongsTo(Patient::class,'patient_id','id');
     }
 
     public function visit(): BelongsTo

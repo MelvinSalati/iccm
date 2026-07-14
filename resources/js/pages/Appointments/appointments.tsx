@@ -1,5 +1,5 @@
 // resources/js/components/appointments/appointment-table.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import {
     Table,
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
     ChevronLeft,
     ChevronRight,
@@ -26,11 +27,29 @@ import {
     CalendarDays,
     CalendarRange,
     ListChecks,
-    X
+    X,
+    Clock,
+    MapPin,
+    FileText,
+    CheckCircle,
+    Edit,
+    Save,
+    UserCircle,
+    Phone,
+    Mail,
+    ClipboardCheck,
+    Activity,
+    CalendarPlus,
+    ChevronDown,
+    AlertCircle,
+    Pencil
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
 import { dashboard } from '@/routes';
+import Notiflix from 'notiflix';
+import { usePage } from '@inertiajs/react';
+import axios from 'axios';
 
 // Types
 interface Appointment {
@@ -38,13 +57,25 @@ interface Appointment {
     patient_uuid: string;
     patient_name: string;
     patient_initial?: string;
+    patient_email?: string;
+    patient_phone?: string;
+    patient_nrc?: string;
     date: string;
     time: string;
     type: string;
-    status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+    status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show' | 'in-progress';
     doctor_name?: string;
+    doctor_id?: string;
     facility_name?: string;
     notes?: string;
+    review_notes?: string;
+    department?: string;
+    priority?: string;
+    duration_minutes?: number;
+    created_at?: string;
+    reason?: string;
+    follow_up_needed?: boolean;
+    follow_up_date?: string;
 }
 
 interface AppointmentTableProps {
@@ -56,11 +87,12 @@ type FilterPeriod = 'today' | 'weekly' | 'monthly' | 'all';
 // Status badge component
 const StatusBadge = ({ status }: { status: Appointment['status'] }) => {
     const statusConfig = {
-        scheduled: { color: 'bg-blue-100 text-blue-700 border-blue-200', label: 'Scheduled' },
-        confirmed: { color: 'bg-green-100 text-green-700 border-green-200', label: 'Confirmed' },
-        completed: { color: 'bg-purple-100 text-purple-700 border-purple-200', label: 'Completed' },
-        cancelled: { color: 'bg-red-100 text-red-700 border-red-200', label: 'Cancelled' },
-        'no-show': { color: 'bg-orange-100 text-orange-700 border-orange-200', label: 'No Show' },
+        scheduled: { color: 'bg-blue-50 text-blue-700 border-blue-200', label: 'Scheduled' },
+        confirmed: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Confirmed' },
+        'in-progress': { color: 'bg-amber-50 text-amber-700 border-amber-200', label: 'In Progress' },
+        completed: { color: 'bg-purple-50 text-purple-700 border-purple-200', label: 'Completed' },
+        cancelled: { color: 'bg-red-50 text-red-700 border-red-200', label: 'Cancelled' },
+        'no-show': { color: 'bg-orange-50 text-orange-700 border-orange-200', label: 'No Show' },
     };
 
     const config = statusConfig[status] || statusConfig.scheduled;
@@ -72,123 +104,941 @@ const StatusBadge = ({ status }: { status: Appointment['status'] }) => {
     );
 };
 
-// Appointment Details Modal
-const AppointmentDetailsModal = ({
-                                     appointment,
-                                     isOpen,
-                                     onClose
-                                 }: {
+// Priority Badge
+const PriorityBadge = ({ priority }: { priority?: string }) => {
+    const priorityConfig = {
+        emergency: { color: 'bg-red-50 text-red-700 border-red-200', label: 'Emergency' },
+        urgent: { color: 'bg-orange-50 text-orange-700 border-orange-200', label: 'Urgent' },
+        routine: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Routine' },
+    };
+
+    const config = priorityConfig[priority?.toLowerCase() as keyof typeof priorityConfig] || priorityConfig.routine;
+
+    return (
+        <Badge variant="outline" className={cn('px-2 py-0.5 text-xs font-medium', config.color)}>
+            {config.label}
+        </Badge>
+    );
+};
+
+// Appointment Details Modal Component
+interface AppointmentDetailsModalProps {
     appointment: Appointment | null;
     isOpen: boolean;
     onClose: () => void;
-}) => {
+    onUpdate?: (data: any) => void;
+}
+
+function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: AppointmentDetailsModalProps) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [showFollowUp, setShowFollowUp] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [formData, setFormData] = useState({
+        status: '',
+        review_notes: '',
+        notes: '',
+        doctor_name: '',
+        department: '',
+        priority: '',
+        duration_minutes: 30,
+        reason: '',
+        follow_up_needed: false,
+        follow_up_date: '',
+    });
+
+    useEffect(() => {
+        if (appointment) {
+            setFormData({
+                status: appointment.status || 'scheduled',
+                review_notes: appointment.review_notes || '',
+                notes: appointment.notes || '',
+                doctor_name: appointment.doctor_name || '',
+                department: appointment.department || '',
+                priority: appointment.priority || 'routine',
+                duration_minutes: appointment.duration_minutes || 30,
+                reason: appointment.reason || '',
+                follow_up_needed: appointment.follow_up_needed || false,
+                follow_up_date: appointment.follow_up_date || '',
+            });
+            setShowFollowUp(appointment.follow_up_needed || false);
+        }
+    }, [appointment]);
+
+    // Reset editing state when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            setIsEditing(false);
+            setIsSaving(false);
+        }
+    }, [isOpen]);
+
     if (!isOpen || !appointment) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                    <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-blue-600" />
-                        Appointment Details
-                    </h3>
-                    <button
-                        onClick={onClose}
-                        className="p-1 rounded-md hover:bg-slate-100 transition-colors"
-                    >
-                        <X className="h-5 w-5 text-slate-500" />
-                    </button>
-                </div>
+    const getStatusColor = (status: string) => {
+        const colors = {
+            scheduled: 'bg-blue-50 border-blue-200 text-blue-700',
+            confirmed: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+            'in-progress': 'bg-amber-50 border-amber-200 text-amber-700',
+            completed: 'bg-purple-50 border-purple-200 text-purple-700',
+            cancelled: 'bg-red-50 border-red-200 text-red-700',
+            'no-show': 'bg-orange-50 border-orange-200 text-orange-700',
+        };
+        return colors[status as keyof typeof colors] || colors.scheduled;
+    };
 
-                {/* Content */}
-                <div className="p-4 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Patient</p>
-                            <div className="flex items-center gap-2 mt-1">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
-                                        {appointment.patient_initial || appointment.patient_name.substring(0, 2).toUpperCase()}
+    const handleStatusChange = (newStatus: string) => {
+        setFormData(prev => ({ ...prev, status: newStatus }));
+    };
+
+    const handleSave = async () => {
+        if (isSaving) return;
+
+        setIsSaving(true);
+
+        try {
+            const updateData = {
+                id: appointment.id,
+                status: formData.status,
+                review_notes: formData.review_notes,
+                notes: formData.notes,
+                doctor_name: formData.doctor_name,
+                reason: formData.reason,
+                follow_up_needed: showFollowUp,
+                follow_up_date: showFollowUp ? formData.follow_up_date : null,
+            };
+
+            console.log('Saving appointment data:', updateData);
+
+            if (onUpdate) {
+                await onUpdate(updateData);
+                Notiflix.Notify.success('Appointment updated successfully!');
+                setIsEditing(false);
+                onClose();
+            } else {
+                Notiflix.Notify.success('Appointment updated successfully!');
+                setIsEditing(false);
+                onClose();
+            }
+        } catch (error: any) {
+            console.error('Error saving appointment:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update appointment. Please try again.';
+            Notiflix.Notify.failure(errorMessage);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handlePatientShowUp = () => {
+        handleStatusChange('completed');
+        Notiflix.Notify.success('Patient marked as showed up. Status updated to Completed.');
+    };
+
+    const statusOptions = [
+        { value: 'scheduled', label: 'Scheduled' },
+        { value: 'confirmed', label: 'Confirmed' },
+        { value: 'in-progress', label: 'In Progress' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'cancelled', label: 'Cancelled' },
+        { value: 'no-show', label: 'No Show' },
+    ];
+
+    return (
+        <>
+            {/* Overlay with solid background */}
+            <div
+                className="fixed inset-0 z-50 bg-black/50"
+                onClick={() => { setIsEditing(false); onClose(); }}
+            />
+
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                    className="relative w-full max-w-4xl bg-white rounded-lg shadow-2xl flex flex-col max-h-[90vh]"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header - Patient Details */}
+                    <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 rounded-t-lg flex-shrink-0">
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <Avatar className="h-12 w-12 border border-slate-200 flex-shrink-0">
+                                    <AvatarFallback className="bg-slate-200 text-slate-700 text-sm font-medium">
+                                        {appointment.patient_initial || appointment.patient_name?.substring(0, 2).toUpperCase() || '??'}
                                     </AvatarFallback>
                                 </Avatar>
-                                <p className="text-sm font-medium text-slate-900">{appointment.patient_name}</p>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-base font-semibold text-slate-900 truncate">{appointment.patient_name}</h3>
+                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                                        {appointment.patient_nrc && (
+                                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                                                <UserCircle className="h-3 w-3" />
+                                                {appointment.patient_nrc}
+                                            </span>
+                                        )}
+                                        {appointment.patient_phone && (
+                                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                                                <Phone className="h-3 w-3" />
+                                                {appointment.patient_phone}
+                                            </span>
+                                        )}
+                                        {appointment.patient_email && (
+                                            <span className="text-xs text-slate-500 flex items-center gap-1 truncate max-w-[150px]">
+                                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                                <span className="truncate">{appointment.patient_email}</span>
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsEditing(!isEditing)}
+                                    className="h-8 px-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                                    disabled={isSaving}
+                                >
+                                    {isEditing ? (
+                                        <X className="h-4 w-4" />
+                                    ) : (
+                                        <Pencil className="h-4 w-4" />
+                                    )}
+                                </Button>
+                                <button
+                                    onClick={() => { setIsEditing(false); onClose(); }}
+                                    className="p-1.5 hover:bg-slate-200 rounded-md transition-colors text-slate-500"
+                                    disabled={isSaving}
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
                             </div>
                         </div>
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Status</p>
-                            <div className="mt-1">
-                                <StatusBadge status={appointment.status} />
+
+                        {/* Status and priority in header */}
+                        <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-200">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-500">Status:</span>
+                                <Badge className={cn('px-2 py-0.5 text-xs font-medium border', getStatusColor(formData.status))}>
+                                    {statusOptions.find(s => s.value === formData.status)?.label || formData.status}
+                                </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-500">Priority:</span>
+                                <PriorityBadge priority={formData.priority} />
+                            </div>
+                            {appointment.department && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500">Dept:</span>
+                                    <span className="text-xs text-slate-700 font-medium">{appointment.department}</span>
+                                </div>
+                            )}
+                            {appointment.duration_minutes && (
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-3 w-3 text-slate-400" />
+                                    <span className="text-xs text-slate-600">{appointment.duration_minutes}m</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Body - Two Column Layout */}
+                    <div className="p-4 flex-1 overflow-y-auto">
+                        {/* Quick Action: Patient Showed Up - Full Width */}
+                        {formData.status !== 'completed' && formData.status !== 'cancelled' && formData.status !== 'no-show' && (
+                            <div className="mb-3 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                    <span className="text-xs text-emerald-700 font-medium">Patient showed up?</span>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    onClick={handlePatientShowUp}
+                                    className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    disabled={isSaving}
+                                >
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Mark Showed Up
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Two Column Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Left Column */}
+                            <div className="space-y-3">
+                                {/* Status Dropdown */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Activity className="h-3 w-3" />
+                                        Appointment Status
+                                    </label>
+                                    {isEditing ? (
+                                        <div className="mt-1 relative">
+                                            <select
+                                                value={formData.status}
+                                                onChange={(e) => handleStatusChange(e.target.value)}
+                                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors appearance-none"
+                                                disabled={isSaving}
+                                            >
+                                                {statusOptions.map((status) => (
+                                                    <option key={status.value} value={status.value}>
+                                                        {status.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                                        </div>
+                                    ) : (
+                                        <div className="mt-1 p-2 bg-slate-50 rounded border border-slate-200">
+                                            <p className="text-sm font-medium text-slate-900">
+                                                {statusOptions.find(s => s.value === formData.status)?.label || formData.status}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Date */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        Date
+                                    </label>
+                                    <p className="mt-1 text-sm font-medium text-slate-900">
+                                        {appointment.date ? format(parseISO(appointment.date), 'EEE, MMM d, yyyy') : '—'}
+                                    </p>
+                                </div>
+
+                                {/* Time */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        Time
+                                    </label>
+                                    <p className="mt-1 text-sm font-medium text-slate-900">{appointment.time || '—'}</p>
+                                </div>
+
+                                {/* Type */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Stethoscope className="h-3 w-3" />
+                                        Appointment Type
+                                    </label>
+                                    <p className="mt-1 text-sm font-medium text-slate-900">{appointment.type || '—'}</p>
+                                </div>
+
+                                {/* Doctor */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <User className="h-3 w-3" />
+                                        Doctor
+                                    </label>
+                                    {isEditing ? (
+                                        <Input
+                                            value={formData.doctor_name}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, doctor_name: e.target.value }))}
+                                            className="mt-1 text-sm h-8"
+                                            placeholder="Doctor name"
+                                            disabled={isSaving}
+                                        />
+                                    ) : (
+                                        <p className="mt-1 text-sm font-medium text-slate-900">{appointment.doctor_name || '—'}</p>
+                                    )}
+                                </div>
+
+                                {/* Facility */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        Facility
+                                    </label>
+                                    <p className="mt-1 text-sm font-medium text-slate-900">{appointment.facility_name || '—'}</p>
+                                </div>
+                            </div>
+
+                            {/* Right Column */}
+                            <div className="space-y-3">
+                                {/* Reason for Appointment */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <ClipboardCheck className="h-3 w-3" />
+                                        Reason for Appointment
+                                    </label>
+                                    {isEditing ? (
+                                        <Textarea
+                                            rows={2}
+                                            value={formData.reason}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                                            placeholder="Reason for the appointment..."
+                                            className="mt-1 text-sm resize-none"
+                                            disabled={isSaving}
+                                        />
+                                    ) : (
+                                        <div className="mt-1 p-2 bg-slate-50 rounded border border-slate-200 min-h-[40px]">
+                                            {formData.reason ? (
+                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{formData.reason}</p>
+                                            ) : (
+                                                <p className="text-sm text-slate-400 italic">No reason provided</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Appointment Notes */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <FileText className="h-3 w-3" />
+                                        Appointment Notes
+                                    </label>
+                                    {isEditing ? (
+                                        <Textarea
+                                            rows={2}
+                                            value={formData.notes}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                            placeholder="Add appointment notes..."
+                                            className="mt-1 text-sm resize-none"
+                                            disabled={isSaving}
+                                        />
+                                    ) : (
+                                        <div className="mt-1 p-2 bg-slate-50 rounded border border-slate-200 min-h-[40px]">
+                                            {formData.notes ? (
+                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{formData.notes}</p>
+                                            ) : (
+                                                <p className="text-sm text-slate-400 italic">No notes provided</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Review Notes */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <FileText className="h-3 w-3" />
+                                        Review Notes & Comments
+                                    </label>
+                                    {isEditing ? (
+                                        <Textarea
+                                            rows={2}
+                                            value={formData.review_notes}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, review_notes: e.target.value }))}
+                                            placeholder="Add review notes, clinical observations..."
+                                            className="mt-1 text-sm resize-none"
+                                            disabled={isSaving}
+                                        />
+                                    ) : (
+                                        <div className="mt-1 p-2 bg-slate-50 rounded border border-slate-200 min-h-[40px]">
+                                            {formData.review_notes ? (
+                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{formData.review_notes}</p>
+                                            ) : (
+                                                <p className="text-sm text-slate-400 italic">No review notes provided</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Follow-up Section */}
+                                <div className="border-t border-slate-200 pt-2">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <input
+                                            type="checkbox"
+                                            id="follow-up"
+                                            checked={showFollowUp}
+                                            onChange={(e) => {
+                                                setShowFollowUp(e.target.checked);
+                                                if (!e.target.checked) {
+                                                    setFormData(prev => ({ ...prev, follow_up_date: '' }));
+                                                }
+                                            }}
+                                            disabled={!isEditing || isSaving}
+                                            className="h-4 w-4 rounded border-slate-300 text-slate-600 focus:ring-slate-400 disabled:opacity-50"
+                                        />
+                                        <label htmlFor="follow-up" className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                            <CalendarPlus className="h-3.5 w-3.5" />
+                                            Follow-up needed
+                                        </label>
+                                    </div>
+
+                                    {showFollowUp && (
+                                        <div>
+                                            <label className="text-[10px] font-medium text-slate-600 flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" />
+                                                Next Follow-up Date
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={formData.follow_up_date}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, follow_up_date: e.target.value }))}
+                                                min={new Date().toISOString().split('T')[0]}
+                                                className="mt-0.5 w-full px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                                disabled={!isEditing || isSaving}
+                                            />
+                                            {!isEditing && formData.follow_up_date && (
+                                                <p className="text-xs text-slate-600 mt-1">
+                                                    Scheduled for: {format(parseISO(formData.follow_up_date), 'MMM d, yyyy')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Date</p>
-                            <p className="text-sm text-slate-900 mt-1">{format(parseISO(appointment.date), 'PPP')}</p>
+                    {/* Footer */}
+                    <div className="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-200 rounded-b-lg flex-shrink-0">
+                        <div className="text-[10px] text-slate-500">
+                            <span className="font-medium text-slate-600">Patient ID:</span> {appointment.patient_uuid}
+                            {appointment.created_at && (
+                                <>
+                                    <span className="mx-2 text-slate-300">·</span>
+                                    <span className="font-medium text-slate-600">Created:</span> {format(parseISO(appointment.created_at), 'MMM dd, yyyy')}
+                                </>
+                            )}
                         </div>
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Time</p>
-                            <p className="text-sm text-slate-900 mt-1">{appointment.time}</p>
+                        <div className="flex gap-2">
+                            {isEditing && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setIsEditing(false)}
+                                        className="text-xs h-8"
+                                        disabled={isSaving}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSave}
+                                        className="bg-slate-700 hover:bg-slate-800 text-white text-xs h-8"
+                                        disabled={isSaving}
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <svg className="animate-spin h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="h-3 w-3 mr-1" />
+                                                Save Changes
+                                            </>
+                                        )}
+                                    </Button>
+                                </>
+                            )}
+                            <Button
+                                size="sm"
+                                onClick={() => { setIsEditing(false); onClose(); }}
+                                className="bg-slate-600 hover:bg-slate-700 text-white text-xs h-8"
+                                disabled={isSaving}
+                            >
+                                Close
+                            </Button>
                         </div>
                     </div>
-
-                    <div>
-                        <p className="text-xs font-medium text-slate-500">Appointment Type</p>
-                        <p className="text-sm text-slate-900 mt-1">{appointment.type}</p>
-                    </div>
-
-                    {appointment.doctor_name && (
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Doctor</p>
-                            <p className="text-sm text-slate-900 mt-1 flex items-center gap-2">
-                                <Stethoscope className="h-4 w-4 text-slate-400" />
-                                {appointment.doctor_name}
-                            </p>
-                        </div>
-                    )}
-
-                    {appointment.facility_name && (
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Facility</p>
-                            <p className="text-sm text-slate-900 mt-1">{appointment.facility_name}</p>
-                        </div>
-                    )}
-
-                    {appointment.notes && (
-                        <div>
-                            <p className="text-xs font-medium text-slate-500">Notes</p>
-                            <p className="text-sm text-slate-700 mt-1 bg-slate-50 p-2 rounded-md border border-slate-200">
-                                {appointment.notes}
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <div className="flex flex-col sm:flex-row gap-2 p-4 border-t border-slate-200 bg-slate-50">
-                    <Button
-                        variant="outline"
-                        className="w-full sm:w-auto"
-                        onClick={onClose}
-                    >
-                        Close
-                    </Button>
-                    <Button
-                        className="w-full sm:w-auto"
-                        asChild
-                    >
-                        <Link href={`/patients/registry/${appointment.patient_uuid}/appointments`}>
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            View Patient Appointments
-                        </Link>
-                    </Button>
                 </div>
             </div>
-        </div>
+        </>
     );
-};
+}
+
+// Appointment Modal for creating new appointments
+interface AppointmentModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (data: any) => void;
+    patient: any;
+    visitId?: number | null;
+}
+
+const appointmentTypes = [
+    'Consultation',
+    'Follow-up',
+    'Screening',
+    'Treatment',
+    'Review',
+    'Referral',
+    'Emergency',
+    'Other'
+];
+
+const departments = [
+    'Gynecology',
+    'Oncology',
+    'Surgery',
+    'Internal Medicine',
+    'Pediatrics',
+    'Dermatology',
+    'Radiology',
+    'Cardiology',
+    'Neurology',
+    'Urology'
+];
+
+const priorities = [
+    'Routine',
+    'Urgent',
+    'Emergency'
+];
+
+const statuses = [
+    'Scheduled',
+    'Confirmed',
+    'In Progress',
+    'Completed',
+    'Cancelled',
+    'No Show'
+];
+
+export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }: AppointmentModalProps) {
+    const { sharedData } = usePage().props;
+
+    const [formData, setFormData] = useState({
+        appointment_date: '',
+        appointment_time: '',
+        appointment_type: 'Consultation',
+        doctor_name: '',
+        doctor_id: '',
+        department: '',
+        notes: '',
+        priority: 'Routine',
+        duration_minutes: 30,
+        location: '',
+        reason: '',
+        appointment_status: 'Scheduled',
+        visit_id: visitId || null,
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!formData.appointment_date || !formData.appointment_time || !formData.department) {
+            Notiflix.Notify.failure('Please fill in all required fields');
+            return;
+        }
+
+        const payload = {
+            patient_id: patient?.id,
+            visit_id: formData.visit_id,
+            appointment_date: formData.appointment_date,
+            appointment_time: formData.appointment_time,
+            appointment_type: formData.appointment_type,
+            appointment_status: formData.appointment_status.toLowerCase(),
+            priority: formData.priority.toLowerCase(),
+            department: formData.department,
+            doctor_id: formData.doctor_id || null,
+            doctor_name: formData.doctor_name || null,
+            reason: formData.reason || null,
+            notes: formData.notes || null,
+            duration_minutes: formData.duration_minutes || 30,
+            facility_id: null,
+            provider_id: null,
+            province_code: null,
+            district_code: null,
+            reminder_sent: false,
+            sms_sent: false,
+            email_sent: false,
+        };
+
+        try {
+            onSubmit(payload);
+            onClose();
+            resetForm();
+            Notiflix.Notify.success('Appointment scheduled successfully!');
+        } catch (error) {
+            console.error('Error submitting appointment:', error);
+            Notiflix.Notify.failure('Failed to create appointment. Please try again.');
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            appointment_date: '',
+            appointment_time: '',
+            appointment_type: 'Consultation',
+            doctor_name: '',
+            doctor_id: '',
+            department: '',
+            notes: '',
+            priority: 'Routine',
+            duration_minutes: 30,
+            location: '',
+            reason: '',
+            appointment_status: 'Scheduled',
+            visit_id: visitId || null,
+        });
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <>
+            <div className="fixed inset-0 z-50 bg-black/50" onClick={() => { resetForm(); onClose(); }} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-6 py-3 bg-slate-50 border-b border-slate-200 rounded-t-lg flex-shrink-0">
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+                                <Calendar className="h-4 w-4" />
+                            </div>
+                            <div>
+                                <h2 className="text-sm font-semibold text-slate-900">Schedule Appointment</h2>
+                                <p className="text-xs text-slate-500">Book a new appointment for the patient</p>
+                            </div>
+                        </div>
+                        <button onClick={() => { resetForm(); onClose(); }} className="p-1.5 hover:bg-slate-200 rounded-md transition-colors">
+                            <X className="h-4 w-4 text-slate-500" />
+                        </button>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-6 overflow-y-auto flex-1">
+                        <form id="appointment-form" onSubmit={handleSubmit} className="space-y-4">
+                            {/* Patient Summary */}
+                            <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-slate-400" />
+                                    <div>
+                                        <p className="text-xs text-slate-500">Patient</p>
+                                        <p className="text-sm font-medium text-slate-900 truncate">{patient?.full_name || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Stethoscope className="h-4 w-4 text-slate-400" />
+                                    <div>
+                                        <p className="text-xs text-slate-500">ID</p>
+                                        <p className="text-sm font-medium text-slate-900 truncate">{patient?.nrc_number || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                {visitId && (
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 text-slate-400" />
+                                        <div>
+                                            <p className="text-xs text-slate-500">Visit</p>
+                                            <p className="text-sm font-medium text-slate-900">#{visitId}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Date & Time */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                                        Date *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={formData.appointment_date}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, appointment_date: e.target.value }))}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                        min={new Date().toISOString().split('T')[0]}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                                        Time *
+                                    </label>
+                                    <input
+                                        type="time"
+                                        required
+                                        value={formData.appointment_time}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, appointment_time: e.target.value }))}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Type & Duration */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Stethoscope className="h-3.5 w-3.5 text-slate-400" />
+                                        Appointment Type *
+                                    </label>
+                                    <select
+                                        required
+                                        value={formData.appointment_type}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, appointment_type: e.target.value }))}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                    >
+                                        {appointmentTypes.map((type) => (
+                                            <option key={type} value={type}>{type}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                                        Duration (minutes)
+                                    </label>
+                                    <select
+                                        value={formData.duration_minutes}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) }))}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                    >
+                                        {[15, 30, 45, 60, 90, 120].map((mins) => (
+                                            <option key={mins} value={mins}>{mins} minutes</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Department & Priority */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <Stethoscope className="h-3.5 w-3.5 text-slate-400" />
+                                        Department *
+                                    </label>
+                                    <select
+                                        required
+                                        value={formData.department}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                    >
+                                        <option value="">Select department</option>
+                                        {departments.map((dept) => (
+                                            <option key={dept} value={dept}>{dept}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <User className="h-3.5 w-3.5 text-slate-400" />
+                                        Priority
+                                    </label>
+                                    <select
+                                        value={formData.priority}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                    >
+                                        {priorities.map((priority) => (
+                                            <option key={priority} value={priority}>{priority}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Doctor & Status */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <User className="h-3.5 w-3.5 text-slate-400" />
+                                        Doctor
+                                    </label>
+                                    <select
+                                        value={formData.doctor_id}
+                                        onChange={(e) => {
+                                            const doctorId = e.target.value ? parseInt(e.target.value) : '';
+                                            const doctor = sharedData.users?.find((u: any) => u.id === doctorId);
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                doctor_id: doctorId,
+                                                doctor_name: doctor?.name || ''
+                                            }));
+                                        }}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                    >
+                                        <option value="">Select a doctor</option>
+                                        {sharedData.users?.map((item: any) => (
+                                            <option key={item.id} value={item.id}>{item.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                        <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                                        Status
+                                    </label>
+                                    <select
+                                        value={formData.appointment_status}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, appointment_status: e.target.value }))}
+                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors"
+                                    >
+                                        {statuses.map((status) => (
+                                            <option key={status} value={status}>{status}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Reason */}
+                            <div>
+                                <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                    <ClipboardCheck className="h-3.5 w-3.5 text-slate-400" />
+                                    Reason for Appointment
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    value={formData.reason}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                                    placeholder="Brief description of the reason for this appointment..."
+                                    className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors resize-none"
+                                />
+                            </div>
+
+                            {/* Notes */}
+                            <div>
+                                <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                                    <FileText className="h-3.5 w-3.5 text-slate-400" />
+                                    Appointment Notes
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    value={formData.notes}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                    placeholder="Additional notes about the appointment..."
+                                    className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 outline-none transition-colors resize-none"
+                                />
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-200 rounded-b-lg flex-shrink-0">
+                        <div className="text-xs text-slate-500 truncate">
+                            <span className="font-medium text-slate-700">Patient:</span> {patient?.full_name || 'N/A'}
+                            <span className="mx-2 text-slate-300">·</span>
+                            <span className="font-medium text-slate-700">ID:</span> {patient?.nrc_number || 'N/A'}
+                            {visitId && (
+                                <>
+                                    <span className="mx-2 text-slate-300">·</span>
+                                    <span className="font-medium text-slate-700">Visit:</span> #{visitId}
+                                </>
+                            )}
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    resetForm();
+                                    onClose();
+                                }}
+                                className="px-4 py-2 text-sm border border-slate-200 rounded-md hover:bg-slate-100 text-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                form="appointment-form"
+                                className="px-4 py-2 text-sm bg-slate-700 hover:bg-slate-800 text-white rounded-md transition-colors flex items-center gap-2"
+                            >
+                                <Calendar className="h-4 w-4" />
+                                Schedule
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
 
 // Main Appointment Table Component
 export default function AppointmentTable({ appointments = [] }: AppointmentTableProps) {
@@ -196,12 +1046,11 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const itemsPerPage = 10;
 
     // Filter appointments based on period and search
     const filteredAppointments = useMemo(() => {
-        // Ensure appointments is an array
         if (!appointments || !Array.isArray(appointments) || appointments.length === 0) {
             return [];
         }
@@ -236,7 +1085,8 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
                 app.patient_name?.toLowerCase().includes(term) ||
                 app.type?.toLowerCase().includes(term) ||
                 app.doctor_name?.toLowerCase().includes(term) ||
-                app.facility_name?.toLowerCase().includes(term)
+                app.facility_name?.toLowerCase().includes(term) ||
+                app.patient_nrc?.toLowerCase().includes(term)
             );
         }
 
@@ -269,16 +1119,46 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
 
     const handleViewDetails = (appointment: Appointment) => {
         setSelectedAppointment(appointment);
-        setIsModalOpen(true);
+        setIsDetailsModalOpen(true);
+    };
+
+    // Update appointment using Axios with /api/v1 prefix
+    const handleUpdateAppointment = async (data: any) => {
+        try {
+            const response = await axios.post(`/api/v1/appointments/${data.id}`, {
+                ...data,
+                _method: 'PUT' // Laravel method spoofing
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                }
+            });
+
+            if (response.data.success) {
+                Notiflix.Notify.success('Appointment updated successfully');
+                // Refresh the page to show updated data
+                window.location.reload();
+                return response.data;
+            } else {
+                throw new Error(response.data.message || 'Failed to update appointment');
+            }
+        } catch (error: any) {
+            console.error('Error updating appointment:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update appointment. Please try again.';
+            Notiflix.Notify.failure(errorMessage);
+            throw error;
+        }
     };
 
     // Reset to first page when filter or search changes
-    useMemo(() => {
+    useEffect(() => {
         setCurrentPage(1);
     }, [filterPeriod, searchTerm]);
 
     return (
-        <div className="space-y-3 p-2 bg-slate-100 rounded-lg">
+        <div className="space-y-3 p-2 bg-slate-50 rounded-lg">
             {/* Filters and Search Bar */}
             <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
                 <div className="flex flex-wrap gap-1.5">
@@ -322,7 +1202,7 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
 
                 <div className="relative w-full sm:w-48">
                     <Input
-                        placeholder="Search..."
+                        placeholder="Search patient, doctor..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-8 h-7 text-xs"
@@ -341,17 +1221,17 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
             </div>
 
             {/* Table */}
-            <div className="border rounded-lg overflow-hidden bg-white">
+            <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-slate-50">
-                                <TableHead className="w-[160px] text-xs font-medium">Patient</TableHead>
-                                <TableHead className="w-[130px] text-xs font-medium">Date & Time</TableHead>
-                                <TableHead className="w-[120px] text-xs font-medium">Type</TableHead>
-                                <TableHead className="w-[100px] text-xs font-medium">Status</TableHead>
-                                <TableHead className="w-[120px] text-xs font-medium">Doctor</TableHead>
-                                <TableHead className="w-[80px] text-right text-xs font-medium">Actions</TableHead>
+                                <TableHead className="w-[180px] text-xs font-medium text-slate-600">Patient</TableHead>
+                                <TableHead className="w-[130px] text-xs font-medium text-slate-600">Date & Time</TableHead>
+                                <TableHead className="w-[120px] text-xs font-medium text-slate-600">Type</TableHead>
+                                <TableHead className="w-[100px] text-xs font-medium text-slate-600">Status</TableHead>
+                                <TableHead className="w-[120px] text-xs font-medium text-slate-600">Doctor</TableHead>
+                                <TableHead className="w-[80px] text-right text-xs font-medium text-slate-600">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -371,15 +1251,20 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <Avatar className="h-6 w-6">
-                                                    <AvatarFallback
-                                                        className="bg-blue-100 text-blue-700 text-[10px] font-medium">
+                                                    <AvatarFallback className="bg-slate-100 text-slate-700 text-[10px] font-medium">
                                                         {appointment.patient_initial || appointment.patient_name?.substring(0, 2).toUpperCase() || '??'}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <span
-                                                    className="text-sm font-medium text-slate-900 truncate max-w-[120px]">
-                                                    {appointment.patient_name || 'Unknown'}
-                                                </span>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-slate-900 truncate max-w-[100px]">
+                                                        {appointment.patient_name || 'Unknown'}
+                                                    </span>
+                                                    {appointment.patient_nrc && (
+                                                        <span className="text-[10px] text-slate-400 truncate max-w-[100px]">
+                                                            {appointment.patient_nrc}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -387,13 +1272,11 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
                                                 <span className="text-xs">
                                                     {appointment.date ? format(parseISO(appointment.date), 'MMM dd') : '—'}
                                                 </span>
-                                                <span
-                                                    className="text-[10px] text-slate-500">{appointment.time || '—'}</span>
+                                                <span className="text-[10px] text-slate-500">{appointment.time || '—'}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <span
-                                                className="text-xs truncate block max-w-[100px]">{appointment.type || '—'}</span>
+                                            <span className="text-xs truncate block max-w-[100px]">{appointment.type || '—'}</span>
                                         </TableCell>
                                         <TableCell>
                                             <StatusBadge status={appointment.status} />
@@ -409,8 +1292,8 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleViewDetails(appointment)}
-                                                    className="h-6 w-6 p-0"
-                                                    title="View Details"
+                                                    className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
+                                                    title="View/Edit Details"
                                                 >
                                                     <Eye className="h-3.5 w-3.5" />
                                                 </Button>
@@ -418,7 +1301,7 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
                                                     variant="ghost"
                                                     size="sm"
                                                     asChild
-                                                    className="h-6 w-6 p-0"
+                                                    className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
                                                     title="View Patient Appointments"
                                                 >
                                                     <Link
@@ -437,7 +1320,7 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between px-3 py-2 border-t bg-slate-50">
+                    <div className="flex items-center justify-between px-3 py-2 border-t border-slate-200 bg-slate-50">
                         <div className="text-xs text-slate-500">
                             Page {currentPage} of {totalPages}
                         </div>
@@ -558,11 +1441,12 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
             {/* Appointment Details Modal */}
             <AppointmentDetailsModal
                 appointment={selectedAppointment}
-                isOpen={isModalOpen}
+                isOpen={isDetailsModalOpen}
                 onClose={() => {
-                    setIsModalOpen(false);
+                    setIsDetailsModalOpen(false);
                     setSelectedAppointment(null);
                 }}
+                onUpdate={handleUpdateAppointment}
             />
         </div>
     );

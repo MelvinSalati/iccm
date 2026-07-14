@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Calendar, X, Clock, User, Stethoscope, MapPin, FileText } from 'lucide-react';
 import Notiflix from 'notiflix';
+import { usePage } from '@inertiajs/react';
 
 interface AppointmentModalProps {
     isOpen: boolean;
@@ -50,12 +51,17 @@ const statuses = [
     'No Show'
 ];
 
-export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }: AppointmentModalProps) {
+export function AppointmentModal({ isOpen, onClose, onSubmit, patients, visitId }: AppointmentModalProps) {
+
+
+    const  {sharedData,patient}  = usePage().props
+
     const [formData, setFormData] = useState({
         appointment_date: '',
         appointment_time: '',
         appointment_type: 'Consultation',
         doctor_name: '',
+        doctor_id: '',
         department: '',
         notes: '',
         priority: 'Routine',
@@ -85,6 +91,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
             appointment_status: formData.appointment_status.toLowerCase(),
             priority: formData.priority.toLowerCase(),
             department: formData.department,
+            doctor_id: formData.doctor_id,
             doctor_name: formData.doctor_name || null,
             reason: formData.reason || null,
             notes: formData.notes || null,
@@ -97,7 +104,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
             sms_sent: false,
             email_sent: false,
         };
-
+console.log(payload)
         try {
             onSubmit(payload);
             onClose();
@@ -114,6 +121,8 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
             appointment_time: '',
             appointment_type: 'Consultation',
             doctor_name: '',
+            doctor_id: '',
+            patient_id: '',
             department: '',
             notes: '',
             priority: 'Routine',
@@ -127,9 +136,25 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
 
     if (!isOpen) return null;
 
+
+    const renderDoctors   =  () => {
+        return <>
+            <select
+                value={formData.doctor_id}
+                onChange={(e) => setFormData(prev => ({ ...prev, doctor_id: parseInt(e.target.value) }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-colors"
+            >
+                <optgroup label={'Doctors | Coubsultation'}>
+                    {sharedData.users.map((item) => (
+                        <option value={item.id}>{item.name}</option>
+                    ))}
+                </optgroup>
+            </select>
+        </>
+    }
     return (
         <>
-            <div className="fixed inset-0 z-50 bg-black/40" onClick={() => { resetForm(); onClose(); }} />
+        <div className="fixed inset-0 z-50 bg-black/40" onClick={() => { resetForm(); onClose(); }} />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                     {/* Header */}
@@ -152,31 +177,31 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
                     <div className="p-6 overflow-y-auto flex-1">
                         <form id="appointment-form" onSubmit={handleSubmit} className="space-y-4">
                             {/* Patient Summary */}
-                            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                <div className="flex items-center gap-2">
-                                    <User className="h-4 w-4 text-slate-400" />
-                                    <div>
-                                        <p className="text-xs text-slate-500">Patient</p>
-                                        <p className="text-sm font-medium text-slate-900">{patient?.full_name || 'N/A'}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Stethoscope className="h-4 w-4 text-slate-400" />
-                                    <div>
-                                        <p className="text-xs text-slate-500">ID</p>
-                                        <p className="text-sm font-medium text-slate-900">{patient?.nrc_number || 'N/A'}</p>
-                                    </div>
-                                </div>
-                                {visitId && (
-                                    <div className="col-span-2 flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-slate-400" />
-                                        <div>
-                                            <p className="text-xs text-slate-500">Visit ID</p>
-                                            <p className="text-sm font-medium text-slate-900">#{visitId}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            {/*<div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">*/}
+                            {/*    <div className="flex items-center gap-2">*/}
+                            {/*        <User className="h-4 w-4 text-slate-400" />*/}
+                            {/*        <div>*/}
+                            {/*            <p className="text-xs text-slate-500">Patient</p>*/}
+                            {/*            <p className="text-sm font-medium text-slate-900">{patient?.full_name || 'N/A'}</p>*/}
+                            {/*        </div>*/}
+                            {/*    </div>*/}
+                            {/*    <div className="flex items-center gap-2">*/}
+                            {/*        <Stethoscope className="h-4 w-4 text-slate-400" />*/}
+                            {/*        <div>*/}
+                            {/*            <p className="text-xs text-slate-500">ID</p>*/}
+                            {/*            <p className="text-sm font-medium text-slate-900">{patient?.nrc_number || 'N/A'}</p>*/}
+                            {/*        </div>*/}
+                            {/*    </div>*/}
+                            {/*    {visitId && (*/}
+                            {/*        <div className="col-span-2 flex items-center gap-2">*/}
+                            {/*            <Calendar className="h-4 w-4 text-slate-400" />*/}
+                            {/*            <div>*/}
+                            {/*                <p className="text-xs text-slate-500">Visit ID</p>*/}
+                            {/*                <p className="text-sm font-medium text-slate-900">#{visitId}</p>*/}
+                            {/*            </div>*/}
+                            {/*        </div>*/}
+                            {/*    )}*/}
+                            {/*</div>*/}
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -286,13 +311,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
                                         <User className="h-3.5 w-3.5 text-slate-400" />
                                         Doctor Name
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={formData.doctor_name}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, doctor_name: e.target.value }))}
-                                        placeholder="e.g., Dr. John Doe"
-                                        className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-colors"
-                                    />
+                                    {renderDoctors()}
                                 </div>
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
@@ -311,19 +330,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
-                                    <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                                    Location / Room
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.location}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                                    placeholder="e.g., Room 301, Main Building"
-                                    className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-colors"
-                                />
-                            </div>
+
 
                             <div>
                                 <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
@@ -339,19 +346,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
                                 />
                             </div>
 
-                            <div>
-                                <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
-                                    <FileText className="h-3.5 w-3.5 text-slate-400" />
-                                    Additional Notes
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    value={formData.notes}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                                    placeholder="Any additional notes or special requirements..."
-                                    className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-md bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-colors resize-none"
-                                />
-                            </div>
+
                         </form>
                     </div>
 

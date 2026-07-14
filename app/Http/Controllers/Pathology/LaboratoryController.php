@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Pathology;
 use App\Http\Controllers\Controller;
 use App\Models\LaboratoryOrder;
 use App\Models\Patients\Patient;
+use App\Models\SampleQualityAssessment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class LaboratoryController extends Controller
@@ -50,6 +52,7 @@ class LaboratoryController extends Controller
                         'ordered_by_name' => $order->user ? $order->user->name : null,
                         'results' => $order->results,
                         'status' => $order->status,
+                        'sample_status' => $order->sample_status ?? null,
                         'processed_by' => $order->processed_by,
                         'processed_by_name' => $order->resultEntry ? $order->resultEntry->name : null,
                         'comment' => $order->comment,
@@ -86,6 +89,19 @@ class LaboratoryController extends Controller
                 'error' => 'Failed to load laboratory orders'
             ]);
         }
+    }
+
+    public function createOrder(Request $request)
+    {
+        $data = array_merge($request->all(), [
+            'laboratory_uuid' => Str::uuid(),
+            'order_number' => rand(111111, 999999)
+        ]);
+        $order = LaboratoryOrder::create($data);
+        return response()->json([
+            'message' => 'Laboratory order created successfully!',
+            'order' => $order
+        ], 201);
     }
 
     /**
@@ -136,6 +152,7 @@ class LaboratoryController extends Controller
                     'ordered_by_name' => $order->user ? $order->user->name : null,
                     'results' => $order->results,
                     'status' => $order->status,
+                    'sample_status' => $order->sample_status ?? null,
                     'processed_by' => $order->processed_by,
                     'processed_by_name' => $order->resultEntry ? $order->resultEntry->name : null,
                     'comment' => $order->comment,
@@ -192,6 +209,7 @@ class LaboratoryController extends Controller
                         'ordered_by_name' => $order->user ? $order->user->name : null,
                         'results' => $order->results,
                         'status' => $order->status,
+                        'sample_status' => $order->sample_status ?? null,
                         'processed_by' => $order->processed_by,
                         'processed_by_name' => $order->resultEntry ? $order->resultEntry->name : null,
                         'comment' => $order->comment,
@@ -226,6 +244,140 @@ class LaboratoryController extends Controller
                 'success' => false,
                 'message' => 'Failed to fetch patient orders',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save sample quality assessment
+     */
+    public function sampleAssessment(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'laboratory_order_id' => 'required|exists:laboratory_orders,id',
+                'patient_id' => 'required|exists:patients,id',
+                'assessed_by' => 'required|exists:users,id',
+                'sample_quality' => 'required|in:adequate,inadequate,unsatisfactory',
+                'quality_notes' => 'nullable|string',
+                'assessment_status' => 'required|in:assessed,pending,rejected',
+                'tissue_adequacy' => 'nullable|in:adequate,inadequate,marginal',
+                'representative_sampling' => 'nullable|in:yes,no,uncertain',
+                'fixation_quality' => 'nullable|in:good,fair,poor',
+                'fixation_medium' => 'nullable|string',
+                'fixative_ratio' => 'nullable|string',
+                'specimen_integrity' => 'nullable|in:intact,compromised,damaged',
+                'identification_verified' => 'nullable|boolean',
+                'container_leak_proof' => 'nullable|boolean',
+                'crushing_artifacts' => 'nullable|boolean',
+                'needs_special_handling' => 'nullable|boolean',
+                'special_handling_details' => 'nullable|string',
+                'rejection_reason' => 'nullable|string|required_if:sample_quality,unsatisfactory'
+            ]);
+
+            // Find the order
+            $order = LaboratoryOrder::findOrFail($id);
+
+            // Create or update the assessment
+            $assessment = SampleQualityAssessment::updateOrCreate(
+                ['laboratory_order_id' => $id],
+                [
+                    'patient_id' => $request->patient_id,
+                    'assessed_by' => $request->assessed_by,
+                    'sample_quality' => $request->sample_quality,
+                    'quality_notes' => $request->quality_notes,
+                    'assessment_status' => $request->assessment_status,
+                    'tissue_adequacy' => $request->tissue_adequacy,
+                    'representative_sampling' => $request->representative_sampling,
+                    'fixation_quality' => $request->fixation_quality,
+                    'fixation_medium' => $request->fixation_medium,
+                    'fixative_ratio' => $request->fixative_ratio,
+                    'specimen_integrity' => $request->specimen_integrity,
+                    'identification_verified' => $request->identification_verified ?? false,
+                    'container_leak_proof' => $request->container_leak_proof ?? false,
+                    'crushing_artifacts' => $request->crushing_artifacts ?? false,
+                    'needs_special_handling' => $request->needs_special_handling ?? false,
+                    'special_handling_details' => $request->special_handling_details,
+                    'rejection_reason' => $request->rejection_reason,
+                ]
+            );
+
+            // Update the order status based on sample quality
+            if ($request->sample_quality === 'adequate') {
+                $order->sample_status = 'accepted';
+            } elseif ($request->sample_quality === 'unsatisfactory') {
+                $order->sample_status = 'rejected';
+            } else {
+                $order->sample_status = 'pending_review';
+            }
+            $order->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sample quality assessment saved successfully',
+                'data' => $assessment
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save assessment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save results entry
+     */
+    public function enterResults(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'order_id' => 'required|exists:laboratory_orders,id',
+                'patient_id' => 'required|exists:patients,id',
+                'entered_by' => 'required|exists:users,id',
+                'results' => 'required|string',
+                'result_category' => 'required|string',
+                'diagnosis' => 'nullable|string',
+                'notes' => 'nullable|string',
+                'status' => 'required|in:pending,completed,rejected'
+            ]);
+
+            // Find the order
+            $order = LaboratoryOrder::findOrFail($id);
+
+            // Update the order with results
+            $order->results = $request->results;
+            $order->result_category = $request->result_category;
+            $order->diagnosis = $request->diagnosis;
+            $order->result_notes = $request->notes;
+            $order->status = $request->status;
+            $order->processed_by = $request->entered_by;
+            $order->processed_at = now();
+            $order->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Results saved successfully',
+                'data' => $order
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save results: ' . $e->getMessage()
             ], 500);
         }
     }

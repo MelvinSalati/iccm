@@ -110,6 +110,20 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
             ],
         },
         {
+            title: 'Patient Registry',
+            href: '/patients/search',
+            icon: Users,
+            roles: [
+                ROLE_IDS.ADMINISTRATOR,
+                ROLE_IDS.DHO,
+                ROLE_IDS.FACILITY_MANAGER,
+                ROLE_IDS.CLINICIAN,
+                ROLE_IDS.NURSE,
+                ROLE_IDS.COUNSELLOR,
+                ROLE_IDS.CHW,
+            ],
+        },
+        {
             title: 'Pathology',
             href: '/laboratory/orders',
             icon: MicroscopeIcon,
@@ -141,20 +155,7 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.CHW,
             ],
         },
-        {
-            title: 'Patient Registry',
-            href: '/patients/search',
-            icon: Users,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.DHO,
-                ROLE_IDS.FACILITY_MANAGER,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.NURSE,
-                ROLE_IDS.COUNSELLOR,
-                ROLE_IDS.CHW,
-            ],
-        },
+
         {
             title: 'Community Outreach',
             href: '/community',
@@ -192,20 +193,7 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.FACILITY_MANAGER,
             ],
         },
-        {
-            title: 'Reports',
-            href: '/manage-reports',
-            icon: BarChart2Icon,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.DHO,
-                ROLE_IDS.FACILITY_MANAGER,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.NURSE,
-                ROLE_IDS.COUNSELLOR,
-                ROLE_IDS.CHW,
-            ],
-        },
+
         // {
         //     title: 'Follow Up',
         //     href: '/follow-up',
@@ -332,6 +320,12 @@ const getPatientNavItems = (patientUuid: string): NavItem[] => [
         description: 'View patient summary',
     },
     {
+        title: 'BreastCancer Screening',
+        href: `/patients/${patientUuid}/breast-cancer`,
+        icon: StethoscopeIcon,
+        description: 'Referral Patient',
+    },
+    {
         title: 'Referral Management',
         href: `/patients/${patientUuid}/referrals`,
         icon: ClipboardList,
@@ -355,12 +349,7 @@ const getPatientNavItems = (patientUuid: string): NavItem[] => [
         icon: CalendarClock,
         description: 'Upcoming appointments',
     },
-    {
-        title: 'Risk Assessment',
-        href: `/patients/${patientUuid}/risk-assessment`,
-        icon: ShieldCheck,
-        description: 'Risk evaluation',
-    },
+
     {
         title: 'Risk Assessment',
         href: `/patients/${patientUuid}/risk-assessment`,
@@ -595,7 +584,7 @@ export function AppSidebar({ patient, isPatientView }: AppSidebarProps) {
                                             onClick={() => setActivePatientHref(item.href)}
                                         />
                                     );
-                                })}test_orders
+                                })}
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>

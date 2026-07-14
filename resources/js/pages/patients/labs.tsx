@@ -1,4 +1,4 @@
-// pages/patients/laboratory.tsx
+// pages/patients/labs.tsx
 import AppLayout from '@/layouts/app-layout';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { router, usePage } from '@inertiajs/react';
@@ -38,6 +38,7 @@ import {
     Droplet,
     Activity,
     Pill,
+    ChevronRight,
 } from 'lucide-react';
 import Http from '@/utils/Http';
 import Notiflix from 'notiflix';
@@ -97,8 +98,8 @@ interface LabTest {
 }
 
 interface LabOrder {
-    id: string;
-    order_number: string;
+    id: string | number;
+    order_number: string | null;
     patient_id: number;
     patient_uuid: string;
     tests: LabTest[];
@@ -110,7 +111,7 @@ interface LabOrder {
     collected_by: string | null;
     completed_at: string | null;
     notes: string | null;
-    results: any[];
+    results: any[] | null;
     created_at: string;
     updated_at: string;
 }
@@ -128,7 +129,7 @@ interface PageProps {
     };
 }
 
-// Available Lab Tests - ONLY ONE TEST: Histopathology
+// Available Lab Tests
 const AVAILABLE_TESTS: LabTest[] = [
     {
         id: 'hp1',
@@ -142,6 +143,28 @@ const AVAILABLE_TESTS: LabTest[] = [
         specimen_type: 'Tissue'
     },
 ];
+
+// Helper function to safely get order display number
+const getOrderDisplayNumber = (order: LabOrder): string => {
+    // Try order_number first
+    if (order.order_number) {
+        return order.order_number;
+    }
+
+    // Fall back to id
+    if (order.id) {
+        const idStr = String(order.id);
+        return idStr.length > 8 ? idStr.slice(0, 8) : idStr;
+    }
+
+    // Ultimate fallback
+    return 'N/A';
+};
+
+// Helper function to safely get results array
+const getSafeResults = (results: any[] | null | undefined): any[] => {
+    return Array.isArray(results) ? results : [];
+};
 
 // Status Badge Component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -180,6 +203,65 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
     );
 };
 
+// Results Display Component for inline results
+const ResultsDisplay = ({ results }: { results: any[] }) => {
+    const safeResults = getSafeResults(results);
+
+    if (safeResults.length === 0) {
+        return (
+            <div className="text-xs text-slate-500 py-2">
+                No results available
+            </div>
+        );
+    }
+
+    const props = usePage();
+    console.log(props);
+    return (
+        <div className="mt-2 space-y-2">
+            <div className="text-xs font-medium text-slate-700 mb-1">Results:</div>
+            {safeResults.map((result: any, index: number) => (
+                <div key={index} className="rounded-md bg-slate-50 border border-slate-200 p-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-800">{result.test_name}</span>
+                        <span className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                            result.status === 'normal' ? 'bg-emerald-50 text-emerald-700' :
+                                result.status === 'abnormal' ? 'bg-rose-50 text-rose-700' :
+                                    'bg-amber-50 text-amber-700'
+                        )}>
+                            {result.status === 'normal' && <CheckCircle className="h-2.5 w-2.5" />}
+                            {result.status === 'abnormal' && <AlertCircle className="h-2.5 w-2.5" />}
+                            {result.status === 'pending' && <Clock className="h-2.5 w-2.5" />}
+                            {result.status || 'Pending'}
+                        </span>
+                    </div>
+                    <div className="mt-1 grid grid-cols-2 gap-1 text-[10px]">
+                        <div>
+                            <span className="text-slate-500">Result:</span>
+                            <span className="ml-1 font-medium text-slate-700">{result.value || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span className="text-slate-500">Reference:</span>
+                            <span className="ml-1 text-slate-700">{result.reference_range || 'N/A'}</span>
+                        </div>
+                    </div>
+                    {result.comment && (
+                        <p className="mt-1 text-[10px] text-slate-600 bg-white p-1.5 rounded border border-slate-100">
+                            {result.comment}
+                        </p>
+                    )}
+                    {result.performed_at && (
+                        <div className="mt-1 text-[9px] text-slate-400">
+                            Performed: {format(parseISO(result.performed_at), 'MMM dd, yyyy')}
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+};
+
 export default function Laboratory() {
     const { props } = usePage<PageProps>();
     const { patient, labOrders = [], auth } = props;
@@ -208,7 +290,7 @@ export default function Laboratory() {
             const term = searchTerm.toLowerCase();
             filtered = filtered.filter(order =>
                 (order.order_number?.toLowerCase().includes(term) || false) ||
-                (order.id?.toLowerCase().includes(term) || false) ||
+                (String(order.id).toLowerCase().includes(term) || false) ||
                 (order.notes?.toLowerCase().includes(term) || false) ||
                 order.tests?.some(test => test.test_name.toLowerCase().includes(term))
             );
@@ -291,7 +373,13 @@ export default function Laboratory() {
         try {
             const response = await Http.get(`/patients/${patient.patient_uuid}/lab-orders`);
             if (response.status === 200 && response.data.success) {
-                setOrdersList(response.data.data || []);
+                const orders = (response.data.data || []).map((order: any) => ({
+                    ...order,
+                    id: order.id,
+                    order_number: order.order_number || null,
+                    results: Array.isArray(order.results) ? order.results : []
+                }));
+                setOrdersList(orders);
                 Notiflix.Notify.success('Orders refreshed');
             }
         } catch (error) {
@@ -325,8 +413,6 @@ export default function Laboratory() {
                 ordered_at: new Date().toISOString(),
             };
 
-            console.log('Submitting lab order payload:', payload);
-
             const response = await Http.post(`/patients/${patient.patient_uuid}/lab-orders`, payload);
 
             if (response.status === 201 || response.status === 200) {
@@ -347,13 +433,14 @@ export default function Laboratory() {
         setShowResultsModal(true);
     };
 
-    const toggleExpanded = (orderId: string) => {
+    const toggleExpanded = (orderId: string | number) => {
+        const idStr = String(orderId);
         setExpandedOrders(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(orderId)) {
-                newSet.delete(orderId);
+            if (newSet.has(idStr)) {
+                newSet.delete(idStr);
             } else {
-                newSet.add(orderId);
+                newSet.add(idStr);
             }
             return newSet;
         });
@@ -476,7 +563,7 @@ export default function Laboratory() {
                     </div>
                 </div>
 
-                {/* Main Content - Single Column Layout */}
+                {/* Main Content */}
                 <div className="container mx-auto px-4 py-4">
                     <div className="max-w-6xl mx-auto">
                         {/* Lab Orders Section */}
@@ -553,115 +640,134 @@ export default function Laboratory() {
                             {/* Orders List */}
                             <div className="divide-y divide-slate-100">
                                 {filteredOrders.length > 0 ? (
-                                    filteredOrders.map((order) => (
-                                        <div key={order.id} className="px-3.5 py-3 hover:bg-slate-50 transition-colors">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <button
-                                                            onClick={() => toggleExpanded(order.id)}
-                                                            className="text-slate-400 hover:text-slate-600 transition-colors"
-                                                        >
-                                                            {expandedOrders.has(order.id) ? (
-                                                                <ChevronUp className="h-3.5 w-3.5" />
-                                                            ) : (
-                                                                <ChevronDown className="h-3.5 w-3.5" />
-                                                            )}
-                                                        </button>
-                                                        <span className="text-sm font-medium text-slate-800">
-                                                            Order #{order.order_number || order.id.slice(0, 8)}
-                                                        </span>
-                                                        <StatusBadge status={order.status} />
-                                                        <PriorityBadge priority={order.priority} />
-                                                        <span className="text-[10px] text-slate-400">
-                                                            {formatRelativeTime(order.ordered_at)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                                        <span className="flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            {formatDate(order.ordered_at)}
-                                                        </span>
-                                                        <span>•</span>
-                                                        <span>{order.tests?.length || 0} tests</span>
-                                                        {order.notes && (
-                                                            <>
-                                                                <span>•</span>
-                                                                <span className="text-slate-400 truncate max-w-[200px]">{order.notes}</span>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                    <div className="mt-1.5 flex flex-wrap gap-1">
-                                                        {order.tests?.slice(0, 4).map((test, idx) => (
-                                                            <span key={idx} className="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
-                                                                {getTestIcon(test.test_category)}
-                                                                {test.test_name}
-                                                            </span>
-                                                        ))}
-                                                        {order.tests?.length > 4 && (
-                                                            <span className="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
-                                                                +{order.tests.length - 4} more
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                    filteredOrders.map((order) => {
+                                        const safeResults = getSafeResults(order.results);
+                                        const hasResults = safeResults.length > 0;
+                                        const isCompleted = order.status === 'completed';
 
-                                                    {/* Expanded Details */}
-                                                    {expandedOrders.has(order.id) && (
-                                                        <div className="mt-3 pt-3 border-t border-slate-100">
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                                                <div>
-                                                                    <span className="text-slate-500">Order ID:</span>
-                                                                    <span className="ml-1 font-mono text-slate-700">{order.id}</span>
+                                        return (
+                                            <div key={String(order.id)} className="px-3.5 py-3 hover:bg-slate-50 transition-colors">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <button
+                                                                onClick={() => toggleExpanded(order.id)}
+                                                                className="text-slate-400 hover:text-slate-600 transition-colors"
+                                                            >
+                                                                {expandedOrders.has(String(order.id)) ? (
+                                                                    <ChevronUp className="h-3.5 w-3.5" />
+                                                                ) : (
+                                                                    <ChevronDown className="h-3.5 w-3.5" />
+                                                                )}
+                                                            </button>
+                                                            <span className="text-sm font-medium text-slate-800">
+                                                                Order #{getOrderDisplayNumber(order)}
+                                                            </span>
+                                                            <StatusBadge status={order.status} />
+                                                            <PriorityBadge priority={order.priority} />
+                                                            <span className="text-[10px] text-slate-400">
+                                                                {formatRelativeTime(order.ordered_at)}
+                                                            </span>
+                                                            {isCompleted && hasResults && (
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">
+                                                                    <CheckCircle className="h-2.5 w-2.5" />
+                                                                    {safeResults.length} result{safeResults.length > 1 ? 's' : ''}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                                            <span className="flex items-center gap-1">
+                                                                <Calendar className="h-3 w-3" />
+                                                                {formatDate(order.ordered_at)}
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span>{order.tests?.length || 0} tests</span>
+                                                            {order.notes && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span className="text-slate-400 truncate max-w-[200px]">{order.notes}</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                        <div className="mt-1.5 flex flex-wrap gap-1">
+                                                            {order.tests?.slice(0, 4).map((test, idx) => (
+                                                                <span key={idx} className="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                                                                    {getTestIcon(test.test_category)}
+                                                                    {test.test_name}
+                                                                </span>
+                                                            ))}
+                                                            {order.tests?.length > 4 && (
+                                                                <span className="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
+                                                                    +{order.tests.length - 4} more
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Expanded Details with Results */}
+                                                        {expandedOrders.has(String(order.id)) && (
+                                                            <div className="mt-3 pt-3 border-t border-slate-100">
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                                                    <div>
+                                                                        <span className="text-slate-500">Order ID:</span>
+                                                                        <span className="ml-1 font-mono text-slate-700">{String(order.id)}</span>
+                                                                    </div>
+                                                                    {order.collected_at && (
+                                                                        <div>
+                                                                            <span className="text-slate-500">Collected:</span>
+                                                                            <span className="ml-1 text-slate-700">{formatDate(order.collected_at)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {order.completed_at && (
+                                                                        <div>
+                                                                            <span className="text-slate-500">Completed:</span>
+                                                                            <span className="ml-1 text-slate-700">{formatDate(order.completed_at)}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {order.collected_by && (
+                                                                        <div>
+                                                                            <span className="text-slate-500">Collected By:</span>
+                                                                            <span className="ml-1 text-slate-700">{order.collected_by}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {order.notes && (
+                                                                        <div className="sm:col-span-2">
+                                                                            <span className="text-slate-500">Notes:</span>
+                                                                            <span className="ml-1 text-slate-700">{order.notes}</span>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                                {order.collected_at && (
-                                                                    <div>
-                                                                        <span className="text-slate-500">Collected:</span>
-                                                                        <span className="ml-1 text-slate-700">{formatDate(order.collected_at)}</span>
-                                                                    </div>
-                                                                )}
-                                                                {order.completed_at && (
-                                                                    <div>
-                                                                        <span className="text-slate-500">Completed:</span>
-                                                                        <span className="ml-1 text-slate-700">{formatDate(order.completed_at)}</span>
-                                                                    </div>
-                                                                )}
-                                                                {order.collected_by && (
-                                                                    <div>
-                                                                        <span className="text-slate-500">Collected By:</span>
-                                                                        <span className="ml-1 text-slate-700">{order.collected_by}</span>
-                                                                    </div>
-                                                                )}
-                                                                {order.notes && (
-                                                                    <div className="sm:col-span-2">
-                                                                        <span className="text-slate-500">Notes:</span>
-                                                                        <span className="ml-1 text-slate-700">{order.notes}</span>
+
+                                                                {/* Display Results for Completed Orders */}
+                                                                {isCompleted && (
+                                                                    <div className="mt-3">
+                                                                        <ResultsDisplay results={order.results} />
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-1 ml-4">
-                                                    {order.status === 'completed' && order.results?.length > 0 && (
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-1 ml-4">
+                                                        {isCompleted && hasResults && (
+                                                            <button
+                                                                onClick={() => handleViewResults(order)}
+                                                                className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                                                title="View Results"
+                                                            >
+                                                                <Eye className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        )}
                                                         <button
-                                                            onClick={() => handleViewResults(order)}
-                                                            className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors"
-                                                            title="View Results"
+                                                            onClick={() => Notiflix.Notify.info('Edit functionality coming soon')}
+                                                            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+                                                            title="Edit"
                                                         >
-                                                            <Eye className="h-3.5 w-3.5" />
+                                                            <Edit className="h-3.5 w-3.5" />
                                                         </button>
-                                                    )}
-                                                    <button
-                                                        onClick={() => Notiflix.Notify.info('Edit functionality coming soon')}
-                                                        className="rounded-md p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-                                                        title="Edit"
-                                                    >
-                                                        <Edit className="h-3.5 w-3.5" />
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <div className="py-8 text-center">
                                         <ClipboardList className="mx-auto h-10 w-10 text-slate-300" />
@@ -686,7 +792,7 @@ export default function Laboratory() {
                                 )}
                             </div>
 
-                            {/* Footer with count */}
+                            {/* Footer */}
                             {filteredOrders.length > 0 && (
                                 <div className="border-t border-slate-200 px-3.5 py-2 text-[10px] text-slate-400 text-center">
                                     Showing {filteredOrders.length} of {ordersList.length} orders
@@ -722,7 +828,7 @@ export default function Laboratory() {
                                     <div>
                                         <h3 className="text-sm font-semibold text-slate-900">Lab Results</h3>
                                         <p className="text-[10px] text-slate-500 flex items-center gap-2">
-                                            <span>Order #{selectedOrder.order_number || selectedOrder.id.slice(0, 8)}</span>
+                                            <span>Order #{getOrderDisplayNumber(selectedOrder)}</span>
                                             <span className="text-slate-300">|</span>
                                             <span>{selectedOrder.tests?.length || 0} tests</span>
                                             <span className="text-slate-300">|</span>
@@ -737,53 +843,60 @@ export default function Laboratory() {
                                     </button>
                                 </div>
                                 <div className="p-4 max-h-[70vh] overflow-y-auto">
-                                    {selectedOrder.results && selectedOrder.results.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {selectedOrder.results.map((result: any, index: number) => (
-                                                <div key={index} className="rounded-md border border-slate-200 p-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <h4 className="text-sm font-medium text-slate-800">{result.test_name}</h4>
-                                                        <span className={cn(
-                                                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-                                                            result.status === 'normal' ? 'bg-emerald-50 text-emerald-700' :
-                                                                result.status === 'abnormal' ? 'bg-rose-50 text-rose-700' :
-                                                                    'bg-amber-50 text-amber-700'
-                                                        )}>
-                                                            {result.status === 'normal' && <CheckCircle className="h-3 w-3" />}
-                                                            {result.status === 'abnormal' && <AlertCircle className="h-3 w-3" />}
-                                                            {result.status === 'pending' && <Clock className="h-3 w-3" />}
-                                                            {result.status || 'Pending'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                                                        <div>
-                                                            <span className="text-xs text-slate-500">Result</span>
-                                                            <div className="font-medium text-slate-800">{result.value || 'N/A'}</div>
+                                    {(() => {
+                                        const safeResults = getSafeResults(selectedOrder.results);
+                                        if (safeResults.length > 0) {
+                                            return (
+                                                <div className="space-y-3">
+                                                    {safeResults.map((result: any, index: number) => (
+                                                        <div key={index} className="rounded-md border border-slate-200 p-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <h4 className="text-sm font-medium text-slate-800">{result.test_name}</h4>
+                                                                <span className={cn(
+                                                                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                                                                    result.status === 'normal' ? 'bg-emerald-50 text-emerald-700' :
+                                                                        result.status === 'abnormal' ? 'bg-rose-50 text-rose-700' :
+                                                                            'bg-amber-50 text-amber-700'
+                                                                )}>
+                                                                    {result.status === 'normal' && <CheckCircle className="h-3 w-3" />}
+                                                                    {result.status === 'abnormal' && <AlertCircle className="h-3 w-3" />}
+                                                                    {result.status === 'pending' && <Clock className="h-3 w-3" />}
+                                                                    {result.status || 'Pending'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                                                                <div>
+                                                                    <span className="text-xs text-slate-500">Result</span>
+                                                                    <div className="font-medium text-slate-800">{result.value || 'N/A'}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-xs text-slate-500">Reference Range</span>
+                                                                    <div className="font-medium text-slate-800">{result.reference_range || 'N/A'}</div>
+                                                                </div>
+                                                            </div>
+                                                            {result.comment && (
+                                                                <p className="mt-2 text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100">
+                                                                    {result.comment}
+                                                                </p>
+                                                            )}
+                                                            {result.performed_at && (
+                                                                <div className="mt-1 text-[10px] text-slate-400">
+                                                                    Performed: {formatDate(result.performed_at)}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <div>
-                                                            <span className="text-xs text-slate-500">Reference Range</span>
-                                                            <div className="font-medium text-slate-800">{result.reference_range || 'N/A'}</div>
-                                                        </div>
-                                                    </div>
-                                                    {result.comment && (
-                                                        <p className="mt-2 text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100">
-                                                            {result.comment}
-                                                        </p>
-                                                    )}
-                                                    {result.performed_at && (
-                                                        <div className="mt-1 text-[10px] text-slate-400">
-                                                            Performed: {formatDate(result.performed_at)}
-                                                        </div>
-                                                    )}
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="py-8 text-center text-sm text-slate-500">
-                                            <FileText className="mx-auto h-10 w-10 text-slate-300 mb-2" />
-                                            No results available for this order
-                                        </div>
-                                    )}
+                                            );
+                                        } else {
+                                            return (
+                                                <div className="py-8 text-center text-sm text-slate-500">
+                                                    <FileText className="mx-auto h-10 w-10 text-slate-300 mb-2" />
+                                                    No results available for this order
+                                                </div>
+                                            );
+                                        }
+                                    })()}
                                 </div>
                                 <div className="border-t border-slate-200 px-4 py-3 flex justify-between items-center">
                                     <span className="text-[10px] text-slate-400">

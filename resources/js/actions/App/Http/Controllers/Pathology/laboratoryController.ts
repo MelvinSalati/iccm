@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:17
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
  * @route '/laboratory/orders'
  */
 export const viewLaboratoryOrders = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ viewLaboratoryOrders.definition = {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:17
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
  * @route '/laboratory/orders'
  */
 viewLaboratoryOrders.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ viewLaboratoryOrders.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:17
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
  * @route '/laboratory/orders'
  */
 viewLaboratoryOrders.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ viewLaboratoryOrders.get = (options?: RouteQueryOptions): RouteDefinition<'get'>
 })
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:17
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
  * @route '/laboratory/orders'
  */
 viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
     /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:17
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
  * @route '/laboratory/orders'
  */
     const viewLaboratoryOrdersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
             /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:17
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
  * @route '/laboratory/orders'
  */
         viewLaboratoryOrdersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head
         })
             /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:17
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
  * @route '/laboratory/orders'
  */
         viewLaboratoryOrdersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -75,7 +75,7 @@ viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head
                     }),
             method: 'get',
         })
-
+    
     viewLaboratoryOrders.form = viewLaboratoryOrdersForm
 const LaboratoryController = { viewLaboratoryOrders }
 

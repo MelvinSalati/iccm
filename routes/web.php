@@ -13,7 +13,7 @@ use App\Http\Controllers\ImageController;
 // ============================================
 // IMAGE ROUTE - Place this BEFORE any auth middleware
 // ============================================
-Route::get('/storage/{path}', [ImageController::class, 'show'])
+Route::get('/storage/app/public/{path}', [ImageController::class, 'show'])
     ->where('path', '.*')
     ->name('image.show');
 
@@ -138,9 +138,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/appointments', function () {
-        return Inertia::render('Appointments/appointments');
-    })->name('appointments');
+    Route::get('/appointments',[\App\Http\Controllers\Appointments\AppointmentController::class,'viewAppointment'])->name('appointments');
 
     /*
     |--------------------------------------------------------------------------

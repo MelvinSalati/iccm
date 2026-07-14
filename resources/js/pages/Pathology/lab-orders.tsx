@@ -1,5 +1,3 @@
-// resources/js/pages/pathology/laboratory-orders.jsx
-
 import AppLayout from '@/layouts/app-layout';
 import { usePage, router } from '@inertiajs/react';
 import Http from '@/utils/Http';
@@ -47,14 +45,15 @@ import {
     Download,
     Plus,
     Edit,
-    Trash2
+    Trash2,
+    QrCode
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
 import SampleQualityAssessmentModal from './components/modals/SampleQualityAssessmentModal';
 import ResultsEntryModal from './components/modals/ResultsEntryModal';
 
-// Dummy data for testing (fallback when no data from server)
+// Dummy data for testing
 const DUMMY_ORDERS = [
     {
         id: 1,
@@ -72,12 +71,13 @@ const DUMMY_ORDERS = [
         ordered_by_name: 'Dr. James Banda',
         results: null,
         status: 'pending',
+        sample_status: null, // 'accepted' or 'rejected'
         processed_by: null,
         processed_by_name: null,
-        comment: 'Routine blood work requested',
-        priority: 'routine',
-        test_count: 3,
-        test_names: 'CBC, Lipid Profile, FBS',
+        comment: 'Cervical biopsy for histopathological examination',
+        priority: 'urgent',
+        test_count: 1,
+        test_names: 'Histopathology - Cervical Biopsy',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     },
@@ -95,66 +95,17 @@ const DUMMY_ORDERS = [
         facility_name: 'Chipata Central Hospital',
         ordered_by: 3,
         ordered_by_name: 'Dr. Mary Zulu',
-        results: 'All values normal. No abnormalities detected.',
-        status: 'completed',
-        processed_by: 7,
-        processed_by_name: 'Dr. Peter Phiri',
-        comment: 'Results reviewed and approved',
+        results: null,
+        status: 'pending',
+        sample_status: null,
+        processed_by: null,
+        processed_by_name: null,
+        comment: 'Routine blood work requested',
         priority: 'routine',
-        test_count: 2,
-        test_names: 'HIV Test, Syphilis Test',
+        test_count: 3,
+        test_names: 'CBC, Lipid Profile, FBS',
         created_at: new Date(Date.now() - 86400000).toISOString(),
         updated_at: new Date(Date.now() - 86400000).toISOString()
-    },
-    {
-        id: 3,
-        laboratory_uuid: 'LAB-2024-003',
-        patient_id: 103,
-        patient_name: 'Grace Banda',
-        patient_first_name: 'Grace',
-        patient_last_name: 'Banda',
-        patient_date_of_birth: '1995-03-08',
-        patient_gender: 'female',
-        patient_phone: '+260973456789',
-        facility_id: 1,
-        facility_name: 'University Teaching Hospital',
-        ordered_by: 5,
-        ordered_by_name: 'Dr. James Banda',
-        results: null,
-        status: 'pending',
-        processed_by: null,
-        processed_by_name: null,
-        comment: 'Urgent: Troponin levels requested',
-        priority: 'urgent',
-        test_count: 1,
-        test_names: 'Troponin',
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-        updated_at: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-        id: 1001,
-        laboratory_uuid: 'LAB-2024-1001',
-        patient_id: 104,
-        patient_name: 'Mary Banda',
-        patient_first_name: 'Mary',
-        patient_last_name: 'Banda',
-        patient_date_of_birth: '1987-04-12',
-        patient_gender: 'female',
-        patient_phone: '+260977700001',
-        facility_id: 1,
-        facility_name: 'University Teaching Hospital',
-        ordered_by: 6,
-        ordered_by_name: 'Dr. Musonda Chilufya',
-        results: null,
-        status: 'pending',
-        processed_by: null,
-        processed_by_name: null,
-        comment: 'Tissue biopsy for histopathological examination',
-        priority: 'urgent',
-        test_count: 1,
-        test_names: 'Histopathology',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
     }
 ];
 
@@ -215,6 +166,45 @@ const StatusBadge = ({ status }: { status: string }) => {
         )}>
             <span className={cn('h-1.5 w-1.5 rounded-full', config.dot)} />
             {config.label}
+        </span>
+    );
+};
+
+// Sample Status Badge
+const SampleStatusBadge = ({ status }: { status: string }) => {
+    if (!status) return null;
+
+    const config = {
+        accepted: {
+            bg: 'bg-green-50',
+            text: 'text-green-700',
+            border: 'border-green-200',
+            label: 'Accepted',
+            icon: CheckCircle
+        },
+        rejected: {
+            bg: 'bg-red-50',
+            text: 'text-red-700',
+            border: 'border-red-200',
+            label: 'Rejected',
+            icon: XCircle
+        }
+    };
+
+    const c = config[status as keyof typeof config];
+    if (!c) return null;
+
+    const Icon = c.icon;
+
+    return (
+        <span className={cn(
+            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+            c.bg,
+            c.text,
+            c.border
+        )}>
+            <Icon className="h-3 w-3" />
+            {c.label}
         </span>
     );
 };
@@ -352,6 +342,8 @@ const OrderDetailsModal = ({
 }) => {
     if (!order) return null;
 
+    const canEnterResults = order.sample_status === 'accepted';
+
     return (
         <UniformModal
             isOpen={isOpen}
@@ -383,48 +375,45 @@ const OrderDetailsModal = ({
                                 <FileText className="h-3.5 w-3.5 mr-1.5" />
                                 Quality Assessment
                             </Button>
-                            <Button
-                                size="sm"
-                                className="w-full sm:w-auto text-xs bg-green-600 hover:bg-green-700"
-                                onClick={() => {
-                                    onClose();
-                                    onResultsEntry(order);
-                                }}
-                            >
-                                <FlaskConical className="h-3.5 w-3.5 mr-1.5" />
-                                Enter Results
-                            </Button>
+                            {canEnterResults && (
+                                <Button
+                                    size="sm"
+                                    className="w-full sm:w-auto text-xs bg-green-600 hover:bg-green-700"
+                                    onClick={() => {
+                                        onClose();
+                                        onResultsEntry(order);
+                                    }}
+                                >
+                                    <FlaskConical className="h-3.5 w-3.5 mr-1.5" />
+                                    Enter Results
+                                </Button>
+                            )}
                         </div>
                     )}
                 </div>
             }
         >
             <div className="space-y-4">
-                {/* Order Info Grid */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Order ID</p>
-                        <p className="text-sm font-semibold text-slate-900 mt-0.5">#{order.id}</p>
+                {/* Order Info with QR Code */}
+                <div className="flex items-center justify-between bg-slate-50 rounded-lg p-3 border border-slate-200">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white p-2 rounded border">
+                            <QrCode className="h-10 w-10 text-slate-700" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Order Number</p>
+                            <p className="text-sm font-mono font-semibold text-slate-900">{order.laboratory_uuid || '—'}</p>
+                        </div>
                     </div>
-                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+                    <div className="text-right">
                         <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Status</p>
                         <div className="mt-0.5">
                             <StatusBadge status={order.status} />
                         </div>
                     </div>
-                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Priority</p>
-                        <div className="mt-0.5">
-                            <PriorityBadge priority={order.priority || 'routine'} />
-                        </div>
-                    </div>
-                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Order Number</p>
-                        <p className="text-sm font-mono text-slate-900 mt-0.5">{order.laboratory_uuid || '—'}</p>
-                    </div>
                 </div>
 
-                {/* Patient Info */}
+                {/* Patient Info - No ID visible */}
                 <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                     <h4 className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
                         <User className="h-3.5 w-3.5" />
@@ -449,14 +438,18 @@ const OrderDetailsModal = ({
                                 <p className="text-sm text-slate-900 capitalize">{order.patient_gender}</p>
                             </div>
                         )}
-                        {order.patient_phone && (
-                            <div className="col-span-2">
-                                <p className="text-[10px] text-blue-600">Phone</p>
-                                <p className="text-sm text-slate-900">{order.patient_phone}</p>
-                            </div>
-                        )}
                     </div>
                 </div>
+
+                {/* Sample Status */}
+                {order.sample_status && (
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Sample Status</p>
+                        <div className="mt-1">
+                            <SampleStatusBadge status={order.sample_status} />
+                        </div>
+                    </div>
+                )}
 
                 {/* Facility & Staff */}
                 <div className="grid grid-cols-2 gap-2">
@@ -475,18 +468,6 @@ const OrderDetailsModal = ({
                             <p className="text-sm text-slate-900 mt-0.5">{order.ordered_by_name}</p>
                         </div>
                     )}
-                    {order.processed_by_name && (
-                        <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
-                            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Processed By</p>
-                            <p className="text-sm text-slate-900 mt-0.5">{order.processed_by_name}</p>
-                        </div>
-                    )}
-                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Created</p>
-                        <p className="text-sm text-slate-900 mt-0.5">
-                            {order.created_at ? format(parseISO(order.created_at), 'MMM d, yyyy h:mm a') : '—'}
-                        </p>
-                    </div>
                 </div>
 
                 {/* Tests */}
@@ -502,14 +483,6 @@ const OrderDetailsModal = ({
                                 </span>
                             ))}
                         </div>
-                    </div>
-                )}
-
-                {/* Results */}
-                {order.results && (
-                    <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                        <p className="text-[10px] font-medium text-green-700 uppercase tracking-wider">Results</p>
-                        <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">{order.results}</p>
                     </div>
                 )}
 
@@ -622,8 +595,13 @@ export default function LabOrders() {
                 data
             );
             if (response.status === 200 || response.status === 201) {
+                // Update the order with sample status
                 setOrders(prevOrders =>
-                    prevOrders.filter(order => order.id !== data.laboratory_order_id)
+                    prevOrders.map(order =>
+                        order.id === data.laboratory_order_id
+                            ? { ...order, sample_status: data.sample_quality === 'adequate' ? 'accepted' : 'rejected' }
+                            : order
+                    )
                 );
                 setShowQualityModal(false);
             }
@@ -825,15 +803,16 @@ export default function LabOrders() {
                                 <TableHead className="w-[130px] text-xs font-medium">Order #</TableHead>
                                 <TableHead className="w-[200px] text-xs font-medium">Patient</TableHead>
                                 <TableHead className="w-[100px] text-xs font-medium">Priority</TableHead>
+                                <TableHead className="w-[100px] text-xs font-medium">Sample</TableHead>
                                 <TableHead className="w-[110px] text-xs font-medium">Created</TableHead>
                                 <TableHead className="text-center w-[140px] text-xs font-medium">Status</TableHead>
-                                <TableHead className="w-[100px] text-right text-xs font-medium">Actions</TableHead>
+                                <TableHead className="w-[120px] text-right text-xs font-medium">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {paginatedOrders.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-6 text-slate-500">
+                                    <TableCell colSpan={8} className="text-center py-6 text-slate-500">
                                         <div className="flex flex-col items-center gap-1">
                                             <FlaskConical className="h-6 w-6 text-slate-300" />
                                             <p className="text-sm">No orders found</p>
@@ -842,87 +821,96 @@ export default function LabOrders() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                paginatedOrders.map((order) => (
-                                    <TableRow key={order.id} className="hover:bg-slate-50">
-                                        <TableCell>
-                                            <span className="text-sm font-medium text-slate-900">#{order.id}</span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="text-xs font-mono text-slate-500 truncate block max-w-[120px]">
-                                                {order.laboratory_uuid || '—'}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-7 w-7">
-                                                    <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px] font-medium">
-                                                        {order.patient_name ? order.patient_name.charAt(0).toUpperCase() : 'P'}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <span className="text-sm font-medium text-slate-900">
-                                                    {order.patient_name || 'Unknown'}
+                                paginatedOrders.map((order) => {
+                                    const canEnterResults = order.sample_status === 'accepted' && order.status !== 'completed';
+
+                                    return (
+                                        <TableRow key={order.id} className="hover:bg-slate-50">
+                                            <TableCell>
+                                                <span className="text-sm font-medium text-slate-900">#{order.id}</span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="text-xs font-mono text-slate-500 truncate block max-w-[120px]">
+                                                    {order.laboratory_uuid || '—'}
                                                 </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <PriorityBadge priority={order.priority || 'routine'} />
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs">
-                                                    {order.created_at ? format(parseISO(order.created_at), 'MMM dd') : '—'}
-                                                </span>
-                                                <span className="text-[10px] text-slate-500">
-                                                    {order.created_at ? format(parseISO(order.created_at), 'HH:mm') : '—'}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <StatusBadge status={order.status} />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-0.5">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => openDetailsModal(order)}
-                                                    className="h-6 w-6 p-0"
-                                                    title="View Details"
-                                                >
-                                                    <Eye className="h-3.5 w-3.5" />
-                                                </Button>
-                                                {order.status !== 'completed' && order.status !== 'rejected' && (
-                                                    <>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => openQualityAssessment(order)}
-                                                            className="h-6 w-6 p-0"
-                                                            title="Quality Assessment"
-                                                        >
-                                                            <FileText className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => openResultsEntry(order)}
-                                                            className="h-6 w-6 p-0 text-green-600"
-                                                            title="Enter Results"
-                                                        >
-                                                            <FlaskConical className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    </>
-                                                )}
-                                                {order.status === 'completed' && (
-                                                    <span className="text-xs text-green-600 font-medium px-1">✓</span>
-                                                )}
-                                                {order.status === 'rejected' && (
-                                                    <span className="text-xs text-red-600 font-medium px-1">✗</span>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="h-7 w-7">
+                                                        <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px] font-medium">
+                                                            {order.patient_name ? order.patient_name.charAt(0).toUpperCase() : 'P'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-sm font-medium text-slate-900">
+                                                        {order.patient_name || 'Unknown'}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <PriorityBadge priority={order.priority || 'routine'} />
+                                            </TableCell>
+                                            <TableCell>
+                                                <SampleStatusBadge status={order.sample_status} />
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs">
+                                                        {order.created_at ? format(parseISO(order.created_at), 'MMM dd') : '—'}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-500">
+                                                        {order.created_at ? format(parseISO(order.created_at), 'HH:mm') : '—'}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <StatusBadge status={order.status} />
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex items-center justify-end gap-0.5">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => openDetailsModal(order)}
+                                                        className="h-6 w-6 p-0"
+                                                        title="View Details"
+                                                    >
+                                                        <Eye className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    {order.status !== 'completed' && order.status !== 'rejected' && (
+                                                        <>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => openQualityAssessment(order)}
+                                                                className="h-6 w-6 p-0"
+                                                                title="Quality Assessment"
+                                                            >
+                                                                <FileText className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                            {canEnterResults && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => openResultsEntry(order)}
+                                                                    className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
+                                                                    title="Enter Results"
+                                                                >
+                                                                    <FlaskConical className="h-3.5 w-3.5" />
+                                                                </Button>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                    {order.status === 'completed' && (
+                                                        <span className="text-xs text-green-600 font-medium px-1">✓</span>
+                                                    )}
+                                                    {order.status === 'rejected' && (
+                                                        <span className="text-xs text-red-600 font-medium px-1">✗</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>
@@ -973,10 +961,11 @@ export default function LabOrders() {
                                 <>
                                     {currentPage > 3 && (
                                         <>
-                                            <Button                                                variant="outline"
-                                                                                                   size="sm"
-                                                                                                   onClick={() => handlePageChange(1)}
-                                                                                                   className="h-6 w-6 p-0 text-xs"
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handlePageChange(1)}
+                                                className="h-6 w-6 p-0 text-xs"
                                             >
                                                 1
                                             </Button>
@@ -1047,7 +1036,7 @@ export default function LabOrders() {
                 )}
             </div>
 
-            {/* Modals */}
+            {/* Modals - Decoupled with independent triggers */}
             <OrderDetailsModal
                 order={selectedOrder}
                 isOpen={showDetailsModal}
