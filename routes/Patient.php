@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Patients\CreateController as PatientCreate;
 use App\Domains\Patients\Controllers\PatientController;
 use Inertia\Inertia;
-
+use App\Http\Controllers\BreastCancerController;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('/dashboard', 'dashboard')->name('dashboard');
 
@@ -31,6 +31,51 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{uuid}/lab',[PatientController::class,'labs']);
     });
 
-    // API routes for patient search (must be before the {uuid} route to avoid conflicts)
+
+    /*
+    |--------------------------------------------------------------------------
+    | Breast Cancer Screening Routes
+    |--------------------------------------------------------------------------
+    */
+
+// Main index page - list all screenings
+    Route::get('/breast-cancer', [BreastCancerController::class, 'index'])
+        ->name('breast-cancer.index')
+        ->middleware(['auth', 'verified']);
+
+// Create new screening form
+    Route::get('/breast-cancer/new', [BreastCancerController::class, 'create'])
+        ->name('breast-cancer.create')
+        ->middleware(['auth', 'verified']);
+
+// Store new screening
+    Route::post('/breast-cancer/screening', [BreastCancerController::class, 'store'])
+        ->name('breast-cancer.store')
+        ->middleware(['auth', 'verified']);
+
+// View single screening details
+    Route::get('/breast-cancer/{id}', [BreastCancerController::class, 'show'])
+        ->name('breast-cancer.show')
+        ->middleware(['auth', 'verified']);
+
+// Edit screening
+    Route::get('/breast-cancer/{id}/edit', [BreastCancerController::class, 'edit'])
+        ->name('breast-cancer.edit')
+        ->middleware(['auth', 'verified']);
+
+// Update screening
+    Route::put('/breast-cancer/{id}', [BreastCancerController::class, 'update'])
+        ->name('breast-cancer.update')
+        ->middleware(['auth', 'verified']);
+
+// Delete screening
+    Route::delete('/breast-cancer/{id}', [BreastCancerController::class, 'destroy'])
+        ->name('breast-cancer.destroy')
+        ->middleware(['auth', 'verified']);
+
+// Export screenings to CSV
+    Route::get('/breast-cancer/export', [BreastCancerController::class, 'export'])
+        ->name('breast-cancer.export')
+        ->middleware(['auth', 'verified']);
 
 });

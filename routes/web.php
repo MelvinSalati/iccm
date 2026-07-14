@@ -10,6 +10,7 @@ use App\Http\Controllers\Consultancies\ConsultancyController;
 use App\Http\Controllers\Pathology\LaboratoryController;
 use App\Http\Controllers\ImageController;
 
+
 // ============================================
 // IMAGE ROUTE - Place this BEFORE any auth middleware
 // ============================================

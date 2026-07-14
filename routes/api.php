@@ -3,7 +3,7 @@
 use App\Domains\Patients\Controllers\LocationController;
 use App\Domains\Patients\Controllers\PatientController;
 use App\Http\Controllers\Appointments\AppointmentController;
-use App\Http\Controllers\Pathology\laboratoryController;
+use App\Http\Controllers\Pathology\LaboratoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Domains\Patients\Actions\CreateVisitAction;

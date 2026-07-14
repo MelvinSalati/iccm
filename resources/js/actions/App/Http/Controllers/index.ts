@@ -8,6 +8,7 @@ import ImageController from './ImageController'
 import Patients from './Patients'
 import Consultancies from './Consultancies'
 import Settings from './Settings'
+import BreastCancerController from './BreastCancerController'
 const Controllers = {
     Pathology: Object.assign(Pathology, Pathology),
 IntegratedScreeningController: Object.assign(IntegratedScreeningController, IntegratedScreeningController),
@@ -19,6 +20,7 @@ ImageController: Object.assign(ImageController, ImageController),
 Patients: Object.assign(Patients, Patients),
 Consultancies: Object.assign(Consultancies, Consultancies),
 Settings: Object.assign(Settings, Settings),
+BreastCancerController: Object.assign(BreastCancerController, BreastCancerController),
 }
 
 export default Controllers
