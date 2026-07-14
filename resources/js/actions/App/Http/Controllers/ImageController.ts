@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\Http\Controllers\ImageController::show
  * @see app/Http/Controllers/ImageController.php:8
- * @route '/storage/app/public/{path}'
+ * @route '/{path}'
  */
 export const show = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
@@ -11,13 +11,13 @@ export const show = (args: { path: string | number } | [path: string | number ] 
 
 show.definition = {
     methods: ["get","head"],
-    url: '/storage/app/public/{path}',
+    url: '/{path}',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\ImageController::show
  * @see app/Http/Controllers/ImageController.php:8
- * @route '/storage/app/public/{path}'
+ * @route '/{path}'
  */
 show.url = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -45,7 +45,7 @@ show.url = (args: { path: string | number } | [path: string | number ] | string 
 /**
 * @see \App\Http\Controllers\ImageController::show
  * @see app/Http/Controllers/ImageController.php:8
- * @route '/storage/app/public/{path}'
+ * @route '/{path}'
  */
 show.get = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
@@ -54,7 +54,7 @@ show.get = (args: { path: string | number } | [path: string | number ] | string 
 /**
 * @see \App\Http\Controllers\ImageController::show
  * @see app/Http/Controllers/ImageController.php:8
- * @route '/storage/app/public/{path}'
+ * @route '/{path}'
  */
 show.head = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
@@ -64,7 +64,7 @@ show.head = (args: { path: string | number } | [path: string | number ] | string
     /**
 * @see \App\Http\Controllers\ImageController::show
  * @see app/Http/Controllers/ImageController.php:8
- * @route '/storage/app/public/{path}'
+ * @route '/{path}'
  */
     const showForm = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: show.url(args, options),
@@ -74,7 +74,7 @@ show.head = (args: { path: string | number } | [path: string | number ] | string
             /**
 * @see \App\Http\Controllers\ImageController::show
  * @see app/Http/Controllers/ImageController.php:8
- * @route '/storage/app/public/{path}'
+ * @route '/{path}'
  */
         showForm.get = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, options),
@@ -83,7 +83,7 @@ show.head = (args: { path: string | number } | [path: string | number ] | string
             /**
 * @see \App\Http\Controllers\ImageController::show
  * @see app/Http/Controllers/ImageController.php:8
- * @route '/storage/app/public/{path}'
+ * @route '/{path}'
  */
         showForm.head = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, {

@@ -14,7 +14,7 @@ use App\Http\Controllers\ImageController;
 // ============================================
 // IMAGE ROUTE - Place this BEFORE any auth middleware
 // ============================================
-Route::get('/storage/app/public/{path}', [ImageController::class, 'show'])
+Route::get('/{path}', [ImageController::class, 'show'])
     ->where('path', '.*')
     ->name('image.show');
 
