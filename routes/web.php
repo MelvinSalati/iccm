@@ -167,5 +167,37 @@ Route::get('manage-reports',function (){
     Inertia::render('Reports/index.tsx');
 });
 
+
+/// Test
+///
+///
+// routes/web.php
+
+use App\Http\Controllers\BreastCancerController;
+
+// Breast Cancer Routes
+Route::prefix('breast-cancer')->group(function () {
+    Route::get('/', [BreastCancerController::class, 'index'])->name('breast-cancer.index');
+    Route::get('/create', [BreastCancerController::class, 'create'])->name('breast-cancer.create');
+    Route::post('/screening', [BreastCancerController::class, 'store'])->name('breast-cancer.store');
+    Route::get('/{id}', [BreastCancerController::class, 'show'])->name('breast-cancer.show');
+    Route::get('/{id}/edit', [BreastCancerController::class, 'edit'])->name('breast-cancer.edit');
+    Route::put('/{id}', [BreastCancerController::class, 'update'])->name('breast-cancer.update');
+    Route::delete('/{id}', [BreastCancerController::class, 'destroy'])->name('breast-cancer.destroy');
+    Route::get('/export', [BreastCancerController::class, 'export'])->name('breast-cancer.export');
+    Route::get('/stats', [BreastCancerController::class, 'stats'])->name('breast-cancer.stats');
+});
+
+// Patient-specific breast cancer routes
+Route::prefix('patients/{uuid}')->group(function () {
+    Route::get('/breast-cancer', [BreastCancerController::class, 'patientScreenings'])
+        ->name('patients.breast-cancer');
+    Route::post('/breast-cancer', [BreastCancerController::class, 'storeForPatient'])
+        ->name('patients.breast-cancer.store');
+});
+
+// Search patients
+Route::get('/patients/search', [BreastCancerController::class, 'searchPatients'])
+    ->name('patients.search');
 require __DIR__.'/settings.php';
 require __DIR__.'/Patient.php';

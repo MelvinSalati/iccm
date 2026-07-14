@@ -250,6 +250,103 @@ manageClientTransfer.post = (args: { patientuuid: string | number } | [patientuu
     
     manageClientTransfer.form = manageClientTransferForm
 /**
+* @see \App\Domains\Patients\Controllers\PatientController::viewBreastCancerScreening
+ * @see app/Domains/Patients/Controllers/PatientController.php:598
+ * @route '/patients/{uuid}/breast-cancer'
+ */
+export const viewBreastCancerScreening = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: viewBreastCancerScreening.url(args, options),
+    method: 'get',
+})
+
+viewBreastCancerScreening.definition = {
+    methods: ["get","head"],
+    url: '/patients/{uuid}/breast-cancer',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::viewBreastCancerScreening
+ * @see app/Domains/Patients/Controllers/PatientController.php:598
+ * @route '/patients/{uuid}/breast-cancer'
+ */
+viewBreastCancerScreening.url = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { uuid: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    uuid: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        uuid: args.uuid,
+                }
+
+    return viewBreastCancerScreening.definition.url
+            .replace('{uuid}', parsedArgs.uuid.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::viewBreastCancerScreening
+ * @see app/Domains/Patients/Controllers/PatientController.php:598
+ * @route '/patients/{uuid}/breast-cancer'
+ */
+viewBreastCancerScreening.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: viewBreastCancerScreening.url(args, options),
+    method: 'get',
+})
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::viewBreastCancerScreening
+ * @see app/Domains/Patients/Controllers/PatientController.php:598
+ * @route '/patients/{uuid}/breast-cancer'
+ */
+viewBreastCancerScreening.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: viewBreastCancerScreening.url(args, options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Domains\Patients\Controllers\PatientController::viewBreastCancerScreening
+ * @see app/Domains/Patients/Controllers/PatientController.php:598
+ * @route '/patients/{uuid}/breast-cancer'
+ */
+    const viewBreastCancerScreeningForm = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: viewBreastCancerScreening.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::viewBreastCancerScreening
+ * @see app/Domains/Patients/Controllers/PatientController.php:598
+ * @route '/patients/{uuid}/breast-cancer'
+ */
+        viewBreastCancerScreeningForm.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: viewBreastCancerScreening.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::viewBreastCancerScreening
+ * @see app/Domains/Patients/Controllers/PatientController.php:598
+ * @route '/patients/{uuid}/breast-cancer'
+ */
+        viewBreastCancerScreeningForm.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: viewBreastCancerScreening.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    viewBreastCancerScreening.form = viewBreastCancerScreeningForm
+/**
 * @see \App\Domains\Patients\Controllers\PatientController::index
  * @see app/Domains/Patients/Controllers/PatientController.php:24
  * @route '/patients'
@@ -1347,6 +1444,394 @@ labs.head = (args: { uuid: string | number } | [uuid: string | number ] | string
         })
     
     labs.form = labsForm
-const PatientController = { search, store, manageClientTransfer, index, show, update, destroy, registry, visitInteractions, create, medications, appointments, referral, riskAssessment, labs }
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::screening
+ * @see app/Domains/Patients/Controllers/PatientController.php:590
+ * @route '/patients/{uuid}/breast-cancer/screening'
+ */
+export const screening = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: screening.url(args, options),
+    method: 'get',
+})
+
+screening.definition = {
+    methods: ["get","head"],
+    url: '/patients/{uuid}/breast-cancer/screening',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::screening
+ * @see app/Domains/Patients/Controllers/PatientController.php:590
+ * @route '/patients/{uuid}/breast-cancer/screening'
+ */
+screening.url = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { uuid: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    uuid: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        uuid: args.uuid,
+                }
+
+    return screening.definition.url
+            .replace('{uuid}', parsedArgs.uuid.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::screening
+ * @see app/Domains/Patients/Controllers/PatientController.php:590
+ * @route '/patients/{uuid}/breast-cancer/screening'
+ */
+screening.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: screening.url(args, options),
+    method: 'get',
+})
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::screening
+ * @see app/Domains/Patients/Controllers/PatientController.php:590
+ * @route '/patients/{uuid}/breast-cancer/screening'
+ */
+screening.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: screening.url(args, options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Domains\Patients\Controllers\PatientController::screening
+ * @see app/Domains/Patients/Controllers/PatientController.php:590
+ * @route '/patients/{uuid}/breast-cancer/screening'
+ */
+    const screeningForm = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: screening.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::screening
+ * @see app/Domains/Patients/Controllers/PatientController.php:590
+ * @route '/patients/{uuid}/breast-cancer/screening'
+ */
+        screeningForm.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: screening.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::screening
+ * @see app/Domains/Patients/Controllers/PatientController.php:590
+ * @route '/patients/{uuid}/breast-cancer/screening'
+ */
+        screeningForm.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: screening.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    screening.form = screeningForm
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::imaging
+ * @see app/Domains/Patients/Controllers/PatientController.php:610
+ * @route '/patients/{uuid}/breast-cancer/imaging'
+ */
+export const imaging = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: imaging.url(args, options),
+    method: 'get',
+})
+
+imaging.definition = {
+    methods: ["get","head"],
+    url: '/patients/{uuid}/breast-cancer/imaging',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::imaging
+ * @see app/Domains/Patients/Controllers/PatientController.php:610
+ * @route '/patients/{uuid}/breast-cancer/imaging'
+ */
+imaging.url = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { uuid: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    uuid: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        uuid: args.uuid,
+                }
+
+    return imaging.definition.url
+            .replace('{uuid}', parsedArgs.uuid.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::imaging
+ * @see app/Domains/Patients/Controllers/PatientController.php:610
+ * @route '/patients/{uuid}/breast-cancer/imaging'
+ */
+imaging.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: imaging.url(args, options),
+    method: 'get',
+})
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::imaging
+ * @see app/Domains/Patients/Controllers/PatientController.php:610
+ * @route '/patients/{uuid}/breast-cancer/imaging'
+ */
+imaging.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: imaging.url(args, options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Domains\Patients\Controllers\PatientController::imaging
+ * @see app/Domains/Patients/Controllers/PatientController.php:610
+ * @route '/patients/{uuid}/breast-cancer/imaging'
+ */
+    const imagingForm = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: imaging.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::imaging
+ * @see app/Domains/Patients/Controllers/PatientController.php:610
+ * @route '/patients/{uuid}/breast-cancer/imaging'
+ */
+        imagingForm.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: imaging.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::imaging
+ * @see app/Domains/Patients/Controllers/PatientController.php:610
+ * @route '/patients/{uuid}/breast-cancer/imaging'
+ */
+        imagingForm.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: imaging.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    imaging.form = imagingForm
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::treatment
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/treatment'
+ */
+export const treatment = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: treatment.url(args, options),
+    method: 'get',
+})
+
+treatment.definition = {
+    methods: ["get","head"],
+    url: '/patients/{uuid}/breast-cancer/treatment',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::treatment
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/treatment'
+ */
+treatment.url = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { uuid: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    uuid: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        uuid: args.uuid,
+                }
+
+    return treatment.definition.url
+            .replace('{uuid}', parsedArgs.uuid.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::treatment
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/treatment'
+ */
+treatment.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: treatment.url(args, options),
+    method: 'get',
+})
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::treatment
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/treatment'
+ */
+treatment.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: treatment.url(args, options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Domains\Patients\Controllers\PatientController::treatment
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/treatment'
+ */
+    const treatmentForm = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: treatment.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::treatment
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/treatment'
+ */
+        treatmentForm.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: treatment.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::treatment
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/treatment'
+ */
+        treatmentForm.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: treatment.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    treatment.form = treatmentForm
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::biopsy
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/biopsy'
+ */
+export const biopsy = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: biopsy.url(args, options),
+    method: 'get',
+})
+
+biopsy.definition = {
+    methods: ["get","head"],
+    url: '/patients/{uuid}/breast-cancer/biopsy',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::biopsy
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/biopsy'
+ */
+biopsy.url = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { uuid: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    uuid: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        uuid: args.uuid,
+                }
+
+    return biopsy.definition.url
+            .replace('{uuid}', parsedArgs.uuid.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::biopsy
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/biopsy'
+ */
+biopsy.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: biopsy.url(args, options),
+    method: 'get',
+})
+/**
+* @see \App\Domains\Patients\Controllers\PatientController::biopsy
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/biopsy'
+ */
+biopsy.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: biopsy.url(args, options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Domains\Patients\Controllers\PatientController::biopsy
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/biopsy'
+ */
+    const biopsyForm = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: biopsy.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::biopsy
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/biopsy'
+ */
+        biopsyForm.get = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: biopsy.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Domains\Patients\Controllers\PatientController::biopsy
+ * @see app/Domains/Patients/Controllers/PatientController.php:0
+ * @route '/patients/{uuid}/breast-cancer/biopsy'
+ */
+        biopsyForm.head = (args: { uuid: string | number } | [uuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: biopsy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    biopsy.form = biopsyForm
+const PatientController = { search, store, manageClientTransfer, viewBreastCancerScreening, index, show, update, destroy, registry, visitInteractions, create, medications, appointments, referral, riskAssessment, labs, screening, imaging, treatment, biopsy }
 
 export default PatientController

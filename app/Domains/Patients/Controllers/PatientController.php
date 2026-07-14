@@ -587,17 +587,58 @@ class PatientController extends Controller
             'labOrders' => LaboratoryOrder::where('patient_id',$pstientId)->get(), // Fetch lab results from your lab results table
         ]);
     }
+    public function screening($uuid){
 
+        $patientId = IdentifiersHelper::getPatientIdByUuid($uuid);
+        $patient = Patient::where('id', $patientId)->firstOrFail();
+        return Inertia::render('patients/screening',[
+            'patient' => $patient,
+        ]);
+    }
+
+    public function imaging($uuid){
+
+        $patientId = IdentifiersHelper::getPatientIdByUuid($uuid);
+        $patient = Patient::where('id', $patientId)->firstOrFail();
+        return Inertia::render('patients/imaging',[
+            'patient' => $patient,
+        ]);
+    }
+    public function treatment($uuid){
+
+        $patientId = IdentifiersHelper::getPatientIdByUuid($uuid);
+        $patient = Patient::where('id', $patientId)->firstOrFail();
+        return Inertia::render('patients/treatment',[
+            'patient' => $patient,
+        ]);
+    }
+    public function biospy($uuid){
+
+        $patientId = IdentifiersHelper::getPatientIdByUuid($uuid);
+        $patient = Patient::where('id', $patientId)->firstOrFail();
+        return Inertia::render('patients/biopsy',[
+            'patient' => $patient,
+        ]);
+    }
+    public function viewBreastCancerScreening($uuid)
+    {
+        $patient = Patient::where('patient_uuid', $uuid)->firstOrFail();
+        $pstientId = IdentifiersHelper::getPatientIdByUuid($uuid);
+        return Inertia::render('patients/breast-cancer', [
+            'patient' => $patient,
+            'breastScreening' => LaboratoryOrder::where('patient_id',$pstientId)->get(), // Fetch lab results from your lab results table
+        ]);
+    }
     /**
      * Display patient imaging page.
      */
-    public function imaging($uuid)
+    public function biopsy($uuid)
     {
         $patient = Patient::where('patient_uuid', $uuid)->firstOrFail();
 
-        return Inertia::render('patients/imaging', [
+        return Inertia::render('patients/biopsy', [
             'patient' => $patient,
-            'imaging' => [], // Fetch imaging records from your imaging table
+            'biopsy' => [], // Fetch imaging records from your imaging table
         ]);
     }
 

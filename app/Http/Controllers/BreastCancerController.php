@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BreastCancerScreening;
-use App\Models\Patient;
+use App\Models\Patients\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -48,7 +48,7 @@ class BreastCancerController extends Controller
         $screenings = $query->orderBy('created_at', 'desc')
             ->paginate($request->per_page ?? 20);
 
-        return inertia('breast-cancer', [
+        return inertia('patients/breast-cancer', [
             'screenings' => $screenings->items(),
             'filters' => $request->only(['result', 'stage', 'date_from', 'date_to']),
             'pagination' => [

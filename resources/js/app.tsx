@@ -78,7 +78,15 @@ createInertiaApp({
                 return UserRegistrationLayout;
             case name === 'patients/create':
                 return null;
-            case name === 'patients/BreastCancer':
+            case name === 'patients/breast-cancer':
+                return null;
+            case name === 'patients/screening':
+                return null;
+            case name === 'patients/imaging':
+                return null;
+            case name === 'patients/biopsy':
+                return null;
+            case name === 'patients/treatment':
                 return null;
             case name === 'dashboard':
                 return AppLayout;

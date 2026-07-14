@@ -6,8 +6,8 @@ import CommunityEngagement from './CommunityEngagement'
 import Appointments from './Appointments'
 import Patients from './Patients'
 import Consultancies from './Consultancies'
-import Settings from './Settings'
 import BreastCancerController from './BreastCancerController'
+import Settings from './Settings'
 const Controllers = {
     Pathology: Object.assign(Pathology, Pathology),
 IntegratedScreeningController: Object.assign(IntegratedScreeningController, IntegratedScreeningController),
@@ -17,8 +17,8 @@ CommunityEngagement: Object.assign(CommunityEngagement, CommunityEngagement),
 Appointments: Object.assign(Appointments, Appointments),
 Patients: Object.assign(Patients, Patients),
 Consultancies: Object.assign(Consultancies, Consultancies),
-Settings: Object.assign(Settings, Settings),
 BreastCancerController: Object.assign(BreastCancerController, BreastCancerController),
+Settings: Object.assign(Settings, Settings),
 }
 
 export default Controllers

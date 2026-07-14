@@ -46,7 +46,20 @@ import {
     FileText,
     Pill,
     MessageCircle,
-    ChevronRight, UserPlus, MicroscopeIcon, StethoscopeIcon, ChartBarIcon, BarChart2Icon
+    ChevronRight,
+    UserPlus,
+    MicroscopeIcon,
+    StethoscopeIcon,
+    ChartBarIcon,
+    BarChart2Icon,
+    Heart,
+    Camera,
+    Radiation,
+    FileSearch,
+    Scan,
+    Pill as PillIcon,
+    Syringe,
+    FlaskConical,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
@@ -155,7 +168,6 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.CHW,
             ],
         },
-
         {
             title: 'Community Outreach',
             href: '/community',
@@ -193,62 +205,6 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.FACILITY_MANAGER,
             ],
         },
-
-        // {
-        //     title: 'Follow Up',
-        //     href: '/follow-up',
-        //     icon: BellRing,
-        // },
-        // {
-        //     title: 'Psychosocial Care',
-        //     href: '/mental-health',
-        //     icon: HeartPulse,
-        //     roles: [
-        //         ROLE_IDS.ADMINISTRATOR,
-        //         ROLE_IDS.COUNSELLOR,
-        //         ROLE_IDS.CLINICIAN,
-        //         ROLE_IDS.FACILITY_MANAGER,
-        //     ],
-        // },
-        // {
-        //     title: 'NCD Management',
-        //     href: '/ncd',
-        //     icon: Activity,
-        // },
-        // {
-        //     title: 'Referrals',
-        //     href: '/referrals',
-        //     icon: ArrowRightLeft,
-        //     roles: [
-        //         ROLE_IDS.ADMINISTRATOR,
-        //         ROLE_IDS.CHW,
-        //         ROLE_IDS.CLINICIAN,
-        //         ROLE_IDS.NURSE,
-        //         ROLE_IDS.FACILITY_MANAGER,
-        //     ],
-        // },
-        // {
-        //     title: 'Admissions',
-        //     href: '/admissions',
-        //     icon: Bed,
-        //     roles: [
-        //         ROLE_IDS.ADMINISTRATOR,
-        //         ROLE_IDS.WARD_CLERK,
-        //         ROLE_IDS.CLINICIAN,
-        //         ROLE_IDS.NURSE,
-        //     ],
-        // },
-        // {
-        //     title: 'Discharges',
-        //     href: '/discharges',
-        //     icon: FileHeart,
-        //     roles: [
-        //         ROLE_IDS.ADMINISTRATOR,
-        //         ROLE_IDS.WARD_CLERK,
-        //         ROLE_IDS.CLINICIAN,
-        //         ROLE_IDS.NURSE,
-        //     ],
-        // },
         {
             title: 'Reports',
             href: '/',
@@ -270,17 +226,6 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.DHO,
             ],
         },
-        // {
-        //     title: 'Reports & MEL',
-        //     href: '/reports',
-        //     icon: ChartBarStacked,
-        //     roles: [
-        //         ROLE_IDS.ADMINISTRATOR,
-        //         ROLE_IDS.MEL_OFFICER,
-        //         ROLE_IDS.FACILITY_MANAGER,
-        //         ROLE_IDS.DHO,
-        //     ],
-        // },
         {
             title: 'Users & Roles',
             href: '/users',
@@ -320,10 +265,35 @@ const getPatientNavItems = (patientUuid: string): NavItem[] => [
         description: 'View patient summary',
     },
     {
-        title: 'BreastCancer Screening',
+        title: 'Breast Cancer',
         href: `/patients/${patientUuid}/breast-cancer`,
-        icon: StethoscopeIcon,
-        description: 'Referral Patient',
+        icon: Heart,
+        description: 'Breast Cancer Management',
+        subItems: [
+            {
+                title: 'Screening',
+                href: `/patients/${patientUuid}/breast-cancer/screening`,
+                icon: FileSearch,
+                description: 'Breast cancer screening',
+            },
+            {
+                title: 'Imaging',
+                href: `/patients/${patientUuid}/breast-cancer/imaging`,
+                icon: Camera,
+                description: 'Mammography & Ultrasound',
+            },
+            {
+                title: 'Treatment',
+                href: `/patients/${patientUuid}/breast-cancer/treatment`,
+                icon: Radiation,
+                description: 'Treatment plans & follow-up',
+            },    {
+                title: 'Biopsy',
+                href: `/patients/${patientUuid}/breast-cancer/biopsy`,
+                icon: Radiation,
+                description: 'Treatment plans & follow-up',
+            },
+        ],
     },
     {
         title: 'Referral Management',
@@ -340,7 +310,7 @@ const getPatientNavItems = (patientUuid: string): NavItem[] => [
     {
         title: 'Medications',
         href: `/patients/${patientUuid}/medications`,
-        icon: Pill,
+        icon: PillIcon,
         description: 'Prescribed medications',
     },
     {
@@ -349,7 +319,6 @@ const getPatientNavItems = (patientUuid: string): NavItem[] => [
         icon: CalendarClock,
         description: 'Upcoming appointments',
     },
-
     {
         title: 'Risk Assessment',
         href: `/patients/${patientUuid}/risk-assessment`,
@@ -378,11 +347,13 @@ interface AppSidebarProps {
 const NavItemRenderer = ({
                              item,
                              isActive,
-                             onClick
+                             onClick,
+                             isSubItem = false,
                          }: {
     item: NavItem;
     isActive: boolean;
     onClick: () => void;
+    isSubItem?: boolean;
 }) => {
     return (
         <SidebarMenuItem>
@@ -394,7 +365,8 @@ const NavItemRenderer = ({
                     navButtonBaseStyles,
                     isActive && navButtonActiveStyles,
                     "group w-full justify-start",
-                    "min-h-[44px]"
+                    "min-h-[44px]",
+                    isSubItem && "pl-8 text-xs"
                 )}
             >
                 <Link
@@ -404,7 +376,7 @@ const NavItemRenderer = ({
                 >
                     {item.icon && (
                         <item.icon className={cn(
-                            SIDEBAR_STYLES.iconSize,
+                            isSubItem ? SIDEBAR_STYLES.iconSizeSmall : SIDEBAR_STYLES.iconSize,
                             "flex-shrink-0",
                             "transition-transform duration-200",
                             "group-hover:scale-110",
@@ -414,7 +386,7 @@ const NavItemRenderer = ({
                     <div className="flex-1 min-w-0 text-left">
                         <span className={cn(
                             "block",
-                            SIDEBAR_STYLES.textSize,
+                            isSubItem ? SIDEBAR_STYLES.textSizeSmall : SIDEBAR_STYLES.textSize,
                             isActive ? "text-blue-700" : "text-slate-700"
                         )}>
                             {item.title}
@@ -431,6 +403,142 @@ const NavItemRenderer = ({
                 </Link>
             </SidebarMenuButton>
         </SidebarMenuItem>
+    );
+};
+
+// Component to render a navigation item with optional sub-items
+const NavItemWithSubItems = ({
+                                 item,
+                                 isActive,
+                                 onClick,
+                                 expandedItems,
+                                 setExpandedItems,
+                             }: {
+    item: NavItem;
+    isActive: boolean;
+    onClick: () => void;
+    expandedItems: Set<string>;
+    setExpandedItems: React.Dispatch<React.SetStateAction<Set<string>>>;
+}) => {
+    const hasSubItems = item.subItems && item.subItems.length > 0;
+    const isExpanded = expandedItems.has(item.title);
+
+    const toggleExpand = () => {
+        setExpandedItems(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(item.title)) {
+                newSet.delete(item.title);
+            } else {
+                newSet.add(item.title);
+            }
+            return newSet;
+        });
+    };
+
+    return (
+        <div className="space-y-0.5">
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    isActive={isActive}
+                    className={cn(
+                        navButtonBaseStyles,
+                        isActive && navButtonActiveStyles,
+                        "group w-full justify-start",
+                        "min-h-[44px]",
+                        hasSubItems && "cursor-pointer"
+                    )}
+                    onClick={hasSubItems ? toggleExpand : onClick}
+                >
+                    {hasSubItems ? (
+                        <div className="relative flex items-center w-full">
+                            {item.icon && (
+                                <item.icon className={cn(
+                                    SIDEBAR_STYLES.iconSize,
+                                    "flex-shrink-0",
+                                    "transition-transform duration-200",
+                                    "group-hover:scale-110",
+                                    isActive ? "text-blue-700" : "text-slate-600"
+                                )} />
+                            )}
+                            <div className="flex-1 min-w-0 text-left">
+                                <span className={cn(
+                                    "block",
+                                    SIDEBAR_STYLES.textSize,
+                                    isActive ? "text-blue-700" : "text-slate-700"
+                                )}>
+                                    {item.title}
+                                </span>
+                                {item.description && (
+                                    <span className="block text-xs text-slate-500 truncate">
+                                        {item.description}
+                                    </span>
+                                )}
+                            </div>
+                            <ChevronRight className={cn(
+                                "h-4 w-4 text-slate-400 transition-transform duration-200 flex-shrink-0",
+                                isExpanded && "rotate-90"
+                            )} />
+                        </div>
+                    ) : (
+                        <Link
+                            href={item.href}
+                            className="relative flex items-center w-full"
+                            onClick={onClick}
+                        >
+                            {item.icon && (
+                                <item.icon className={cn(
+                                    SIDEBAR_STYLES.iconSize,
+                                    "flex-shrink-0",
+                                    "transition-transform duration-200",
+                                    "group-hover:scale-110",
+                                    isActive ? "text-blue-700" : "text-slate-600"
+                                )} />
+                            )}
+                            <div className="flex-1 min-w-0 text-left">
+                                <span className={cn(
+                                    "block",
+                                    SIDEBAR_STYLES.textSize,
+                                    isActive ? "text-blue-700" : "text-slate-700"
+                                )}>
+                                    {item.title}
+                                </span>
+                                {item.description && (
+                                    <span className="block text-xs text-slate-500 truncate">
+                                        {item.description}
+                                    </span>
+                                )}
+                            </div>
+                            {isActive && (
+                                <ChevronRight className="h-4 w-4 text-blue-600 flex-shrink-0 ml-1" />
+                            )}
+                        </Link>
+                    )}
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            {/* Sub-items */}
+            {hasSubItems && isExpanded && (
+                <div className="ml-2 space-y-0.5 border-l-2 border-slate-200 pl-2">
+                    {item.subItems!.map((subItem) => {
+                        const isSubActive = false; // You can add logic here if needed
+                        return (
+                            <NavItemRenderer
+                                key={subItem.title}
+                                item={subItem}
+                                isActive={isSubActive}
+                                onClick={() => {
+                                    // Navigate to sub-item
+                                    window.location.href = subItem.href;
+                                }}
+                                isSubItem={true}
+                            />
+                        );
+                    })}
+                </div>
+            )}
+        </div>
     );
 };
 
@@ -506,10 +614,16 @@ export function AppSidebar({ patient, isPatientView }: AppSidebarProps) {
 
     // For patient navigation, use state to track active item
     const [activePatientHref, setActivePatientHref] = useState<string>('');
+    const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
     // Set initial active patient nav item only when patient view is shown
     useEffect(() => {
         if (showPatientView && !activePatientHref) {
+            // Auto-expand Breast Cancer if it contains sub-items
+            const breastCancerItem = patientNavItems.find(item => item.title === 'Breast Cancer');
+            if (breastCancerItem && breastCancerItem.subItems) {
+                setExpandedItems(new Set(['Breast Cancer']));
+            }
             setActivePatientHref('');
         }
     }, [showPatientView]);
@@ -575,7 +689,22 @@ export function AppSidebar({ patient, isPatientView }: AppSidebarProps) {
                         <SidebarGroupContent>
                             <SidebarMenu className="gap-0.5">
                                 {patientNavItems.map((item) => {
-                                    const isActive = activePatientHref === item.href;
+                                    const hasSubItems = item.subItems && item.subItems.length > 0;
+                                    const isActive = !hasSubItems && activePatientHref === item.href;
+
+                                    if (hasSubItems) {
+                                        return (
+                                            <NavItemWithSubItems
+                                                key={item.title}
+                                                item={item}
+                                                isActive={false}
+                                                onClick={() => {}}
+                                                expandedItems={expandedItems}
+                                                setExpandedItems={setExpandedItems}
+                                            />
+                                        );
+                                    }
+
                                     return (
                                         <NavItemRenderer
                                             key={item.title}
@@ -591,7 +720,6 @@ export function AppSidebar({ patient, isPatientView }: AppSidebarProps) {
                 ) : (
                     // Main navigation
                     <SidebarGroup>
-
                         <SidebarGroupContent>
                             <SidebarMenu className="gap-0.5">
                                 {visibleItems.map((item) => {

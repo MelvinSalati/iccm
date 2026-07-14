@@ -1,4 +1,76 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
+import breastCancer from './breast-cancer'
+/**
+ * @see routes/Patient.php:14
+ * @route '/patients/search'
+ */
+export const search = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: search.url(options),
+    method: 'get',
+})
+
+search.definition = {
+    methods: ["get","head"],
+    url: '/patients/search',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+ * @see routes/Patient.php:14
+ * @route '/patients/search'
+ */
+search.url = (options?: RouteQueryOptions) => {
+    return search.definition.url + queryParams(options)
+}
+
+/**
+ * @see routes/Patient.php:14
+ * @route '/patients/search'
+ */
+search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: search.url(options),
+    method: 'get',
+})
+/**
+ * @see routes/Patient.php:14
+ * @route '/patients/search'
+ */
+search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: search.url(options),
+    method: 'head',
+})
+
+    /**
+ * @see routes/Patient.php:14
+ * @route '/patients/search'
+ */
+    const searchForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: search.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/Patient.php:14
+ * @route '/patients/search'
+ */
+        searchForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: search.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/Patient.php:14
+ * @route '/patients/search'
+ */
+        searchForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: search.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    search.form = searchForm
 /**
 * @see \App\Domains\Patients\Controllers\PatientController::index
  * @see app/Domains/Patients/Controllers/PatientController.php:24
@@ -77,77 +149,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     index.form = indexForm
-/**
- * @see routes/Patient.php:14
- * @route '/patients/search'
- */
-export const search = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: search.url(options),
-    method: 'get',
-})
-
-search.definition = {
-    methods: ["get","head"],
-    url: '/patients/search',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
- * @see routes/Patient.php:14
- * @route '/patients/search'
- */
-search.url = (options?: RouteQueryOptions) => {
-    return search.definition.url + queryParams(options)
-}
-
-/**
- * @see routes/Patient.php:14
- * @route '/patients/search'
- */
-search.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: search.url(options),
-    method: 'get',
-})
-/**
- * @see routes/Patient.php:14
- * @route '/patients/search'
- */
-search.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: search.url(options),
-    method: 'head',
-})
-
-    /**
- * @see routes/Patient.php:14
- * @route '/patients/search'
- */
-    const searchForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: search.url(options),
-        method: 'get',
-    })
-
-            /**
- * @see routes/Patient.php:14
- * @route '/patients/search'
- */
-        searchForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: search.url(options),
-            method: 'get',
-        })
-            /**
- * @see routes/Patient.php:14
- * @route '/patients/search'
- */
-        searchForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: search.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    search.form = searchForm
 /**
  * @see routes/Patient.php:17
  * @route '/patients/create'
@@ -637,8 +638,9 @@ registry.head = (args: { uuid: string | number } | [uuid: string | number ] | st
     
     registry.form = registryForm
 const patients = {
-    index: Object.assign(index, index),
+    breastCancer: Object.assign(breastCancer, breastCancer),
 search: Object.assign(search, search),
+index: Object.assign(index, index),
 create: Object.assign(create, create),
 store: Object.assign(store, store),
 show: Object.assign(show, show),

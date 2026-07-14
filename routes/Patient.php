@@ -29,6 +29,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{uuid}/referrals',[PatientController::class,'referral']);
         Route::get('/{uuid}/risk-assessment',[PatientController::class,'riskAssessment']);
         Route::get('/{uuid}/lab',[PatientController::class,'labs']);
+        Route::get('/{uuid}/breast-cancer',[PatientController::class,'viewBreastCancerScreening']);
+        Route::get('/{uuid}/breast-cancer/screening',[PatientController::class,'screening']);
+        Route::get('/{uuid}/breast-cancer/imaging',[PatientController::class,'imaging']);
+        Route::get('/{uuid}/breast-cancer/treatment',[PatientController::class,'treatment']);
+        Route::get('/{uuid}/breast-cancer/biopsy',[PatientController::class,'biopsy']);
     });
 
 
@@ -39,9 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     */
 
 // Main index page - list all screenings
-    Route::get('patients/{patientuuid}/breast-cancer', [BreastCancerController::class, 'index'])
-        ->name('breast-cancer.index')
-        ->middleware(['auth', 'verified']);
+
 
 // Create new screening form
     Route::get('/breast-cancer/new', [BreastCancerController::class, 'create'])
