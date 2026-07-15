@@ -6,7 +6,6 @@ import { useState } from 'react';
 import BreastCancerScreeningModal from './components/modals/BreastScreeningModal';
 import { Button } from '@/components/ui/button';
 import { Plus, Heart, FileSearch, Calendar, User, AlertCircle } from 'lucide-react';
-import Http from '@/utils/Http';
 import Notiflix from 'notiflix';
 
 interface Patient {
@@ -20,7 +19,6 @@ interface Patient {
     gender: string;
     date_of_birth: string;
     phone_number: string;
-    email?: string;
     is_high_risk: boolean;
 }
 
@@ -60,27 +58,51 @@ export default function Screening() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [screenings, setScreenings] = useState<BreastCancerScreening[]>(breastCancerScreening);
-    const [loading, setLoading] = useState(false);
+    const [editingData, setEditingData] = useState<any>(null);
 
     // Handler for opening the modal
     const handleOpenModal = () => {
+        setEditingData(null);
         setIsModalOpen(true);
+    };
+
+    // Handler for editing a screening
+    const handleEditScreening = async (screening: BreastCancerScreening) => {
+        try {
+            const response = await Http.get(`/patients/${patient.patient_uuid}/breast-cancer/screening/${screening.id}`);
+            setEditingData(response.data);
+            setIsModalOpen(true);
+        } catch (error) {
+            console.error('Error fetching screening details:', error);
+            Notiflix.Notify.failure('Failed to load screening details');
+        }
     };
 
     // Handler for closing the modal
     const handleCloseModal = () => {
         setIsModalOpen(false);
+        setEditingData(null);
     };
 
     // Handler for successful screening submission
     const handleScreeningSuccess = (data: any) => {
-        // Add the new screening to the list
-        setScreenings(prev => [data, ...prev]);
+        setScreenings(prev => {
+            const existingIndex = prev.findIndex(s => s.id === data.id);
+            if (existingIndex >= 0) {
+                // Update existing
+                const updated = [...prev];
+                updated[existingIndex] = data;
+                return updated;
+            }
+            // Add new
+            return [data, ...prev];
+        });
         setIsModalOpen(false);
-        Notiflix.Notify.success('Screening recorded successfully!');
+        setEditingData(null);
+        Notiflix.Notify.success('Screening saved successfully!');
     };
 
-    // Format date for display
+    // Format date
     const formatDate = (date: string) => {
         if (!date) return 'N/A';
         try {
@@ -94,7 +116,7 @@ export default function Screening() {
         }
     };
 
-    // Get status badge color
+    // Get status badge
     const getStatusBadge = (isPositive: boolean) => {
         return isPositive
             ? 'bg-rose-100 text-rose-800 border-rose-200'
@@ -142,7 +164,7 @@ export default function Screening() {
                     <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                                <Heart className="h-6 w-6 text-rose-500" />
+                                <Heart className="h-6 w-6 text-slate-600" />
                                 Breast Cancer Screening
                             </h1>
                             <p className="text-sm text-slate-500">
@@ -151,13 +173,12 @@ export default function Screening() {
                         </div>
                         <Button
                             onClick={handleOpenModal}
-                            className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white"
+                            className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white"
                         >
                             <Plus className="h-4 w-4" />
                             New Screening
                         </Button>
                     </div>
-
 
                     {/* Screenings List */}
                     <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -207,8 +228,15 @@ export default function Screening() {
                                                     variant="outline"
                                                     size="sm"
                                                     className="text-xs"
+                                                    onClick={() => handleEditScreening(screening)}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="text-xs"
                                                     onClick={() => {
-                                                        // View details - you can implement this later
                                                         Notiflix.Notify.info('View details coming soon');
                                                     }}
                                                 >
@@ -228,7 +256,7 @@ export default function Screening() {
                                 </p>
                                 <Button
                                     onClick={handleOpenModal}
-                                    className="mt-4 bg-rose-600 hover:bg-rose-700 text-white"
+                                    className="mt-4 bg-slate-700 hover:bg-slate-800 text-white"
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
                                     Start First Screening
@@ -244,7 +272,9 @@ export default function Screening() {
                     onClose={handleCloseModal}
                     onSuccess={handleScreeningSuccess}
                     patientId={String(patient?.id)}
+                    patientUuid={patient?.patient_uuid}
                     userId={auth?.user?.id}
+                    editingData={editingData}
                 />
             </div>
         </AppLayout>

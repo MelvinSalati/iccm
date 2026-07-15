@@ -11,6 +11,7 @@ use App\Models\Patients\Patient;
 use App\Models\Patients\PatientVisit;
 use App\Models\Patients\PatientVisitInteraction;
 use App\Models\Referral;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
@@ -67,7 +68,15 @@ class PatientController extends Controller
     public function store(Request $request)
     {
         try {
-            $result = PatientRegistrationAction::createPatient($request->all());
+            /**
+             *  add unique id
+            */
+            $identity  = IdentifiersHelper::createIdentity(Carbon::now());
+
+            $patientData  =  array_merge($request->all(),
+                ['client_identity_number' => $identity]
+            );
+            $result = PatientRegistrationAction::createPatient($patientData);
 
             if ($result['success']) {
                 return response()->json([

@@ -19,20 +19,22 @@ import {
     Search,
     Stethoscope,
     FileText,
-    Calendar,
+    Calendar
 } from 'lucide-react';
 import Notiflix from 'notiflix';
 import Http from '@/utils/Http';
 import { Button } from '@/components/ui/button';
+import patient from '@/routes/patient';
 
 interface BreastCancerScreeningModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSuccess: (data: any) => void;
-    patientId?: string;
-    visitId?: string;
-    userId?: string;
-    editingData?: any;
+    isOpen: boolean,
+    onClose: () => void,
+    onSuccess: (data: any) => void,
+    patientId?: string,
+    visitId?: string,
+    userId?: string,
+    editingData?: any,
+    patientUuid?: unknown
 }
 
 interface FormData {
@@ -120,6 +122,7 @@ export default function BreastCancerScreeningModal({
                                                        visitId,
                                                        userId,
                                                        editingData,
+                                                       patientUuid
                                                    }: BreastCancerScreeningModalProps) {
     const [activeTab, setActiveTab] = useState('symptoms');
     const [loading, setLoading] = useState(false);
@@ -135,7 +138,7 @@ export default function BreastCancerScreeningModal({
         physicalExam: true,
         lymphNodes: true,
         general: true,
-        tnm: true,
+        tnm: true
     });
     const searchRef = useRef<HTMLDivElement>(null);
 
@@ -207,7 +210,7 @@ export default function BreastCancerScreeningModal({
         follow_up_date: '',
         follow_up_interval: '',
         plan_notes: '',
-        recommended_by: '',
+        recommended_by: ''
     });
 
     const tabs: Tab[] = [
@@ -215,7 +218,7 @@ export default function BreastCancerScreeningModal({
         { id: 'history', label: 'History', icon: <History className="h-4 w-4" /> },
         { id: 'exam', label: 'Examination', icon: <Stethoscope className="h-4 w-4" /> },
         { id: 'tnm', label: 'TNM Staging', icon: <TrendingUp className="h-4 w-4" /> },
-        { id: 'plan', label: 'Plan', icon: <ClipboardCheck className="h-4 w-4" /> },
+        { id: 'plan', label: 'Plan', icon: <ClipboardCheck className="h-4 w-4" /> }
     ];
 
     useEffect(() => {
@@ -226,7 +229,7 @@ export default function BreastCancerScreeningModal({
         if (editingData) {
             setFormData(prev => ({
                 ...prev,
-                ...editingData,
+                ...editingData
             }));
         }
     }, [editingData]);
@@ -275,7 +278,7 @@ export default function BreastCancerScreeningModal({
         setFormData(prev => ({
             ...prev,
             patient_id: patient.id,
-            patient_search: `${patient.full_name} (${patient.nrc_number || 'N/A'})`,
+            patient_search: `${patient.full_name} (${patient.nrc_number || 'N/A'})`
         }));
         setShowSearchResults(false);
         setSearchResults([]);
@@ -284,7 +287,7 @@ export default function BreastCancerScreeningModal({
     const toggleSection = (section: string) => {
         setExpandedSections(prev => ({
             ...prev,
-            [section]: !prev[section],
+            [section]: !prev[section]
         }));
     };
 
@@ -313,12 +316,12 @@ export default function BreastCancerScreeningModal({
 
         setSaving(true);
         try {
-            const endpoint = editingData ? `/breast-cancer/${editingData.id}` : '/breast-cancer/screening';
+            const endpoint = editingData ? `/breast-cancer/${editingData.id}` : `${patientUuid}/breast-cancer/screening`;
             const method = editingData ? 'put' : 'post';
 
             const response = await Http[method](endpoint, {
                 ...formData,
-                user_id: userId,
+                user_id: userId
             });
 
             if (response.status === 201 || response.status === 200) {
@@ -334,7 +337,7 @@ export default function BreastCancerScreeningModal({
                     stage_group: formData.stage_group || '',
                     created_at: new Date().toISOString(),
                     submitted_by: response.data.data.submitted_by || userId || 'Current User',
-                    submitted_by_name: response.data.data.submitted_by_name || 'Current User',
+                    submitted_by_name: response.data.data.submitted_by_name || 'Current User'
                 };
 
                 onSuccess(newScreening);
@@ -361,7 +364,8 @@ export default function BreastCancerScreeningModal({
             <div className="flex min-h-screen items-center justify-center p-4">
                 <div className="relative  max-w-4xl rounded-lg bg-white shadow-2xl max-h-[95vh] flex flex-col">
                     {/* Header - Clean slate */}
-                    <div className="border-b border-slate-200 px-4 py-3 flex items-center justify-between bg-slate-50 rounded-t-lg flex-shrink-0">
+                    <div
+                        className="border-b border-slate-200 px-4 py-3 flex items-center justify-between bg-slate-50 rounded-t-lg flex-shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="rounded-md bg-slate-100 p-1.5">
                                 <Heart className="h-4 w-4 text-slate-600" />
@@ -427,9 +431,11 @@ export default function BreastCancerScreeningModal({
                                             className="w-full rounded-md border border-slate-200 px-3 py-2 pr-10 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
                                             placeholder="Type patient name or NRC number..."
                                         />
-                                        <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                                        <Search
+                                            className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                                         {showSearchResults && searchResults.length > 0 && (
-                                            <div className="absolute z-20 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg max-h-60 overflow-y-auto">
+                                            <div
+                                                className="absolute z-20 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg max-h-60 overflow-y-auto">
                                                 {searchResults.map((patient) => (
                                                     <button
                                                         key={patient.id}
@@ -449,7 +455,8 @@ export default function BreastCancerScreeningModal({
                                         )}
                                     </div>
                                     {formData.patient_id && (
-                                        <div className="mt-2 rounded-md bg-emerald-50 p-2 flex items-center gap-2 border border-emerald-200">
+                                        <div
+                                            className="mt-2 rounded-md bg-emerald-50 p-2 flex items-center gap-2 border border-emerald-200">
                                             <CheckCircle className="h-4 w-4 text-emerald-600" />
                                             <span className="text-sm text-emerald-700">
                                                 Patient selected: <strong>{formData.patient_search}</strong>
@@ -473,15 +480,32 @@ export default function BreastCancerScreeningModal({
                                                 <span className="flex items-center gap-2">
                                                     <span className="text-slate-400">◀</span> Left Side
                                                 </span>
-                                                {expandedSections.left ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                                {expandedSections.left ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                                    <ChevronDown className="h-3.5 w-3.5" />}
                                             </button>
                                             {expandedSections.left && (
                                                 <div className="space-y-2 p-3 bg-slate-50/50 rounded-md">
                                                     {[
-                                                        { label: 'Breast Swelling', key: 'left_breast_swelling', durationKey: 'left_breast_swelling_duration' },
-                                                        { label: 'Axillary Swelling', key: 'left_axillary_swelling', durationKey: 'left_axillary_swelling_duration' },
-                                                        { label: 'Bone Pain', key: 'left_bone_pain', durationKey: 'left_bone_pain_duration' },
-                                                        { label: 'Arm Swelling', key: 'left_arm_swelling', durationKey: 'left_arm_swelling_duration' },
+                                                        {
+                                                            label: 'Breast Swelling',
+                                                            key: 'left_breast_swelling',
+                                                            durationKey: 'left_breast_swelling_duration'
+                                                        },
+                                                        {
+                                                            label: 'Axillary Swelling',
+                                                            key: 'left_axillary_swelling',
+                                                            durationKey: 'left_axillary_swelling_duration'
+                                                        },
+                                                        {
+                                                            label: 'Bone Pain',
+                                                            key: 'left_bone_pain',
+                                                            durationKey: 'left_bone_pain_duration'
+                                                        },
+                                                        {
+                                                            label: 'Arm Swelling',
+                                                            key: 'left_arm_swelling',
+                                                            durationKey: 'left_arm_swelling_duration'
+                                                        }
                                                     ].map((symptom) => (
                                                         <div key={symptom.key} className="flex items-center gap-2">
                                                             <input
@@ -491,7 +515,8 @@ export default function BreastCancerScreeningModal({
                                                                 onChange={handleInputChange}
                                                                 className="rounded border-slate-300 text-slate-600 focus:ring-slate-400 h-4 w-4"
                                                             />
-                                                            <label className="text-sm text-slate-700 flex-1">{symptom.label}</label>
+                                                            <label
+                                                                className="text-sm text-slate-700 flex-1">{symptom.label}</label>
                                                             {formData[symptom.key as keyof FormData] && (
                                                                 <input
                                                                     type="text"
@@ -518,15 +543,32 @@ export default function BreastCancerScreeningModal({
                                                 <span className="flex items-center gap-2">
                                                     Right Side <span className="text-slate-400">▶</span>
                                                 </span>
-                                                {expandedSections.right ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                                {expandedSections.right ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                                    <ChevronDown className="h-3.5 w-3.5" />}
                                             </button>
                                             {expandedSections.right && (
                                                 <div className="space-y-2 p-3 bg-slate-50/50 rounded-md">
                                                     {[
-                                                        { label: 'Breast Swelling', key: 'right_breast_swelling', durationKey: 'right_breast_swelling_duration' },
-                                                        { label: 'Axillary Swelling', key: 'right_axillary_swelling', durationKey: 'right_axillary_swelling_duration' },
-                                                        { label: 'Bone Pain', key: 'right_bone_pain', durationKey: 'right_bone_pain_duration' },
-                                                        { label: 'Arm Swelling', key: 'right_arm_swelling', durationKey: 'right_arm_swelling_duration' },
+                                                        {
+                                                            label: 'Breast Swelling',
+                                                            key: 'right_breast_swelling',
+                                                            durationKey: 'right_breast_swelling_duration'
+                                                        },
+                                                        {
+                                                            label: 'Axillary Swelling',
+                                                            key: 'right_axillary_swelling',
+                                                            durationKey: 'right_axillary_swelling_duration'
+                                                        },
+                                                        {
+                                                            label: 'Bone Pain',
+                                                            key: 'right_bone_pain',
+                                                            durationKey: 'right_bone_pain_duration'
+                                                        },
+                                                        {
+                                                            label: 'Arm Swelling',
+                                                            key: 'right_arm_swelling',
+                                                            durationKey: 'right_arm_swelling_duration'
+                                                        }
                                                     ].map((symptom) => (
                                                         <div key={symptom.key} className="flex items-center gap-2">
                                                             <input
@@ -536,7 +578,8 @@ export default function BreastCancerScreeningModal({
                                                                 onChange={handleInputChange}
                                                                 className="rounded border-slate-300 text-slate-600 focus:ring-slate-400 h-4 w-4"
                                                             />
-                                                            <label className="text-sm text-slate-700 flex-1">{symptom.label}</label>
+                                                            <label
+                                                                className="text-sm text-slate-700 flex-1">{symptom.label}</label>
                                                             {formData[symptom.key as keyof FormData] && (
                                                                 <input
                                                                     type="text"
@@ -559,8 +602,16 @@ export default function BreastCancerScreeningModal({
                                         <h4 className="text-xs font-medium text-slate-600 mb-2">General Symptoms</h4>
                                         <div className="space-y-2">
                                             {[
-                                                { label: 'Weight Loss', key: 'weight_loss', durationKey: 'weight_loss_duration' },
-                                                { label: 'Convulsions', key: 'convulsions', durationKey: 'convulsions_duration' },
+                                                {
+                                                    label: 'Weight Loss',
+                                                    key: 'weight_loss',
+                                                    durationKey: 'weight_loss_duration'
+                                                },
+                                                {
+                                                    label: 'Convulsions',
+                                                    key: 'convulsions',
+                                                    durationKey: 'convulsions_duration'
+                                                }
                                             ].map((symptom) => (
                                                 <div key={symptom.key} className="flex items-center gap-2">
                                                     <input
@@ -570,7 +621,8 @@ export default function BreastCancerScreeningModal({
                                                         onChange={handleInputChange}
                                                         className="rounded border-slate-300 text-slate-600 focus:ring-slate-400 h-4 w-4"
                                                     />
-                                                    <label className="text-sm text-slate-700 flex-1">{symptom.label}</label>
+                                                    <label
+                                                        className="text-sm text-slate-700 flex-1">{symptom.label}</label>
                                                     {formData[symptom.key as keyof FormData] && (
                                                         <input
                                                             type="text"
@@ -602,12 +654,14 @@ export default function BreastCancerScreeningModal({
                                                 <Users className="h-3.5 w-3.5 text-slate-500" />
                                                 Reproductive History
                                             </span>
-                                            {expandedSections.reproductive ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                            {expandedSections.reproductive ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                                <ChevronDown className="h-3.5 w-3.5" />}
                                         </button>
                                         {expandedSections.reproductive && (
                                             <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50/50 rounded-md">
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Pregnancies</label>
+                                                    <label
+                                                        className="text-xs font-medium text-slate-700">Pregnancies</label>
                                                     <input
                                                         type="number"
                                                         name="pregnancies"
@@ -618,7 +672,8 @@ export default function BreastCancerScreeningModal({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Deliveries</label>
+                                                    <label
+                                                        className="text-xs font-medium text-slate-700">Deliveries</label>
                                                     <input
                                                         type="number"
                                                         name="deliveries"
@@ -629,7 +684,8 @@ export default function BreastCancerScreeningModal({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Contraceptive Use</label>
+                                                    <label className="text-xs font-medium text-slate-700">Contraceptive
+                                                        Use</label>
                                                     <select
                                                         name="contraceptive_use"
                                                         value={formData.contraceptive_use}
@@ -646,7 +702,8 @@ export default function BreastCancerScreeningModal({
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Contraceptive Type</label>
+                                                    <label className="text-xs font-medium text-slate-700">Contraceptive
+                                                        Type</label>
                                                     <input
                                                         type="text"
                                                         name="contraceptive_type"
@@ -657,7 +714,8 @@ export default function BreastCancerScreeningModal({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Menopause Status</label>
+                                                    <label className="text-xs font-medium text-slate-700">Menopause
+                                                        Status</label>
                                                     <select
                                                         name="menopause_status"
                                                         value={formData.menopause_status}
@@ -685,7 +743,8 @@ export default function BreastCancerScreeningModal({
                                                 <Shield className="h-3.5 w-3.5 text-slate-500" />
                                                 Family History
                                             </span>
-                                            {expandedSections.family ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                            {expandedSections.family ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                                <ChevronDown className="h-3.5 w-3.5" />}
                                         </button>
                                         {expandedSections.family && (
                                             <div className="space-y-2 p-3 bg-slate-50/50 rounded-md">
@@ -697,7 +756,8 @@ export default function BreastCancerScreeningModal({
                                                         onChange={handleInputChange}
                                                         className="rounded border-slate-300 text-slate-600 focus:ring-slate-400 h-4 w-4"
                                                     />
-                                                    <label className="text-sm text-slate-700 flex-1">Breast Cancer</label>
+                                                    <label className="text-sm text-slate-700 flex-1">Breast
+                                                        Cancer</label>
                                                     {formData.family_breast_cancer && (
                                                         <input
                                                             type="text"
@@ -717,7 +777,8 @@ export default function BreastCancerScreeningModal({
                                                         onChange={handleInputChange}
                                                         className="rounded border-slate-300 text-slate-600 focus:ring-slate-400 h-4 w-4"
                                                     />
-                                                    <label className="text-sm text-slate-700 flex-1">Ovarian Cancer</label>
+                                                    <label className="text-sm text-slate-700 flex-1">Ovarian
+                                                        Cancer</label>
                                                     {formData.family_ovarian_cancer && (
                                                         <input
                                                             type="text"
@@ -737,7 +798,8 @@ export default function BreastCancerScreeningModal({
                                                         onChange={handleInputChange}
                                                         className="rounded border-slate-300 text-slate-600 focus:ring-slate-400 h-4 w-4"
                                                     />
-                                                    <label className="text-sm text-slate-700 flex-1">Other Malignancies</label>
+                                                    <label className="text-sm text-slate-700 flex-1">Other
+                                                        Malignancies</label>
                                                     {formData.family_other_cancer && (
                                                         <input
                                                             type="text"
@@ -764,7 +826,8 @@ export default function BreastCancerScreeningModal({
                                                 <Shield className="h-3.5 w-3.5 text-slate-500" />
                                                 Genetic Mutations
                                             </span>
-                                            {expandedSections.genetics ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                            {expandedSections.genetics ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                                <ChevronDown className="h-3.5 w-3.5" />}
                                         </button>
                                         {expandedSections.genetics && (
                                             <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50/50 rounded-md">
@@ -795,7 +858,8 @@ export default function BreastCancerScreeningModal({
                                                     </select>
                                                 </div>
                                                 <div className="col-span-2">
-                                                    <label className="text-xs font-medium text-slate-700">Other Mutations</label>
+                                                    <label className="text-xs font-medium text-slate-700">Other
+                                                        Mutations</label>
                                                     <input
                                                         type="text"
                                                         name="genetic_other"
@@ -824,7 +888,8 @@ export default function BreastCancerScreeningModal({
                                                 <Stethoscope className="h-3.5 w-3.5 text-slate-500" />
                                                 Physical Examination
                                             </span>
-                                            {expandedSections.physicalExam ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                            {expandedSections.physicalExam ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                                <ChevronDown className="h-3.5 w-3.5" />}
                                         </button>
                                         {expandedSections.physicalExam && (
                                             <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50/50 rounded-md">
@@ -872,7 +937,8 @@ export default function BreastCancerScreeningModal({
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs text-slate-700">Nipple Retraction</label>
+                                                        <label className="text-xs text-slate-700">Nipple
+                                                            Retraction</label>
                                                         <select
                                                             name="left_nipple_retraction"
                                                             value={formData.left_nipple_retraction}
@@ -943,7 +1009,8 @@ export default function BreastCancerScreeningModal({
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs text-slate-700">Nipple Retraction</label>
+                                                        <label className="text-xs text-slate-700">Nipple
+                                                            Retraction</label>
                                                         <select
                                                             name="right_nipple_retraction"
                                                             value={formData.right_nipple_retraction}
@@ -983,12 +1050,14 @@ export default function BreastCancerScreeningModal({
                                                 <Activity className="h-3.5 w-3.5 text-slate-500" />
                                                 Lymph Nodes
                                             </span>
-                                            {expandedSections.lymphNodes ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                            {expandedSections.lymphNodes ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                                <ChevronDown className="h-3.5 w-3.5" />}
                                         </button>
                                         {expandedSections.lymphNodes && (
                                             <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50/50 rounded-md">
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Axillary</label>
+                                                    <label
+                                                        className="text-xs font-medium text-slate-700">Axillary</label>
                                                     <select
                                                         name="axillary_nodes"
                                                         value={formData.axillary_nodes}
@@ -1001,7 +1070,8 @@ export default function BreastCancerScreeningModal({
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Supraclavicular</label>
+                                                    <label
+                                                        className="text-xs font-medium text-slate-700">Supraclavicular</label>
                                                     <select
                                                         name="supraclavicular_nodes"
                                                         value={formData.supraclavicular_nodes}
@@ -1014,7 +1084,8 @@ export default function BreastCancerScreeningModal({
                                                     </select>
                                                 </div>
                                                 <div className="col-span-2">
-                                                    <label className="text-xs font-medium text-slate-700">Other Nodes</label>
+                                                    <label className="text-xs font-medium text-slate-700">Other
+                                                        Nodes</label>
                                                     <input
                                                         type="text"
                                                         name="other_nodes"
@@ -1038,13 +1109,15 @@ export default function BreastCancerScreeningModal({
                                                 <FileText className="h-3.5 w-3.5 text-slate-500" />
                                                 General
                                             </span>
-                                            {expandedSections.general ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                            {expandedSections.general ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                                <ChevronDown className="h-3.5 w-3.5" />}
                                         </button>
                                         {expandedSections.general && (
                                             <div className="space-y-3 p-3 bg-slate-50/50 rounded-md">
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
-                                                        <label className="text-xs font-medium text-slate-700">ECOG Status</label>
+                                                        <label className="text-xs font-medium text-slate-700">ECOG
+                                                            Status</label>
                                                         <select
                                                             name="ecog"
                                                             value={formData.ecog}
@@ -1060,7 +1133,8 @@ export default function BreastCancerScreeningModal({
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs font-medium text-slate-700">Comorbidities</label>
+                                                        <label
+                                                            className="text-xs font-medium text-slate-700">Comorbidities</label>
                                                         <input
                                                             type="text"
                                                             name="comorbidities"
@@ -1072,7 +1146,8 @@ export default function BreastCancerScreeningModal({
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Other Findings</label>
+                                                    <label className="text-xs font-medium text-slate-700">Other
+                                                        Findings</label>
                                                     <textarea
                                                         name="other_exam_findings"
                                                         value={formData.other_exam_findings}
@@ -1100,13 +1175,15 @@ export default function BreastCancerScreeningModal({
                                             <TrendingUp className="h-3.5 w-3.5 text-slate-500" />
                                             TNM Staging
                                         </span>
-                                        {expandedSections.tnm ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                        {expandedSections.tnm ? <ChevronUp className="h-3.5 w-3.5" /> :
+                                            <ChevronDown className="h-3.5 w-3.5" />}
                                     </button>
                                     {expandedSections.tnm && (
                                         <div className="space-y-4 p-3 bg-slate-50/50 rounded-md">
                                             <div className="grid grid-cols-3 gap-3">
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">T Category</label>
+                                                    <label className="text-xs font-medium text-slate-700">T
+                                                        Category</label>
                                                     <select
                                                         name="t_category"
                                                         value={formData.t_category}
@@ -1122,7 +1199,8 @@ export default function BreastCancerScreeningModal({
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">N Category</label>
+                                                    <label className="text-xs font-medium text-slate-700">N
+                                                        Category</label>
                                                     <select
                                                         name="n_category"
                                                         value={formData.n_category}
@@ -1137,7 +1215,8 @@ export default function BreastCancerScreeningModal({
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">M Category</label>
+                                                    <label className="text-xs font-medium text-slate-700">M
+                                                        Category</label>
                                                     <select
                                                         name="m_category"
                                                         value={formData.m_category}
@@ -1164,7 +1243,8 @@ export default function BreastCancerScreeningModal({
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-700">Stage Group</label>
+                                                    <label className="text-xs font-medium text-slate-700">Stage
+                                                        Group</label>
                                                     <select
                                                         name="stage_group"
                                                         value={formData.stage_group}
@@ -1186,7 +1266,8 @@ export default function BreastCancerScreeningModal({
                                             </div>
 
                                             <div>
-                                                <label className="text-xs font-medium text-slate-700">Additional Details</label>
+                                                <label className="text-xs font-medium text-slate-700">Additional
+                                                    Details</label>
                                                 <textarea
                                                     name="tnm_additional_details"
                                                     value={formData.tnm_additional_details}
@@ -1240,7 +1321,8 @@ export default function BreastCancerScreeningModal({
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs font-medium text-slate-700">Follow-up Interval</label>
+                                            <label className="text-xs font-medium text-slate-700">Follow-up
+                                                Interval</label>
                                             <input
                                                 type="text"
                                                 name="follow_up_interval"
@@ -1280,7 +1362,8 @@ export default function BreastCancerScreeningModal({
                         </div>
 
                         {/* Footer - Clean slate */}
-                        <div className="border-t border-slate-200 px-4 py-3 flex items-center justify-between bg-slate-50 rounded-b-lg flex-shrink-0">
+                        <div
+                            className="border-t border-slate-200 px-4 py-3 flex items-center justify-between bg-slate-50 rounded-b-lg flex-shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center gap-1 text-xs text-slate-500">
                                     <AlertCircle className="h-3.5 w-3.5" />
@@ -1311,7 +1394,8 @@ export default function BreastCancerScreeningModal({
                                 >
                                     {saving ? (
                                         <>
-                                            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                            <div
+                                                className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                                             Saving...
                                         </>
                                     ) : (

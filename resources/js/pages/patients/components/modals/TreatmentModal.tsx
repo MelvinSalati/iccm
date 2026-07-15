@@ -23,6 +23,7 @@ interface TreatmentModalProps {
     onClose: () => void;
     onSuccess: (data: any) => void;
     patientId?: string;
+    patientUuid?: string;
     screeningId?: string;
     userId?: string;
     editingData?: any;
@@ -65,6 +66,7 @@ export default function TreatmentModal({
                                            onClose,
                                            onSuccess,
                                            patientId,
+                                           patientUuid,
                                            screeningId,
                                            userId,
                                            editingData,
@@ -126,7 +128,11 @@ export default function TreatmentModal({
 
         setSaving(true);
         try {
-            const endpoint = editingData ? `/treatment/${editingData.id}` : '/treatment';
+            // Use patientUuid in the URL path
+            const basePath = patientUuid ? `/patients/${patientUuid}/breast-cancer` : '/breast-cancer';
+            const endpoint = editingData
+                ? `${basePath}/treatment/${editingData.id}`
+                : `${basePath}/treatment`;
             const method = editingData ? 'put' : 'post';
 
             const response = await Http[method](endpoint, {

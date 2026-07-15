@@ -18,6 +18,14 @@ class IdentifiersHelper
         return $patient?->id;
     }
 
+    public static function createIdentity($timeStamp)
+    {
+        $number = rand(100000, 999999);
+
+        $identity = $number . '-' . $timeStamp->format('m-Y');
+
+        return $identity;
+    }
     /**
      * Get patient by UUID and return specific fields
      *

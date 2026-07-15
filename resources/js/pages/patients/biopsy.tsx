@@ -3,7 +3,7 @@
 import AppLayout from '@/layouts/app-layout';
 import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import BiopsyModal from './components/modals/biopsy';
+import BiopsyModal from './components/modals/biopsy'; // Fixed import path
 import { Button } from '@/components/ui/button';
 import {
     Plus,
@@ -263,7 +263,6 @@ export default function BreastBiopsy() {
                         </div>
                     </div>
 
-
                     {/* Filters */}
                     <div className="mb-4 flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
@@ -486,6 +485,7 @@ export default function BreastBiopsy() {
                     }}
                     onSuccess={handleSaveSuccess}
                     patientId={String(patient?.id)}
+                    patientUuid={patient?.patient_uuid}
                     userId={auth?.user?.id}
                     editingData={editingData}
                 />

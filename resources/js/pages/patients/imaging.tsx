@@ -1,11 +1,22 @@
-// pages/patients/[patientUuid]/breast-cancer/imaging.tsx
 
 import AppLayout from '@/layouts/app-layout';
 import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import ImagingModal from './components/modals/Imaging';
 import { Button } from '@/components/ui/button';
-import { Plus, Camera, Calendar, Eye, FileText, Search, Filter, Download, Printer } from 'lucide-react';
+import {
+    Plus,
+    Camera,
+    Calendar,
+    Eye,
+    FileText,
+    Search,
+    Filter,
+    Download,
+    Printer,
+    ChevronDown,
+    ChevronUp,
+} from 'lucide-react';
 import Notiflix from 'notiflix';
 import Http from '@/utils/Http';
 
@@ -77,6 +88,7 @@ export default function BreastImaging() {
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
+    const [expandedStudy, setExpandedStudy] = useState<string | null>(null);
 
     // Format date
     const formatDate = (date: string) => {
@@ -116,6 +128,31 @@ export default function BreastImaging() {
         return colors[laterality] || 'bg-slate-100 text-slate-800';
     };
 
+    // Get study type badge
+    const getStudyTypeBadge = (type: string) => {
+        const colors: Record<string, string> = {
+            'Mammogram': 'bg-pink-100 text-pink-800',
+            'Ultrasound': 'bg-cyan-100 text-cyan-800',
+            'MRI': 'bg-violet-100 text-violet-800',
+            'CT Scan': 'bg-blue-100 text-blue-800',
+            'Bone Scan': 'bg-amber-100 text-amber-800',
+            'PET Scan': 'bg-rose-100 text-rose-800',
+        };
+        return colors[type] || 'bg-slate-100 text-slate-800';
+    };
+
+    // Get study types present in a study
+    const getStudyTypes = (study: ImagingStudy): string[] => {
+        const types: string[] = [];
+        if (study.mammogram_date) types.push('Mammogram');
+        if (study.ultrasound_date) types.push('Ultrasound');
+        if (study.mri_date) types.push('MRI');
+        if (study.ct_scan) types.push('CT Scan');
+        if (study.bone_scan) types.push('Bone Scan');
+        if (study.pet_scan) types.push('PET Scan');
+        return types;
+    };
+
     // Handle new imaging
     const handleNewImaging = () => {
         setEditingData(null);
@@ -143,13 +180,19 @@ export default function BreastImaging() {
         setEditingData(null);
     };
 
+    // Toggle expanded study
+    const toggleExpanded = (studyId: string) => {
+        setExpandedStudy(expandedStudy === studyId ? null : studyId);
+    };
+
     // Filter studies
     const filteredStudies = studies.filter(study => {
         // Search filter
         const matchesSearch =
             study.radiologist?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             study.mammogram_findings?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            study.ultrasound_findings?.toLowerCase().includes(searchTerm.toLowerCase());
+            study.ultrasound_findings?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            study.mri_findings?.toLowerCase().includes(searchTerm.toLowerCase());
 
         // Type filter
         let matchesType = true;
@@ -222,6 +265,31 @@ export default function BreastImaging() {
                         </div>
                     </div>
 
+                    {/* Stats Cards */}
+                    <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                            <p className="text-xs text-slate-500">Total Studies</p>
+                            <p className="text-2xl font-bold text-slate-900">{studies.length}</p>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                            <p className="text-xs text-slate-500">Mammograms</p>
+                            <p className="text-2xl font-bold text-pink-600">
+                                {studies.filter(s => s.mammogram_date).length}
+                            </p>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                            <p className="text-xs text-slate-500">Ultrasounds</p>
+                            <p className="text-2xl font-bold text-cyan-600">
+                                {studies.filter(s => s.ultrasound_date).length}
+                            </p>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                            <p className="text-xs text-slate-500">Other Scans</p>
+                            <p className="text-2xl font-bold text-slate-600">
+                                {studies.filter(s => s.ct_scan || s.bone_scan || s.pet_scan).length}
+                            </p>
+                        </div>
+                    </div>
 
                     {/* Filters */}
                     <div className="mb-4 flex flex-col sm:flex-row gap-3">
@@ -277,102 +345,201 @@ export default function BreastImaging() {
 
                         {filteredStudies.length > 0 ? (
                             <div className="divide-y divide-slate-100">
-                                {filteredStudies.map((study) => (
-                                    <div key={study.id} className="px-4 py-4 hover:bg-slate-50 transition-colors">
-                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="text-sm font-medium text-slate-900">
-                                                        Imaging Study
-                                                    </span>
-                                                    {study.mammogram_date && (
-                                                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${getLateralityBadge(study.mammogram_laterality)}`}>
-                                                            Mammogram • {study.mammogram_laterality}
+                                {filteredStudies.map((study) => {
+                                    const studyTypes = getStudyTypes(study);
+                                    const isExpanded = expandedStudy === study.id;
+
+                                    return (
+                                        <div key={study.id} className="px-4 py-4 hover:bg-slate-50 transition-colors">
+                                            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-3">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <button
+                                                            onClick={() => toggleExpanded(study.id)}
+                                                            className="text-slate-400 hover:text-slate-600 transition-colors"
+                                                        >
+                                                            {isExpanded ? (
+                                                                <ChevronUp className="h-4 w-4" />
+                                                            ) : (
+                                                                <ChevronDown className="h-4 w-4" />
+                                                            )}
+                                                        </button>
+                                                        <span className="text-sm font-medium text-slate-900">
+                                                            Imaging Study
                                                         </span>
-                                                    )}
-                                                    {study.ultrasound_date && (
-                                                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${getLateralityBadge(study.ultrasound_laterality)}`}>
-                                                            Ultrasound • {study.ultrasound_laterality}
-                                                        </span>
-                                                    )}
-                                                    {study.mri_date && (
-                                                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${getLateralityBadge(study.mri_laterality)}`}>
-                                                            MRI • {study.mri_laterality}
-                                                        </span>
-                                                    )}
-                                                    {study.ct_scan && (
-                                                        <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                                                            CT Scan
-                                                        </span>
-                                                    )}
-                                                    {study.bone_scan && (
-                                                        <span className="inline-block rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
-                                                            Bone Scan
-                                                        </span>
-                                                    )}
-                                                    {study.pet_scan && (
-                                                        <span className="inline-block rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-medium text-rose-800">
-                                                            PET Scan
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                                                    {study.mammogram_date && (
-                                                        <span className="flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            Mammogram: {formatDate(study.mammogram_date)}
-                                                        </span>
-                                                    )}
-                                                    {study.mammogram_birads && study.mammogram_birads !== '0' && (
-                                                        <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${getBiradsBadge(study.mammogram_birads)}`}>
-                                                            BIRADS {study.mammogram_birads}
-                                                        </span>
-                                                    )}
-                                                    {study.mammogram_tumour_size && (
-                                                        <span>Size: {study.mammogram_tumour_size}</span>
-                                                    )}
-                                                    {study.radiologist && (
-                                                        <span>• Radiologist: {study.radiologist}</span>
-                                                    )}
-                                                </div>
-                                                {(study.mammogram_findings || study.ultrasound_findings || study.mri_findings) && (
-                                                    <div className="mt-2 text-xs text-slate-600 bg-slate-50 rounded-md p-2 border border-slate-100">
-                                                        {study.mammogram_findings && (
-                                                            <div><span className="font-medium">Mammogram:</span> {study.mammogram_findings}</div>
+                                                        {studyTypes.map((type) => (
+                                                            <span key={type} className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${getStudyTypeBadge(type)}`}>
+                                                                {type}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                                        {study.mammogram_date && (
+                                                            <span className="flex items-center gap-1">
+                                                                <Calendar className="h-3 w-3" />
+                                                                Mammogram: {formatDate(study.mammogram_date)}
+                                                            </span>
                                                         )}
-                                                        {study.ultrasound_findings && (
-                                                            <div><span className="font-medium">Ultrasound:</span> {study.ultrasound_findings}</div>
+                                                        {study.mammogram_birads && study.mammogram_birads !== '0' && (
+                                                            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${getBiradsBadge(study.mammogram_birads)}`}>
+                                                                BIRADS {study.mammogram_birads}
+                                                            </span>
                                                         )}
-                                                        {study.mri_findings && (
-                                                            <div><span className="font-medium">MRI:</span> {study.mri_findings}</div>
+                                                        {study.mammogram_tumour_size && (
+                                                            <span>Size: {study.mammogram_tumour_size}</span>
+                                                        )}
+                                                        {study.radiologist && (
+                                                            <span>• Radiologist: {study.radiologist}</span>
                                                         )}
                                                     </div>
-                                                )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleEditImaging(study)}
+                                                        className="text-xs"
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            Notiflix.Notify.info('View details coming soon');
+                                                        }}
+                                                        className="text-xs"
+                                                    >
+                                                        View
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleEditImaging(study)}
-                                                    className="text-xs"
-                                                >
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        // View details - you can implement this later
-                                                        Notiflix.Notify.info('View details coming soon');
-                                                    }}
-                                                    className="text-xs"
-                                                >
-                                                    View
-                                                </Button>
-                                            </div>
+
+                                            {/* Expanded Details */}
+                                            {isExpanded && (
+                                                <div className="mt-4 pt-4 border-t border-slate-200">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {/* Mammogram Details */}
+                                                        {study.mammogram_date && (
+                                                            <div className="rounded-md border border-slate-200 p-3">
+                                                                <h5 className="text-xs font-medium text-slate-600 flex items-center gap-1 mb-2">
+                                                                    <Camera className="h-3.5 w-3.5" />
+                                                                    Mammogram
+                                                                </h5>
+                                                                <div className="space-y-1 text-sm">
+                                                                    <div><span className="text-slate-500">Date:</span> {formatDate(study.mammogram_date)}</div>
+                                                                    <div><span className="text-slate-500">Laterality:</span> {study.mammogram_laterality}</div>
+                                                                    {study.mammogram_tumour_size && (
+                                                                        <div><span className="text-slate-500">Size:</span> {study.mammogram_tumour_size}</div>
+                                                                    )}
+                                                                    <div><span className="text-slate-500">BIRADS:</span> {study.mammogram_birads}</div>
+                                                                    {study.mammogram_findings && (
+                                                                        <div><span className="text-slate-500">Findings:</span> {study.mammogram_findings}</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Ultrasound Details */}
+                                                        {study.ultrasound_date && (
+                                                            <div className="rounded-md border border-slate-200 p-3">
+                                                                <h5 className="text-xs font-medium text-slate-600 flex items-center gap-1 mb-2">
+                                                                    <Camera className="h-3.5 w-3.5" />
+                                                                    Ultrasound
+                                                                </h5>
+                                                                <div className="space-y-1 text-sm">
+                                                                    <div><span className="text-slate-500">Date:</span> {formatDate(study.ultrasound_date)}</div>
+                                                                    <div><span className="text-slate-500">Laterality:</span> {study.ultrasound_laterality}</div>
+                                                                    {study.ultrasound_tumour_size && (
+                                                                        <div><span className="text-slate-500">Size:</span> {study.ultrasound_tumour_size}</div>
+                                                                    )}
+                                                                    <div><span className="text-slate-500">BIRADS:</span> {study.ultrasound_birads}</div>
+                                                                    {study.ultrasound_findings && (
+                                                                        <div><span className="text-slate-500">Findings:</span> {study.ultrasound_findings}</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* MRI Details */}
+                                                        {study.mri_date && (
+                                                            <div className="rounded-md border border-slate-200 p-3">
+                                                                <h5 className="text-xs font-medium text-slate-600 flex items-center gap-1 mb-2">
+                                                                    <Camera className="h-3.5 w-3.5" />
+                                                                    MRI
+                                                                </h5>
+                                                                <div className="space-y-1 text-sm">
+                                                                    <div><span className="text-slate-500">Date:</span> {formatDate(study.mri_date)}</div>
+                                                                    <div><span className="text-slate-500">Laterality:</span> {study.mri_laterality}</div>
+                                                                    {study.mri_findings && (
+                                                                        <div><span className="text-slate-500">Findings:</span> {study.mri_findings}</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Other Scans */}
+                                                        {(study.ct_scan || study.bone_scan || study.pet_scan) && (
+                                                            <div className="rounded-md border border-slate-200 p-3 md:col-span-2">
+                                                                <h5 className="text-xs font-medium text-slate-600 flex items-center gap-1 mb-2">
+                                                                    <Camera className="h-3.5 w-3.5" />
+                                                                    Other Scans
+                                                                </h5>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                                                                    {study.ct_scan && (
+                                                                        <div>
+                                                                            <span className="text-slate-500">CT Scan:</span>
+                                                                            <div>{formatDate(study.ct_scan_date)}</div>
+                                                                            {study.ct_scan_findings && (
+                                                                                <div className="text-xs text-slate-600">{study.ct_scan_findings}</div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                    {study.bone_scan && (
+                                                                        <div>
+                                                                            <span className="text-slate-500">Bone Scan:</span>
+                                                                            <div>{formatDate(study.bone_scan_date)}</div>
+                                                                            {study.bone_scan_findings && (
+                                                                                <div className="text-xs text-slate-600">{study.bone_scan_findings}</div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                    {study.pet_scan && (
+                                                                        <div>
+                                                                            <span className="text-slate-500">PET Scan:</span>
+                                                                            <div>{formatDate(study.pet_scan_date)}</div>
+                                                                            {study.pet_scan_findings && (
+                                                                                <div className="text-xs text-slate-600">{study.pet_scan_findings}</div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Notes & Radiologist */}
+                                                        {(study.radiologist || study.imaging_notes) && (
+                                                            <div className="rounded-md border border-slate-200 p-3 md:col-span-2">
+                                                                <h5 className="text-xs font-medium text-slate-600 flex items-center gap-1 mb-2">
+                                                                    <FileText className="h-3.5 w-3.5" />
+                                                                    Additional Information
+                                                                </h5>
+                                                                <div className="space-y-1 text-sm">
+                                                                    {study.radiologist && (
+                                                                        <div><span className="text-slate-500">Radiologist:</span> {study.radiologist}</div>
+                                                                    )}
+                                                                    {study.imaging_notes && (
+                                                                        <div><span className="text-slate-500">Notes:</span> {study.imaging_notes}</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="py-12 text-center">
@@ -404,6 +571,7 @@ export default function BreastImaging() {
                     }}
                     onSuccess={handleSaveSuccess}
                     patientId={String(patient?.id)}
+                    patientUuid={patient?.patient_uuid}
                     userId={auth?.user?.id}
                     editingData={editingData}
                 />

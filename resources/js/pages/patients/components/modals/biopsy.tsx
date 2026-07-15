@@ -21,6 +21,7 @@ interface BiopsyModalProps {
     onClose: () => void;
     onSuccess: (data: any) => void;
     patientId?: string;
+    patientUuid?: string;
     screeningId?: string;
     userId?: string;
     editingData?: any;
@@ -49,6 +50,7 @@ export default function BiopsyModal({
                                         onClose,
                                         onSuccess,
                                         patientId,
+                                        patientUuid,
                                         screeningId,
                                         userId,
                                         editingData,
@@ -96,7 +98,11 @@ export default function BiopsyModal({
 
         setSaving(true);
         try {
-            const endpoint = editingData ? `/biopsy/${editingData.id}` : '/biopsy';
+            // Use patientUuid in the URL path
+            const basePath = patientUuid ? `/patients/${patientUuid}/breast-cancer` : '/breast-cancer';
+            const endpoint = editingData
+                ? `${basePath}/biopsy/${editingData.id}`
+                : `${basePath}/biopsy`;
             const method = editingData ? 'put' : 'post';
 
             const response = await Http[method](endpoint, {

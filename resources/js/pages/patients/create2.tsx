@@ -31,35 +31,22 @@ interface AddressDetails {
 }
 
 interface RiskAssessment {
-    // Reproductive Factors
     numberOfPregnancies: string;
     numberOfDeliveries: string;
-    longTermContraceptiveUse: 'yes' | 'no' | '';
-
-    // HIV/ART
     hivStatus: 'positive' | 'negative' | 'unknown' | '';
     artStatus: 'active' | 'defaulted' | 'never' | '';
     viralLoadStatus: 'suppressed' | 'detectable' | 'unknown' | '';
-    hpvStatus: 'positive' | 'negative' | 'unknown' | '';
-
-    // Lifestyle
     smokingHistory: 'yes' | 'no' | '';
+    smokingType: '' | 'shisha' | 'cigarettes' | 'sniffing' | 'vape';
     alcoholUse: 'yes' | 'no' | '';
     familyHistoryOfCancer: 'yes' | 'no' | '';
-
-    // Previous History
     previousVIAPositive: 'yes' | 'no' | '';
     previousHPVPositive: 'yes' | 'no' | '';
     previousCINDiagnosis: 'yes' | 'no' | '';
     previousCervicalCancer: 'yes' | 'no' | '';
-
-    // Other
-    immunosuppression: 'yes' | 'no' | '';
-    longTermContraceptive: 'yes' | 'no' | '';
 }
 
 interface PatientFormData {
-    // Demographics
     firstName: string;
     lastName: string;
     dateOfBirth: string;
@@ -67,56 +54,33 @@ interface PatientFormData {
     maritalStatus?: string;
     nrcNumber?: string;
     phoneNumber: string;
-
-    // Address
     address: AddressDetails;
-
-    // Facility
     facility: string;
-
-    // Risk Assessment
     riskAssessment: RiskAssessment;
-
-    // Risk Flags (for quick view)
     riskFlags: string[];
 }
 
-// ============================================
-// MOCK DATA
-// ============================================
+// API Location Types
+interface Province {
+    id: number;
+    name: string;
+    code?: string;
+}
 
-const PROVINCES = [
-    'Lusaka', 'Central', 'Copperbelt', 'Eastern', 'Southern',
-    'Western', 'Muchinga', 'Northern', 'Luapula', 'North-Western'
-];
+interface District {
+    id: number;
+    name: string;
+    province_id: number;
+    code?: string;
+}
 
-const DISTRICTS: Record<string, string[]> = {
-    Eastern: ['Chipata', 'Lundazi', 'Katete', 'Petauke'],
-    Lusaka: ['Lusaka', 'Chilanga', 'Chongwe', 'Kafue'],
-    Central: ['Kabwe', 'Mkushi', 'Serenje', 'Chibombo'],
-    Copperbelt: ['Ndola', 'Kitwe', 'Chingola', 'Mufulira', 'Luanshya'],
-    Southern: ['Choma', 'Livingstone', 'Mazabuka', 'Monze'],
-    Western: ['Mongu', 'Kaoma', 'Senanga', 'Sesheke'],
-    Muchinga: ['Chinsali', 'Isoka', 'Mpika', 'Nakonde'],
-    Northern: ['Kasama', 'Mbala', 'Mporokoso', 'Senga Hill'],
-    Luapula: ['Mansa', 'Samfya', 'Kawambwa', 'Nchelenge'],
-    'North-Western': ['Solwezi', 'Kasempa', 'Mwinilunga', 'Zambezi'],
-};
-
-const CHIEFDOMS: Record<string, string[]> = {
-    Chipata: ['Mshawa', 'Mkanda', 'Kapatamoyo', 'Champhira'],
-    Lundazi: ['Zulu', 'Mwase', 'Kampoko', 'Chikomeni'],
-    Lusaka: ['Mukamambo', 'Chilulu', 'Mwembeshi', 'Chongo'],
-};
-
-const FACILITIES: Record<string, string[]> = {
-    Chipata: ['Chipata Central Hospital', 'Kapata Urban Clinic', 'Nabvutika Health Centre', 'Msekera Rural Health Centre'],
-    Lundazi: ['Lundazi District Hospital', 'Mkandawire Clinic'],
-    Katete: ['Katete District Hospital', 'Kakumbi Clinic'],
-    Lusaka: ['University Teaching Hospital', 'Levy Mwanawasa Hospital', 'Kanyama Clinic', 'Chawama Clinic'],
-    Ndola: ['Ndola Central Hospital', 'Arthur Davison Hospital', 'Itawa Clinic'],
-    Kitwe: ['Kitwe Teaching Hospital', 'Wusakile Clinic', 'Mindolo Clinic'],
-};
+interface Facility {
+    id: number;
+    name: string;
+    type: string;
+    district_id: number;
+    code?: string;
+}
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -150,10 +114,10 @@ const SimpleButton: React.FC<{
           className = '',
           children,
       }) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-md';
+    const baseStyles = 'inline-flex items-center justify-center font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-md';
 
     const variants = {
-        primary: 'bg-blue-600 text-white hover:bg-blue-700',
+        primary: 'bg-blue-600 text-white hover:bg-black hover:text-white',
         secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
         danger: 'bg-red-600 text-white hover:bg-red-700',
         success: 'bg-green-600 text-white hover:bg-green-700',
@@ -175,6 +139,28 @@ const SimpleButton: React.FC<{
             className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
         >
             {children}
+        </button>
+    );
+};
+
+// Custom New Patient Button
+const NewPatientButton: React.FC<{
+    onClick: () => void;
+}> = ({ onClick }) => {
+    return (
+        <button
+            onClick={onClick}
+            className="
+                inline-flex items-center justify-center
+                px-4 py-2 text-sm font-medium
+                transition-colors duration-200 rounded-md
+                bg-blue-600 text-white
+                hover:bg-black hover:text-white
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+            "
+        >
+            <Plus className="w-4 h-4 mr-2" />
+            New Patient
         </button>
     );
 };
@@ -306,7 +292,7 @@ const RadioGroup: React.FC<{
           className = '',
       }) => {
     return (
-        <div className={`space-y-1 ${className}`}>
+        <div className={`space-y-0.5 ${className}`}>
             <SimpleLabel htmlFor={name} className="text-xs font-medium">
                 {label} {required && <span className="text-red-500">*</span>}
             </SimpleLabel>
@@ -320,7 +306,7 @@ const RadioGroup: React.FC<{
                             value={opt.value}
                             checked={value === opt.value}
                             onChange={() => onChange(opt.value)}
-                            className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
+                            className="h-3.5 w-3.5 border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
                         <SimpleLabel htmlFor={`${name}-${opt.value}`} className="text-sm font-normal">
                             {opt.label}
@@ -433,14 +419,24 @@ interface CreateProps {
 }
 
 export default function Create() {
-    const  {auth} = usePage().props;
+    const { auth } = usePage().props;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('demographics');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-    // Form state
+    // Location data from API
+    const [provinces, setProvinces] = useState<Province[]>([]);
+    const [districts, setDistricts] = useState<District[]>([]);
+    const [facilities, setFacilities] = useState<Facility[]>([]);
+    const [loading, setLoading] = useState({
+        provinces: false,
+        districts: false,
+        facilities: false
+    });
+
+    // Form state - with default "no" for radio buttons
     const [formData, setFormData] = useState<PatientFormData>({
         firstName: '',
         lastName: '',
@@ -463,20 +459,17 @@ export default function Create() {
         riskAssessment: {
             numberOfPregnancies: '',
             numberOfDeliveries: '',
-            longTermContraceptiveUse: '',
             hivStatus: '',
             artStatus: '',
             viralLoadStatus: '',
-            hpvStatus: '',
-            smokingHistory: '',
-            alcoholUse: '',
-            familyHistoryOfCancer: '',
-            previousVIAPositive: '',
-            previousHPVPositive: '',
-            previousCINDiagnosis: '',
-            previousCervicalCancer: '',
-            immunosuppression: '',
-            longTermContraceptive: '',
+            smokingHistory: 'no', // Default to 'no'
+            smokingType: '',
+            alcoholUse: 'no', // Default to 'no'
+            familyHistoryOfCancer: 'no', // Default to 'no'
+            previousVIAPositive: 'no', // Default to 'no'
+            previousHPVPositive: 'no', // Default to 'no'
+            previousCINDiagnosis: 'no', // Default to 'no'
+            previousCervicalCancer: 'no', // Default to 'no'
         },
         riskFlags: [],
     });
@@ -486,51 +479,110 @@ export default function Create() {
         { system: 'mobile', value: '', use: 'mobile', rank: 1 }
     ]);
 
-    // Cascading dropdowns
-    const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
-    const [availableChiefdoms, setAvailableChiefdoms] = useState<string[]>([]);
-    const [availableFacilities, setAvailableFacilities] = useState<string[]>([]);
+    // ============================================
+    // API FUNCTIONS for Location Data
+    // ============================================
 
-    // Update districts when province changes
-    useEffect(() => {
-        if (formData.address.province && DISTRICTS[formData.address.province]) {
-            setAvailableDistricts(DISTRICTS[formData.address.province]);
-            setFormData(prev => ({
-                ...prev,
-                address: { ...prev.address, district: '', chiefdom: '' },
-                facility: ''
+    const fetchProvinces = async () => {
+        setLoading(prev => ({ ...prev, provinces: true }));
+        try {
+            const response = await Http.get('/locations/provinces');
+            const provincesWithCode = response.data.map((province: any) => ({
+                ...province,
+                code: province.code || `province_${province.id}`
             }));
-            setAvailableChiefdoms([]);
-            setAvailableFacilities([]);
+            setProvinces(provincesWithCode);
+        } catch (error) {
+            console.error('Error fetching provinces:', error);
+            Notify.failure('Failed to load provinces.', {
+                position: 'right-top',
+                timeout: 5000,
+            });
+        } finally {
+            setLoading(prev => ({ ...prev, provinces: false }));
+        }
+    };
+
+    const fetchDistricts = async (provinceId: number) => {
+        setLoading(prev => ({ ...prev, districts: true }));
+        try {
+            const response = await Http.get(`/locations/districts?province_id=${provinceId}`);
+            const districtsWithCode = response.data.map((district: any) => ({
+                ...district,
+                code: district.code || `district_${district.id}`
+            }));
+            setDistricts(districtsWithCode);
+        } catch (error) {
+            console.error('Error fetching districts:', error);
+            Notify.failure('Failed to load districts.', {
+                position: 'right-top',
+                timeout: 5000,
+            });
+            setDistricts([]);
+        } finally {
+            setLoading(prev => ({ ...prev, districts: false }));
+        }
+    };
+
+    const fetchFacilities = async (districtId: number) => {
+        setLoading(prev => ({ ...prev, facilities: true }));
+        try {
+            const response = await Http.get(`/locations/facilities?district_id=${districtId}`);
+            const facilitiesWithCode = response.data.map((facility: any) => ({
+                ...facility,
+                code: facility.code || `facility_${facility.id}`
+            }));
+            setFacilities(facilitiesWithCode);
+        } catch (error) {
+            console.error('Error fetching facilities:', error);
+            Notify.failure('Failed to load facilities.', {
+                position: 'right-top',
+                timeout: 5000,
+            });
+            setFacilities([]);
+        } finally {
+            setLoading(prev => ({ ...prev, facilities: false }));
+        }
+    };
+
+    // ============================================
+    // EFFECTS for Cascading Dropdowns
+    // ============================================
+
+    useEffect(() => {
+        fetchProvinces();
+    }, []);
+
+    useEffect(() => {
+        if (formData.address.province) {
+            const selectedProvince = provinces.find(p => p.code === formData.address.province);
+            if (selectedProvince) {
+                fetchDistricts(selectedProvince.id);
+                setFormData(prev => ({
+                    ...prev,
+                    address: { ...prev.address, district: '' },
+                    facility: ''
+                }));
+                setFacilities([]);
+            }
         } else {
-            setAvailableDistricts([]);
+            setDistricts([]);
+            setFacilities([]);
         }
     }, [formData.address.province]);
 
-    // Update chiefdoms when district changes
     useEffect(() => {
-        if (formData.address.district && CHIEFDOMS[formData.address.district]) {
-            setAvailableChiefdoms(CHIEFDOMS[formData.address.district]);
-            setFormData(prev => ({
-                ...prev,
-                address: { ...prev.address, chiefdom: '' }
-            }));
+        if (formData.address.district) {
+            const selectedDistrict = districts.find(d => d.code === formData.address.district);
+            if (selectedDistrict) {
+                fetchFacilities(selectedDistrict.id);
+                setFormData(prev => ({ ...prev, facility: '' }));
+            }
         } else {
-            setAvailableChiefdoms([]);
+            setFacilities([]);
         }
     }, [formData.address.district]);
 
-    // Update facilities when district changes
-    useEffect(() => {
-        if (formData.address.district && FACILITIES[formData.address.district]) {
-            setAvailableFacilities(FACILITIES[formData.address.district]);
-            setFormData(prev => ({ ...prev, facility: '' }));
-        } else {
-            setAvailableFacilities([]);
-        }
-    }, [formData.address.district]);
-
-    // Reset form when modal closes
     const resetForm = () => {
         setFormData({
             firstName: '',
@@ -554,20 +606,17 @@ export default function Create() {
             riskAssessment: {
                 numberOfPregnancies: '',
                 numberOfDeliveries: '',
-                longTermContraceptiveUse: '',
                 hivStatus: '',
                 artStatus: '',
                 viralLoadStatus: '',
-                hpvStatus: '',
-                smokingHistory: '',
-                alcoholUse: '',
-                familyHistoryOfCancer: '',
-                previousVIAPositive: '',
-                previousHPVPositive: '',
-                previousCINDiagnosis: '',
-                previousCervicalCancer: '',
-                immunosuppression: '',
-                longTermContraceptive: '',
+                smokingHistory: 'no',
+                smokingType: '',
+                alcoholUse: 'no',
+                familyHistoryOfCancer: 'no',
+                previousVIAPositive: 'no',
+                previousHPVPositive: 'no',
+                previousCINDiagnosis: 'no',
+                previousCervicalCancer: 'no',
             },
             riskFlags: [],
         });
@@ -575,12 +624,10 @@ export default function Create() {
         setActiveTab('demographics');
         setError(null);
         setFormErrors({});
-        setAvailableDistricts([]);
-        setAvailableChiefdoms([]);
-        setAvailableFacilities([]);
+        setDistricts([]);
+        setFacilities([]);
     };
 
-    // Handle form field changes
     const handleChange = (field: keyof PatientFormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (formErrors[field]) {
@@ -592,7 +639,6 @@ export default function Create() {
         }
     };
 
-    // Handle address changes
     const handleAddressChange = (field: keyof AddressDetails, value: string) => {
         setFormData(prev => ({
             ...prev,
@@ -600,7 +646,6 @@ export default function Create() {
         }));
     };
 
-    // Handle risk assessment changes
     const handleRiskChange = (field: keyof RiskAssessment, value: string) => {
         setFormData(prev => ({
             ...prev,
@@ -608,26 +653,22 @@ export default function Create() {
         }));
     };
 
-    // Handle contact changes
     const handleContactChange = (index: number, field: keyof Contact, value: any) => {
         const newContacts = [...contacts];
         newContacts[index] = { ...newContacts[index], [field]: value };
         setContacts(newContacts);
     };
 
-    // Add contact
     const addContact = () => {
         setContacts([...contacts, { system: 'mobile', value: '', use: 'mobile', rank: contacts.length + 1 }]);
     };
 
-    // Remove contact
     const removeContact = (index: number) => {
         if (contacts.length > 1) {
             setContacts(contacts.filter((_, i) => i !== index));
         }
     };
 
-    // Validate form
     const validateForm = (): boolean => {
         const errors: Record<string, string> = {};
 
@@ -638,6 +679,12 @@ export default function Create() {
         if (!formData.address.province) errors['address.province'] = 'Province is required';
         if (!formData.address.district) errors['address.district'] = 'District is required';
         if (!formData.facility) errors.facility = 'Facility is required';
+
+        const pregnancies = parseInt(formData.riskAssessment.numberOfPregnancies);
+        const deliveries = parseInt(formData.riskAssessment.numberOfDeliveries);
+        if (pregnancies > 0 && deliveries > 0 && deliveries > pregnancies) {
+            errors['riskAssessment.numberOfDeliveries'] = 'Deliveries cannot exceed pregnancies';
+        }
 
         if (formData.phoneNumber) {
             const normalized = normalizePhoneNumber(formData.phoneNumber);
@@ -651,37 +698,84 @@ export default function Create() {
         return Object.keys(errors).length === 0;
     };
 
-    // Submit form using Inertia router
+    const showSuccessNotification = (message: string) => {
+        Notify.success(message, {
+            position: 'right-top',
+            timeout: 4000,
+            cssAnimationStyle: 'fade',
+            showOnlyTheLastOne: true,
+            clickToClose: true,
+            borderRadius: '8px',
+            fontSize: '14px',
+            success: {
+                background: '#10B981',
+                textColor: '#FFFFFF',
+                notiflixIconColor: '#FFFFFF',
+            },
+        });
+    };
+
+    const showErrorNotification = (message: string) => {
+        Notify.failure(message, {
+            position: 'right-top',
+            timeout: 5000,
+            cssAnimationStyle: 'fade',
+            showOnlyTheLastOne: true,
+            clickToClose: true,
+            borderRadius: '8px',
+            fontSize: '14px',
+            failure: {
+                background: '#EF4444',
+                textColor: '#FFFFFF',
+                notiflixIconColor: '#FFFFFF',
+            },
+        });
+    };
+
+    const showWarningNotification = (message: string) => {
+        Notify.warning(message, {
+            position: 'right-top',
+            timeout: 3000,
+            cssAnimationStyle: 'fade',
+            showOnlyTheLastOne: true,
+            clickToClose: true,
+        });
+    };
+
+    const showInfoNotification = (message: string) => {
+        Notify.info(message, {
+            position: 'right-top',
+            timeout: 2000,
+            cssAnimationStyle: 'fade',
+            showOnlyTheLastOne: true,
+            clickToClose: true,
+        });
+    };
 
     const handleSubmit = async () => {
-        // 1. Validate form
         if (!validateForm()) {
             const errorKeys = Object.keys(formErrors);
             if (errorKeys.length > 0) {
                 const firstError = errorKeys[0];
-
-                // Map error fields to tabs
                 if (['firstName', 'lastName', 'dateOfBirth', 'gender', 'maritalStatus', 'nrcNumber'].includes(firstError)) {
                     setActiveTab('demographics');
                 } else if (['phoneNumber', 'email'].includes(firstError)) {
                     setActiveTab('contact');
                 } else if (firstError.includes('address') || firstError === 'facility' || firstError.includes('province') || firstError.includes('district')) {
                     setActiveTab('address');
+                } else if (firstError.includes('riskAssessment')) {
+                    setActiveTab('risk');
                 } else {
                     setActiveTab('demographics');
                 }
-
-                // Show validation error notification
-                Notify.warning('Please fix the highlighted fields');
+                showWarningNotification('Please fix the highlighted fields');
             }
             return;
         }
 
-        // 2. Set loading state
         setIsSubmitting(true);
         setError(null);
 
-        // 3. Prepare submission data
         const submissionData = {
             ...formData,
             telecom: contacts.map(contact => ({
@@ -693,128 +787,52 @@ export default function Create() {
             user_id: auth?.user?.id,
         };
 
-        console.log('📤 Submitting patient data:', submissionData);
-
-        // 4. Show loading notification
-        Notify.info('Saving patient...', {
-            timeout: 2000,
-        });
+        showInfoNotification('Saving patient...');
 
         try {
-            // 5. Submit with Http.post
             const response = await Http.post('/patients/register', submissionData);
 
-            console.log('✅ Response:', response.data);
-
-            // Check if request was successful
             if (response.data?.success || response.status === 200 || response.status === 201) {
-                // Show success notification
-                Notify.success(response.data?.message || 'Patient created successfully!', {
-                    position: 'right-top',
-                    timeout: 3000,
-                });
-
-                // Close modal and reset form
+                const successMessage = response.data?.message || '✅ Patient registered successfully!';
+                showSuccessNotification(successMessage);
                 setIsModalOpen(false);
                 resetForm();
-
-                // Optional: reload page to show updated list
                 router.reload({
                     only: ['patients'],
                     preserveState: true,
                     preserveScroll: true,
                 });
             } else {
-                // Handle unexpected response
-                Notify.warning('Unexpected response from server', {
-                    position: 'right-top',
-                    timeout: 3000,
-                });
+                showWarningNotification('Unexpected response from server');
             }
         } catch (error: any) {
             console.error('❌ Error:', error);
-
-            // Handle different error types
             if (error.response) {
-                // The request was made and the server responded with a status code
-                // that falls out of the range of 2xx
                 const responseData = error.response.data;
-
                 if (responseData?.errors) {
-                    // Validation errors from Laravel
                     const errorMessages = Object.values(responseData.errors).flat();
                     const errorMessage = errorMessages.join(', ') || 'Validation failed';
-
-                    Notify.failure(errorMessage, {
-                        position: 'right-top',
-                        timeout: 5000,
-                    });
-
+                    showErrorNotification(errorMessage);
                     setError(errorMessage);
-
-                    // Focus on first error field
-                    const firstErrorField = Object.keys(responseData.errors)[0];
-                    if (firstErrorField) {
-                        const fieldTabMap: Record<string, string> = {
-                            'firstName': 'demographics',
-                            'lastName': 'demographics',
-                            'dateOfBirth': 'demographics',
-                            'gender': 'demographics',
-                            'maritalStatus': 'demographics',
-                            'nrcNumber': 'demographics',
-                            'phoneNumber': 'contact',
-                            'email': 'contact',
-                            'address.province': 'address',
-                            'address.district': 'address',
-                            'address.city': 'address',
-                            'address.address_line1': 'address',
-                            'facility': 'address',
-                        };
-
-                        for (const [field, tab] of Object.entries(fieldTabMap)) {
-                            if (firstErrorField.includes(field) || firstErrorField === field) {
-                                setActiveTab(tab);
-                                break;
-                            }
-                        }
-                    }
                 } else if (responseData?.message) {
-                    // Custom error message from backend
-                    Notify.failure(responseData.message, {
-                        position: 'right-top',
-                        timeout: 5000,
-                    });
+                    showErrorNotification(responseData.message);
                     setError(responseData.message);
                 } else {
-                    // Generic server error
-                    Notify.failure(error.response.statusText || 'Server error occurred', {
-                        position: 'right-top',
-                        timeout: 5000,
-                    });
+                    showErrorNotification(error.response.statusText || 'Server error occurred');
                     setError('Server error occurred');
                 }
             } else if (error.request) {
-                // The request was made but no response was received
-                Notify.failure('No response from server. Please check your connection.', {
-                    position: 'right-top',
-                    timeout: 5000,
-                });
+                showErrorNotification('No response from server. Please check your connection.');
                 setError('Network error - no response from server');
             } else {
-                // Something happened in setting up the request that triggered an Error
-                Notify.failure(error.message || 'An unexpected error occurred', {
-                    position: 'right-top',
-                    timeout: 5000,
-                });
+                showErrorNotification(error.message || 'An unexpected error occurred');
                 setError(error.message || 'An unexpected error occurred');
             }
         } finally {
-            // Always reset loading state
             setIsSubmitting(false);
         }
     };
 
-    // Tab navigation
     const tabs = [
         { id: 'demographics', label: 'Demographics', icon: User },
         { id: 'contact', label: 'Contact', icon: Phone },
@@ -957,8 +975,9 @@ export default function Create() {
                     id="province"
                     value={formData.address.province}
                     onChange={(e) => handleAddressChange('province', e.target.value)}
-                    options={PROVINCES.map(p => ({ value: p, label: p }))}
-                    placeholder="Select province"
+                    options={provinces.map(p => ({ value: p.code || String(p.id), label: p.name }))}
+                    placeholder={loading.provinces ? "Loading provinces..." : "Select province"}
+                    disabled={loading.provinces}
                     className={formErrors['address.province'] ? 'border-red-500' : ''}
                 />
                 {formErrors['address.province'] && <p className="text-xs text-red-500">{formErrors['address.province']}</p>}
@@ -972,9 +991,9 @@ export default function Create() {
                     id="district"
                     value={formData.address.district}
                     onChange={(e) => handleAddressChange('district', e.target.value)}
-                    options={availableDistricts.map(d => ({ value: d, label: d }))}
-                    placeholder="Select district"
-                    disabled={!availableDistricts.length}
+                    options={districts.map(d => ({ value: d.code || String(d.id), label: d.name }))}
+                    placeholder={!formData.address.province ? "Select province first" : loading.districts ? "Loading districts..." : "Select district"}
+                    disabled={!formData.address.province || loading.districts}
                     className={formErrors['address.district'] ? 'border-red-500' : ''}
                 />
                 {formErrors['address.district'] && <p className="text-xs text-red-500">{formErrors['address.district']}</p>}
@@ -982,13 +1001,11 @@ export default function Create() {
 
             <div className="space-y-1">
                 <SimpleLabel htmlFor="chiefdom">Chiefdom</SimpleLabel>
-                <SimpleSelect
+                <SimpleInput
                     id="chiefdom"
                     value={formData.address.chiefdom}
                     onChange={(e) => handleAddressChange('chiefdom', e.target.value)}
-                    options={availableChiefdoms.map(c => ({ value: c, label: c }))}
-                    placeholder="Select chiefdom"
-                    disabled={!availableChiefdoms.length}
+                    placeholder="Enter chiefdom name"
                 />
             </div>
 
@@ -1062,9 +1079,9 @@ export default function Create() {
                         id="facility"
                         value={formData.facility}
                         onChange={(e) => handleChange('facility', e.target.value)}
-                        options={availableFacilities.map(f => ({ value: f, label: f }))}
-                        placeholder="Select facility"
-                        disabled={!availableFacilities.length}
+                        options={facilities.map(f => ({ value: f.code || String(f.id), label: f.name }))}
+                        placeholder={!formData.address.district ? "Select district first" : loading.facilities ? "Loading facilities..." : "Select facility"}
+                        disabled={!formData.address.district || loading.facilities}
                         className={formErrors.facility ? 'border-red-500' : ''}
                     />
                     {formErrors.facility && <p className="text-xs text-red-500">{formErrors.facility}</p>}
@@ -1087,29 +1104,31 @@ export default function Create() {
                 </div>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-md">
-                <h4 className="text-sm font-semibold mb-2">Selected Location</h4>
-                <dl className="grid grid-cols-2 gap-1 text-xs">
-                    <dt className="text-slate-500">Province:</dt>
-                    <dd>{formData.address.province || 'Not selected'}</dd>
-                    <dt className="text-slate-500">District:</dt>
-                    <dd>{formData.address.district || 'Not selected'}</dd>
-                    <dt className="text-slate-500">Chiefdom:</dt>
-                    <dd>{formData.address.chiefdom || 'Not selected'}</dd>
-                    <dt className="text-slate-500">Facility:</dt>
-                    <dd className="font-medium text-blue-600">{formData.facility || 'Not selected'}</dd>
-                </dl>
-            </div>
+            {formData.address.province && formData.address.district && formData.facility && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-medium text-green-800">Location Selected</p>
+                            <p className="text-xs text-green-700">
+                                {provinces.find(p => p.code === formData.address.province)?.name || formData.address.province} →
+                                {districts.find(d => d.code === formData.address.district)?.name || formData.address.district} →
+                                {facilities.find(f => f.code === formData.facility)?.name || formData.facility}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 
     const renderRiskAssessment = () => {
         const risk = formData.riskAssessment;
+        const isHivPositive = risk.hivStatus === 'positive';
+        const isSmoking = risk.smokingHistory === 'yes';
 
-        // Count risk flags based on "yes" answers
         const riskFlags: string[] = [];
         if (risk.hivStatus === 'positive') riskFlags.push('HIV Positive');
-        if (risk.hpvStatus === 'positive') riskFlags.push('HPV Positive');
         if (risk.smokingHistory === 'yes') riskFlags.push('Smoker');
         if (risk.alcoholUse === 'yes') riskFlags.push('Alcohol Use');
         if (risk.familyHistoryOfCancer === 'yes') riskFlags.push('Family History of Cancer');
@@ -1117,189 +1136,193 @@ export default function Create() {
         if (risk.previousHPVPositive === 'yes') riskFlags.push('Previous HPV Positive');
         if (risk.previousCINDiagnosis === 'yes') riskFlags.push('Previous CIN Diagnosis');
         if (risk.previousCervicalCancer === 'yes') riskFlags.push('Previous Cervical Cancer');
-        if (risk.immunosuppression === 'yes') riskFlags.push('Immunosuppression');
-        if (risk.longTermContraceptive === 'yes') riskFlags.push('Long-Term Contraceptive Use');
+
+        const pregnancies = parseInt(risk.numberOfPregnancies);
+        const deliveries = parseInt(risk.numberOfDeliveries);
+        const hasDeliveryError = pregnancies > 0 && deliveries > 0 && deliveries > pregnancies;
 
         return (
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                {/* Reproductive Factors */}
-                <div className="border rounded-lg p-3 bg-white">
-                    <h4 className="text-sm font-semibold text-blue-700 mb-3 flex items-center gap-2">
-                        <Heart className="w-4 h-4" /> Reproductive Factors
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                {/* Reproductive Factors - Compact */}
+                <div className="border rounded-lg p-2 bg-white">
+                    <h4 className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1">
+                        <Heart className="w-3.5 h-3.5" /> Reproductive Factors
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                            <SimpleLabel htmlFor="pregnancies">Number of Pregnancies</SimpleLabel>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-0.5">
+                            <SimpleLabel htmlFor="pregnancies" className="text-[10px]">Pregnancies</SimpleLabel>
                             <SimpleInput
                                 id="pregnancies"
                                 type="number"
+                                min="0"
                                 value={risk.numberOfPregnancies}
                                 onChange={(e) => handleRiskChange('numberOfPregnancies', e.target.value)}
                                 placeholder="0"
+                                className="h-7 text-xs"
                             />
                         </div>
-                        <div className="space-y-1">
-                            <SimpleLabel htmlFor="deliveries">Number of Deliveries</SimpleLabel>
+                        <div className="space-y-0.5">
+                            <SimpleLabel htmlFor="deliveries" className="text-[10px]">Deliveries</SimpleLabel>
                             <SimpleInput
                                 id="deliveries"
                                 type="number"
+                                min="0"
                                 value={risk.numberOfDeliveries}
                                 onChange={(e) => handleRiskChange('numberOfDeliveries', e.target.value)}
                                 placeholder="0"
+                                className={`h-7 text-xs ${hasDeliveryError ? 'border-red-500' : ''}`}
                             />
+                            {hasDeliveryError && (
+                                <p className="text-[10px] text-red-500">Deliveries cannot exceed pregnancies</p>
+                            )}
                         </div>
                     </div>
-                    <div className="mt-2">
-                        <RadioGroup
-                            label="Long-Term Oral Contraceptive Use (>5 years)"
-                            name="contraceptiveUse"
-                            value={risk.longTermContraceptiveUse}
-                            onChange={(val) => handleRiskChange('longTermContraceptiveUse', val)}
-                        />
-                    </div>
                 </div>
 
-                {/* HIV/ART Status */}
-                <div className="border rounded-lg p-3 bg-white">
-                    <h4 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
-                        <Activity className="w-4 h-4" /> HIV & ART Status
+                {/* HIV Status - Compact */}
+                <div className="border rounded-lg p-2 bg-white">
+                    <h4 className="text-xs font-semibold text-red-700 mb-2 flex items-center gap-1">
+                        <Activity className="w-3.5 h-3.5" /> HIV Status
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <RadioGroup
-                            label="HIV Status"
-                            name="hivStatus"
-                            value={risk.hivStatus}
-                            onChange={(val) => handleRiskChange('hivStatus', val)}
-                            options={[
-                                { value: 'positive', label: 'Positive' },
-                                { value: 'negative', label: 'Negative' },
-                                { value: 'unknown', label: 'Unknown' },
-                            ]}
-                        />
-                        <RadioGroup
-                            label="ART Status"
-                            name="artStatus"
-                            value={risk.artStatus}
-                            onChange={(val) => handleRiskChange('artStatus', val)}
-                            options={[
-                                { value: 'active', label: 'Active' },
-                                { value: 'defaulted', label: 'Defaulted' },
-                                { value: 'never', label: 'Never' },
-                            ]}
-                        />
-                        <RadioGroup
-                            label="Viral Load Status"
-                            name="viralLoad"
-                            value={risk.viralLoadStatus}
-                            onChange={(val) => handleRiskChange('viralLoadStatus', val)}
-                            options={[
-                                { value: 'suppressed', label: 'Suppressed' },
-                                { value: 'detectable', label: 'Detectable' },
-                                { value: 'unknown', label: 'Unknown' },
-                            ]}
-                        />
-                        <RadioGroup
-                            label="HPV Status"
-                            name="hpvStatus"
-                            value={risk.hpvStatus}
-                            onChange={(val) => handleRiskChange('hpvStatus', val)}
-                            options={[
-                                { value: 'positive', label: 'Positive' },
-                                { value: 'negative', label: 'Negative' },
-                                { value: 'unknown', label: 'Unknown' },
-                            ]}
-                        />
-                    </div>
+                    <RadioGroup
+                        label="HIV Status"
+                        name="hivStatus"
+                        value={risk.hivStatus}
+                        onChange={(val) => handleRiskChange('hivStatus', val)}
+                        options={[
+                            { value: 'positive', label: 'Positive' },
+                            { value: 'negative', label: 'Negative' },
+                            { value: 'unknown', label: 'Unknown' },
+                        ]}
+                        className="space-y-0.5"
+                    />
+
+                    {isHivPositive && (
+                        <div className="mt-2 pt-2 border-t border-slate-200">
+                            <div className="grid grid-cols-2 gap-2">
+                                <RadioGroup
+                                    label="ART Status"
+                                    name="artStatus"
+                                    value={risk.artStatus}
+                                    onChange={(val) => handleRiskChange('artStatus', val)}
+                                    options={[
+                                        { value: 'active', label: 'Active' },
+                                        { value: 'defaulted', label: 'Defaulted' },
+                                        { value: 'never', label: 'Never' },
+                                    ]}
+                                    className="space-y-0.5"
+                                />
+                                <RadioGroup
+                                    label="Viral Load"
+                                    name="viralLoad"
+                                    value={risk.viralLoadStatus}
+                                    onChange={(val) => handleRiskChange('viralLoadStatus', val)}
+                                    options={[
+                                        { value: 'suppressed', label: 'Suppressed' },
+                                        { value: 'detectable', label: 'Detectable' },
+                                        { value: 'unknown', label: 'Unknown' },
+                                    ]}
+                                    className="space-y-0.5"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Lifestyle Factors */}
-                <div className="border rounded-lg p-3 bg-white">
-                    <h4 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
-                        <ClipboardList className="w-4 h-4" /> Lifestyle Factors
+                {/* Lifestyle Factors - Compact */}
+                <div className="border rounded-lg p-2 bg-white">
+                    <h4 className="text-xs font-semibold text-orange-700 mb-2 flex items-center gap-1">
+                        <ClipboardList className="w-3.5 h-3.5" /> Lifestyle
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <RadioGroup
+                                label="Smoking"
+                                name="smoking"
+                                value={risk.smokingHistory}
+                                onChange={(val) => handleRiskChange('smokingHistory', val)}
+                                className="space-y-0.5"
+                            />
+                            {isSmoking && (
+                                <div className="mt-1">
+                                    <SimpleSelect
+                                        id="smokingType"
+                                        value={risk.smokingType || ''}
+                                        onChange={(e) => handleRiskChange('smokingType', e.target.value)}
+                                        options={[
+                                            { value: 'shisha', label: 'Shisha' },
+                                            { value: 'cigarettes', label: 'Cigarettes' },
+                                            { value: 'sniffing', label: 'Sniffing' },
+                                            { value: 'vape', label: 'Vape' },
+                                        ]}
+                                        placeholder="Type"
+                                        className="h-7 text-xs"
+                                    />
+                                </div>
+                            )}
+                        </div>
                         <RadioGroup
-                            label="Smoking History"
-                            name="smoking"
-                            value={risk.smokingHistory}
-                            onChange={(val) => handleRiskChange('smokingHistory', val)}
-                        />
-                        <RadioGroup
-                            label="Alcohol Use"
+                            label="Alcohol"
                             name="alcohol"
                             value={risk.alcoholUse}
                             onChange={(val) => handleRiskChange('alcoholUse', val)}
+                            className="space-y-0.5"
                         />
+                    </div>
+                    <div className="mt-1">
                         <RadioGroup
-                            label="Family History of Cancer"
+                            label="Family Cancer History"
                             name="familyCancer"
                             value={risk.familyHistoryOfCancer}
                             onChange={(val) => handleRiskChange('familyHistoryOfCancer', val)}
+                            className="space-y-0.5"
                         />
                     </div>
                 </div>
 
-                {/* Previous History */}
-                <div className="border rounded-lg p-3 bg-white">
-                    <h4 className="text-sm font-semibold text-purple-700 mb-3 flex items-center gap-2">
-                        <Stethoscope className="w-4 h-4" /> Previous History
+                {/* Previous History - Compact */}
+                <div className="border rounded-lg p-2 bg-white">
+                    <h4 className="text-xs font-semibold text-purple-700 mb-2 flex items-center gap-1">
+                        <Stethoscope className="w-3.5 h-3.5" /> Previous History
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-1">
                         <RadioGroup
-                            label="Previous VIA Positive"
+                            label="Previous VIA+"
                             name="viaPositive"
                             value={risk.previousVIAPositive}
                             onChange={(val) => handleRiskChange('previousVIAPositive', val)}
+                            className="space-y-0.5"
                         />
                         <RadioGroup
-                            label="Previous HPV Positive"
+                            label="Previous HPV+"
                             name="hpvPositive"
                             value={risk.previousHPVPositive}
                             onChange={(val) => handleRiskChange('previousHPVPositive', val)}
+                            className="space-y-0.5"
                         />
                         <RadioGroup
-                            label="Previous CIN Diagnosis"
+                            label="Previous CIN"
                             name="cinDiagnosis"
                             value={risk.previousCINDiagnosis}
                             onChange={(val) => handleRiskChange('previousCINDiagnosis', val)}
+                            className="space-y-0.5"
                         />
                         <RadioGroup
                             label="Previous Cervical Cancer"
                             name="cervicalCancer"
                             value={risk.previousCervicalCancer}
                             onChange={(val) => handleRiskChange('previousCervicalCancer', val)}
+                            className="space-y-0.5"
                         />
                     </div>
                 </div>
 
-                {/* Other Factors */}
-                <div className="border rounded-lg p-3 bg-white">
-                    <h4 className="text-sm font-semibold text-teal-700 mb-3 flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4" /> Other Factors
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <RadioGroup
-                            label="Immunosuppression"
-                            name="immunosuppression"
-                            value={risk.immunosuppression}
-                            onChange={(val) => handleRiskChange('immunosuppression', val)}
-                        />
-                        <RadioGroup
-                            label="Long-Term Contraceptive Use"
-                            name="longTermContraceptive"
-                            value={risk.longTermContraceptive}
-                            onChange={(val) => handleRiskChange('longTermContraceptive', val)}
-                        />
-                    </div>
-                </div>
-
-                {/* Risk Flags Summary */}
                 {riskFlags.length > 0 && (
-                    <div className="border-2 border-red-200 rounded-lg p-3 bg-red-50">
-                        <h4 className="text-sm font-semibold text-red-700 mb-2">Risk Flags Detected</h4>
-                        <div className="flex flex-wrap gap-2">
+                    <div className="border-2 border-red-200 rounded-lg p-2 bg-red-50">
+                        <h4 className="text-xs font-semibold text-red-700 mb-1">Risk Flags</h4>
+                        <div className="flex flex-wrap gap-1">
                             {riskFlags.map((flag) => (
-                                <SimpleBadge key={flag} variant="danger">{flag}</SimpleBadge>
+                                <SimpleBadge key={flag} variant="danger" className="text-[10px]">{flag}</SimpleBadge>
                             ))}
                         </div>
                     </div>
@@ -1340,9 +1363,9 @@ export default function Create() {
                 <h4 className="text-sm font-semibold mb-2">Address</h4>
                 <dl className="grid grid-cols-2 gap-1 text-xs">
                     <dt className="text-slate-500">Province:</dt>
-                    <dd>{formData.address.province}</dd>
+                    <dd>{provinces.find(p => p.code === formData.address.province)?.name || formData.address.province || 'N/A'}</dd>
                     <dt className="text-slate-500">District:</dt>
-                    <dd>{formData.address.district}</dd>
+                    <dd>{districts.find(d => d.code === formData.address.district)?.name || formData.address.district || 'N/A'}</dd>
                     <dt className="text-slate-500">Chiefdom:</dt>
                     <dd>{formData.address.chiefdom || 'N/A'}</dd>
                     <dt className="text-slate-500">Village:</dt>
@@ -1354,19 +1377,28 @@ export default function Create() {
 
             <div className="bg-slate-50 p-3 rounded-md">
                 <h4 className="text-sm font-semibold mb-2">Facility</h4>
-                <div className="text-xs font-medium text-blue-600">{formData.facility || 'Not selected'}</div>
+                <div className="text-xs font-medium text-blue-600">
+                    {facilities.find(f => f.code === formData.facility)?.name || formData.facility || 'Not selected'}
+                </div>
             </div>
 
-            {/* Risk Assessment Summary */}
             <div className="bg-slate-50 p-3 rounded-md">
                 <h4 className="text-sm font-semibold mb-2">Risk Assessment</h4>
                 <div className="grid grid-cols-2 gap-1 text-xs">
+                    <dt className="text-slate-500">Pregnancies:</dt>
+                    <dd>{formData.riskAssessment.numberOfPregnancies || '0'}</dd>
+                    <dt className="text-slate-500">Deliveries:</dt>
+                    <dd>{formData.riskAssessment.numberOfDeliveries || '0'}</dd>
                     <dt className="text-slate-500">HIV Status:</dt>
                     <dd>{formData.riskAssessment.hivStatus || 'N/A'}</dd>
-                    <dt className="text-slate-500">HPV Status:</dt>
-                    <dd>{formData.riskAssessment.hpvStatus || 'N/A'}</dd>
                     <dt className="text-slate-500">Smoking:</dt>
                     <dd>{formData.riskAssessment.smokingHistory || 'N/A'}</dd>
+                    {formData.riskAssessment.smokingHistory === 'yes' && (
+                        <>
+                            <dt className="text-slate-500">Smoking Type:</dt>
+                            <dd>{formData.riskAssessment.smokingType || 'N/A'}</dd>
+                        </>
+                    )}
                     <dt className="text-slate-500">Alcohol:</dt>
                     <dd>{formData.riskAssessment.alcoholUse || 'N/A'}</dd>
                     <dt className="text-slate-500">Family Cancer History:</dt>
@@ -1382,27 +1414,17 @@ export default function Create() {
 
     return (
         <div className="space-y-4 p-4">
-            {/* Page Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Patient Registration</h1>
                     <p className="text-sm text-slate-500">Create a new patient profile with risk assessment</p>
                 </div>
-                <SimpleButton
-                    variant="ghost"
-                    onClick={() => setIsModalOpen(true)}
-                    className="bg-black text-white hover:bg-blue-700"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Patient
-                </SimpleButton>
+                <NewPatientButton onClick={() => setIsModalOpen(true)} />
             </div>
 
-            {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl  max-w-5xl max-h-[95vh] flex flex-col">
-                        {/* Header */}
+                    <div className="bg-white rounded-xl shadow-2xl max-w-5xl max-h-[95vh] flex flex-col">
                         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 flex-shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -1427,7 +1449,6 @@ export default function Create() {
                             </SimpleButton>
                         </div>
 
-                        {/* Error Banner */}
                         {error && (
                             <div className="mx-5 mt-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 flex-shrink-0">
                                 <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
@@ -1443,7 +1464,6 @@ export default function Create() {
                             </div>
                         )}
 
-                        {/* Tabs Navigation */}
                         <div className="px-5 pt-3 flex-shrink-0 overflow-x-auto">
                             <div className="grid grid-cols-6 gap-1 bg-slate-100 p-0.5 rounded-lg min-w-[600px]">
                                 {tabs.map((tab) => (
@@ -1463,7 +1483,6 @@ export default function Create() {
                             </div>
                         </div>
 
-                        {/* Content - Fixed height with scroll */}
                         <div className="flex-1 overflow-y-auto px-5 py-3 min-h-[400px] max-h-[55vh]">
                             {activeTab === 'demographics' && renderDemographics()}
                             {activeTab === 'contact' && renderContact()}
@@ -1473,7 +1492,6 @@ export default function Create() {
                             {activeTab === 'review' && renderReview()}
                         </div>
 
-                        {/* Footer */}
                         <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200 bg-slate-50/50 rounded-b-xl flex-shrink-0">
                             <div className="text-xs text-slate-500">
                                 Step {currentTabIndex + 1} of {totalTabs}

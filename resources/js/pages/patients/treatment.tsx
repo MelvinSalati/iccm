@@ -262,7 +262,7 @@ export default function BreastTreatment() {
                         </div>
                     </div>
 
-
+                    {/* Stats Cards - Removed per request */}
                     {/* Filters */}
                     <div className="mb-4 flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
@@ -557,6 +557,7 @@ export default function BreastTreatment() {
                     }}
                     onSuccess={handleSaveSuccess}
                     patientId={String(patient?.id)}
+                    patientUuid={patient?.patient_uuid}
                     userId={auth?.user?.id}
                     editingData={editingData}
                 />

@@ -19,6 +19,7 @@ interface ImagingModalProps {
     onClose: () => void;
     onSuccess: (data: any) => void;
     patientId?: string;
+    patientUuid?: string;
     screeningId?: string;
     userId?: string;
     editingData?: any;
@@ -58,6 +59,7 @@ export default function ImagingModal({
                                          onClose,
                                          onSuccess,
                                          patientId,
+                                         patientUuid,
                                          screeningId,
                                          userId,
                                          editingData,
@@ -122,7 +124,11 @@ export default function ImagingModal({
 
         setSaving(true);
         try {
-            const endpoint = editingData ? `/imaging/${editingData.id}` : '/imaging';
+            // Use patientUuid in the URL path
+            const basePath = patientUuid ? `/patients/${patientUuid}/breast-cancer` : '/breast-cancer';
+            const endpoint = editingData
+                ? `${basePath}/imaging/${editingData.id}`
+                : `${basePath}/imaging`;
             const method = editingData ? 'put' : 'post';
 
             const response = await Http[method](endpoint, {
@@ -158,7 +164,7 @@ export default function ImagingModal({
                             </div>
                             <div>
                                 <h3 className="text-sm font-semibold text-slate-900">
-                                    {editingData ? 'Edit' : 'New'} Imaging
+                                    {editingData ? 'Edit' : 'New'} Imaging Study
                                 </h3>
                                 <p className="text-xs text-slate-500">Radiology and imaging studies</p>
                             </div>
@@ -239,7 +245,7 @@ export default function ImagingModal({
                                             value={formData.mammogram_findings}
                                             onChange={handleInputChange}
                                             className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
-                                            rows={1}
+                                            rows={2}
                                             placeholder="Mammogram findings..."
                                         />
                                     </div>
@@ -311,7 +317,7 @@ export default function ImagingModal({
                                             value={formData.ultrasound_findings}
                                             onChange={handleInputChange}
                                             className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
-                                            rows={1}
+                                            rows={2}
                                             placeholder="Ultrasound findings..."
                                         />
                                     </div>
@@ -355,7 +361,7 @@ export default function ImagingModal({
                                             value={formData.mri_findings}
                                             onChange={handleInputChange}
                                             className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
-                                            rows={1}
+                                            rows={2}
                                             placeholder="MRI findings..."
                                         />
                                     </div>
@@ -399,7 +405,7 @@ export default function ImagingModal({
                                                         value={formData[scan.findingsKey as keyof FormData] as string}
                                                         onChange={handleInputChange}
                                                         className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
-                                                        rows={1}
+                                                        rows={2}
                                                         placeholder="Findings"
                                                     />
                                                 </>

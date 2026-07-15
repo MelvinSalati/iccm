@@ -59,7 +59,7 @@ import {
     Scan,
     Pill as PillIcon,
     Syringe,
-    FlaskConical,
+    FlaskConical, TrendingUpIcon
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
@@ -153,7 +153,7 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
             ],
         },
         {
-            title: 'Consultancy',
+            title: 'Consultation',
             href: `/consultancy/${encryptId(consultancyId)}`,
             icon: StethoscopeIcon,
             roles: [
@@ -209,6 +209,18 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
             title: 'Reports',
             href: '/',
             icon: ChartBarIcon,
+            roles: [
+                ROLE_IDS.ADMINISTRATOR,
+                ROLE_IDS.CLINICIAN,
+                ROLE_IDS.FACILITY_MANAGER,
+                ROLE_IDS.DHO,
+                ROLE_IDS.MEL_OFFICER,
+            ],
+        },
+        {
+            title: 'Indicators',
+            href: '/',
+            icon: TrendingUpIcon,
             roles: [
                 ROLE_IDS.ADMINISTRATOR,
                 ROLE_IDS.CLINICIAN,
