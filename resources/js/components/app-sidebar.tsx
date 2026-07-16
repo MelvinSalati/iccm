@@ -1,4 +1,4 @@
-// app-sidebar.tsx - Fixed with auth.user.facility_id for consultancy
+// app-sidebar.tsx - Fixed with proper admin routes
 import { Link, usePage } from '@inertiajs/react';
 import {encryptId} from '@/utils/helpers'
 import { useState, useEffect } from 'react';
@@ -59,7 +59,12 @@ import {
     Scan,
     Pill as PillIcon,
     Syringe,
-    FlaskConical, TrendingUpIcon
+    FlaskConical,
+    TrendingUpIcon,
+    Database,
+    FileSpreadsheet,
+    Gauge,
+    BarChart3, HospitalIcon
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
@@ -205,9 +210,10 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.FACILITY_MANAGER,
             ],
         },
+        // ADMIN SECTION - Reports & Analytics
         {
-            title: 'Reports',
-            href: '/',
+            title: 'Reports & Analytics',
+            href: '/admin/reports',
             icon: ChartBarIcon,
             roles: [
                 ROLE_IDS.ADMINISTRATOR,
@@ -216,53 +222,158 @@ const getNavigationItems = (facilityId: number | null): NavItem[] => {
                 ROLE_IDS.DHO,
                 ROLE_IDS.MEL_OFFICER,
             ],
-        },
-        {
-            title: 'Indicators',
-            href: '/',
-            icon: TrendingUpIcon,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.CLINICIAN,
-                ROLE_IDS.FACILITY_MANAGER,
-                ROLE_IDS.DHO,
-                ROLE_IDS.MEL_OFFICER,
+            subItems: [
+                {
+                    title: 'Clinical Reports',
+                    href: '/admin/reports/clinical',
+                    icon: FileSpreadsheet,
+                    description: 'Patient outcomes & clinical metrics',
+                },
+                {
+                    title: 'Operational Reports',
+                    href: '/admin/reports/operational',
+                    icon: Gauge,
+                    description: 'Facility performance & operations',
+                },
             ],
         },
+        // ADMIN SECTION - Indicators
+        {
+            title: 'Manage Facilities',
+            href: '/admin/manage-facility',
+            icon: HospitalIcon,
+            roles: [
+                ROLE_IDS.ADMINISTRATOR,
+                ROLE_IDS.DHO,
+                ROLE_IDS.FACILITY_MANAGER,
+                ROLE_IDS.MEL_OFFICER,
+                ROLE_IDS.CLINICIAN,
+                ROLE_IDS.NURSE,
+                ROLE_IDS.COUNSELLOR,
+                ROLE_IDS.WARD_CLERK,
+                ROLE_IDS.CHW,
+            ]
+        },
+        // {
+        //     title: 'Indicators',
+        //     href: '/admin/indicators',
+        //     icon: TrendingUpIcon,
+        //     roles: [
+        //         ROLE_IDS.ADMINISTRATOR,
+        //         ROLE_IDS.CLINICIAN,
+        //         ROLE_IDS.FACILITY_MANAGER,
+        //         ROLE_IDS.DHO,
+        //         ROLE_IDS.MEL_OFFICER,
+        //     ],
+        //     subItems: [
+        //         {
+        //             title: 'KPI Dashboard',
+        //             href: '/admin/indicators/kpi',
+        //             icon: Gauge,
+        //             description: 'Key performance indicators',
+        //         },
+        //         {
+        //             title: 'Health Indicators',
+        //             href: '/admin/indicators/health',
+        //             icon: HeartPulse,
+        //             description: 'Population health metrics',
+        //         }
+        //     ],
+        // },
+        // ADMIN SECTION - Facility Management
         {
             title: 'Facilities',
-            href: '/facilities',
+            href: '/admin/facilities',
             icon: Hospital,
             roles: [
                 ROLE_IDS.ADMINISTRATOR,
                 ROLE_IDS.DHO,
             ],
+            subItems: [
+                {
+                    title: 'All Facilities',
+                    href: '/admin/facilities',
+                    icon: Building2,
+                    description: 'View all healthcare facilities',
+                },
+                {
+                    title: 'Add Facility',
+                    href: '/admin/facilities/create',
+                    icon: UserPlus,
+                    description: 'Register new facility',
+                },
+                {
+                    title: 'Departments',
+                    href: '/admin/facilities/departments',
+                    icon: LayoutGrid,
+                    description: 'Manage facility departments',
+                },
+                {
+                    title: 'Resources',
+                    href: '/admin/facilities/resources',
+                    icon: Database,
+                    description: 'Facility resources & equipment',
+                },
+            ],
         },
+        // ADMIN SECTION - User Management
         {
             title: 'Users & Roles',
-            href: '/users',
+            href: '/admin/users',
             icon: UserCog,
             roles: [ROLE_IDS.ADMINISTRATOR],
+            subItems: [
+                {
+                    title: 'All Users',
+                    href: '/admin/users',
+                    icon: Users,
+                    description: 'Manage user accounts',
+                },
+                {
+                    title: 'Roles',
+                    href: '/admin/roles',
+                    icon: ShieldCheck,
+                    description: 'Role management',
+                },
+                {
+                    title: 'Permissions',
+                    href: '/admin/permissions',
+                    icon: ShieldCheck,
+                    description: 'Permission management',
+                },
+            ],
         },
-        {
-            title: 'Permissions',
-            href: '/permissions',
-            icon: ShieldCheck,
-            roles: [ROLE_IDS.ADMINISTRATOR],
-        },
+        // ADMIN SECTION - System Settings
         {
             title: 'System Settings',
-            href: '/settings',
+            href: '/admin/settings',
             icon: Settings,
             roles: [ROLE_IDS.ADMINISTRATOR],
-        },
-        {
-            title: 'Facilities Management',
-            href: '/facility-management',
-            icon: Building2,
-            roles: [
-                ROLE_IDS.ADMINISTRATOR,
-                ROLE_IDS.DHO,
+            subItems: [
+                {
+                    title: 'General Settings',
+                    href: '/admin/settings/general',
+                    icon: Settings,
+                    description: 'System configuration',
+                },
+                {
+                    title: 'Notification Settings',
+                    href: '/admin/settings/notifications',
+                    icon: BellRing,
+                    description: 'Alert & notification preferences',
+                },
+                {
+                    title: 'Integration Settings',
+                    href: '/admin/settings/integrations',
+                    icon: Database,
+                    description: 'Third-party integrations',
+                },
+                {
+                    title: 'Audit Logs',
+                    href: '/admin/settings/audit',
+                    icon: FileText,
+                    description: 'System audit trail',
+                },
             ],
         },
     ];
@@ -299,11 +410,12 @@ const getPatientNavItems = (patientUuid: string): NavItem[] => [
                 href: `/patients/${patientUuid}/breast-cancer/treatment`,
                 icon: Radiation,
                 description: 'Treatment plans & follow-up',
-            },    {
+            },
+            {
                 title: 'Biopsy',
                 href: `/patients/${patientUuid}/breast-cancer/biopsy`,
                 icon: Radiation,
-                description: 'Treatment plans & follow-up',
+                description: 'Biopsy procedures',
             },
         ],
     },
@@ -353,6 +465,7 @@ interface AppSidebarProps {
         [key: string]: unknown;
     } | null;
     isPatientView?: boolean;
+    admin?: boolean;
 }
 
 // Navigation item renderer with consistent styles
@@ -554,7 +667,7 @@ const NavItemWithSubItems = ({
     );
 };
 
-export function AppSidebar({ patient, isPatientView }: AppSidebarProps) {
+export function AppSidebar({ patient, isPatientView, admin }: AppSidebarProps) {
     // Get the current URL from window.location as fallback
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
@@ -735,7 +848,22 @@ export function AppSidebar({ patient, isPatientView }: AppSidebarProps) {
                         <SidebarGroupContent>
                             <SidebarMenu className="gap-0.5">
                                 {visibleItems.map((item) => {
-                                    const isActive = isMainNavActive(item.href);
+                                    const hasSubItems = item.subItems && item.subItems.length > 0;
+                                    const isActive = !hasSubItems && isMainNavActive(item.href);
+
+                                    if (hasSubItems) {
+                                        return (
+                                            <NavItemWithSubItems
+                                                key={item.title}
+                                                item={item}
+                                                isActive={false}
+                                                onClick={() => {}}
+                                                expandedItems={expandedItems}
+                                                setExpandedItems={setExpandedItems}
+                                            />
+                                        );
+                                    }
+
                                     return (
                                         <NavItemRenderer
                                             key={item.title}

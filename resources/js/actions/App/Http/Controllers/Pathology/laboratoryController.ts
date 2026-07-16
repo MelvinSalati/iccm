@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/patients/{patientUuid}/lab-orders'
  */
 const createOrder07887101495b9b0685dd8ce63b1564e0 = (args: { patientUuid: string | number } | [patientUuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ createOrder07887101495b9b0685dd8ce63b1564e0.definition = {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/patients/{patientUuid}/lab-orders'
  */
 createOrder07887101495b9b0685dd8ce63b1564e0.url = (args: { patientUuid: string | number } | [patientUuid: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ createOrder07887101495b9b0685dd8ce63b1564e0.url = (args: { patientUuid: string |
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/patients/{patientUuid}/lab-orders'
  */
 createOrder07887101495b9b0685dd8ce63b1564e0.post = (args: { patientUuid: string | number } | [patientUuid: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -54,7 +54,7 @@ createOrder07887101495b9b0685dd8ce63b1564e0.post = (args: { patientUuid: string 
 
     /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/patients/{patientUuid}/lab-orders'
  */
     const createOrder07887101495b9b0685dd8ce63b1564e0Form = (args: { patientUuid: string | number } | [patientUuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -64,7 +64,7 @@ createOrder07887101495b9b0685dd8ce63b1564e0.post = (args: { patientUuid: string 
 
             /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/patients/{patientUuid}/lab-orders'
  */
         createOrder07887101495b9b0685dd8ce63b1564e0Form.post = (args: { patientUuid: string | number } | [patientUuid: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -75,7 +75,7 @@ createOrder07887101495b9b0685dd8ce63b1564e0.post = (args: { patientUuid: string 
     createOrder07887101495b9b0685dd8ce63b1564e0.form = createOrder07887101495b9b0685dd8ce63b1564e0Form
     /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/laboratory/orders'
  */
 const createOrderfbb132c8db162d4a838be8b0f54971a4 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -90,7 +90,7 @@ createOrderfbb132c8db162d4a838be8b0f54971a4.definition = {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/laboratory/orders'
  */
 createOrderfbb132c8db162d4a838be8b0f54971a4.url = (options?: RouteQueryOptions) => {
@@ -99,7 +99,7 @@ createOrderfbb132c8db162d4a838be8b0f54971a4.url = (options?: RouteQueryOptions) 
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/laboratory/orders'
  */
 createOrderfbb132c8db162d4a838be8b0f54971a4.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -109,7 +109,7 @@ createOrderfbb132c8db162d4a838be8b0f54971a4.post = (options?: RouteQueryOptions)
 
     /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/laboratory/orders'
  */
     const createOrderfbb132c8db162d4a838be8b0f54971a4Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -119,7 +119,7 @@ createOrderfbb132c8db162d4a838be8b0f54971a4.post = (options?: RouteQueryOptions)
 
             /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::createOrder
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:94
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:97
  * @route '/api/v1/laboratory/orders'
  */
         createOrderfbb132c8db162d4a838be8b0f54971a4Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -141,7 +141,7 @@ export const createOrder = {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::sampleAssessment
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:254
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:358
  * @route '/api/v1/laboratory/orders/{orderId}/sample-assessment'
  */
 export const sampleAssessment = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -156,7 +156,7 @@ sampleAssessment.definition = {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::sampleAssessment
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:254
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:358
  * @route '/api/v1/laboratory/orders/{orderId}/sample-assessment'
  */
 sampleAssessment.url = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -184,7 +184,7 @@ sampleAssessment.url = (args: { orderId: string | number } | [orderId: string | 
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::sampleAssessment
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:254
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:358
  * @route '/api/v1/laboratory/orders/{orderId}/sample-assessment'
  */
 sampleAssessment.post = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -194,7 +194,7 @@ sampleAssessment.post = (args: { orderId: string | number } | [orderId: string |
 
     /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::sampleAssessment
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:254
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:358
  * @route '/api/v1/laboratory/orders/{orderId}/sample-assessment'
  */
     const sampleAssessmentForm = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -204,7 +204,7 @@ sampleAssessment.post = (args: { orderId: string | number } | [orderId: string |
 
             /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::sampleAssessment
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:254
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:358
  * @route '/api/v1/laboratory/orders/{orderId}/sample-assessment'
  */
         sampleAssessmentForm.post = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -215,7 +215,7 @@ sampleAssessment.post = (args: { orderId: string | number } | [orderId: string |
     sampleAssessment.form = sampleAssessmentForm
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::enterResults
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:338
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:513
  * @route '/api/v1/laboratory/orders/{orderId}/results'
  */
 export const enterResults = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -230,7 +230,7 @@ enterResults.definition = {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::enterResults
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:338
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:513
  * @route '/api/v1/laboratory/orders/{orderId}/results'
  */
 enterResults.url = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -258,7 +258,7 @@ enterResults.url = (args: { orderId: string | number } | [orderId: string | numb
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::enterResults
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:338
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:513
  * @route '/api/v1/laboratory/orders/{orderId}/results'
  */
 enterResults.post = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -268,7 +268,7 @@ enterResults.post = (args: { orderId: string | number } | [orderId: string | num
 
     /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::enterResults
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:338
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:513
  * @route '/api/v1/laboratory/orders/{orderId}/results'
  */
     const enterResultsForm = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -278,7 +278,7 @@ enterResults.post = (args: { orderId: string | number } | [orderId: string | num
 
             /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::enterResults
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:338
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:513
  * @route '/api/v1/laboratory/orders/{orderId}/results'
  */
         enterResultsForm.post = (args: { orderId: string | number } | [orderId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -289,7 +289,7 @@ enterResults.post = (args: { orderId: string | number } | [orderId: string | num
     enterResults.form = enterResultsForm
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:21
  * @route '/laboratory/orders'
  */
 export const viewLaboratoryOrders = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -304,7 +304,7 @@ viewLaboratoryOrders.definition = {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:21
  * @route '/laboratory/orders'
  */
 viewLaboratoryOrders.url = (options?: RouteQueryOptions) => {
@@ -313,7 +313,7 @@ viewLaboratoryOrders.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:21
  * @route '/laboratory/orders'
  */
 viewLaboratoryOrders.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -322,7 +322,7 @@ viewLaboratoryOrders.get = (options?: RouteQueryOptions): RouteDefinition<'get'>
 })
 /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:21
  * @route '/laboratory/orders'
  */
 viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -332,7 +332,7 @@ viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
     /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:21
  * @route '/laboratory/orders'
  */
     const viewLaboratoryOrdersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -342,7 +342,7 @@ viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head
 
             /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:21
  * @route '/laboratory/orders'
  */
         viewLaboratoryOrdersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -351,7 +351,7 @@ viewLaboratoryOrders.head = (options?: RouteQueryOptions): RouteDefinition<'head
         })
             /**
 * @see \App\Http\Controllers\Pathology\LaboratoryController::viewLaboratoryOrders
- * @see app/Http/Controllers/Pathology/LaboratoryController.php:19
+ * @see app/Http/Controllers/Pathology/LaboratoryController.php:21
  * @route '/laboratory/orders'
  */
         viewLaboratoryOrdersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

@@ -1,0 +1,1 @@
+function e({stats:e}){if(!e)return null}export{e as default};

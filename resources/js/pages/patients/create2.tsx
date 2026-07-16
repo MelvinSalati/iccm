@@ -76,10 +76,21 @@ interface District {
 
 interface Facility {
     id: number;
+    facility_uuid?: string | null;
     name: string;
+    code: string;
     type: string;
-    district_id: number;
-    code?: string;
+    district: string;
+    province: string;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    status: string;
+    created_by?: number | null;
+    updated_by?: number | null;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string | null;
 }
 
 // ============================================
@@ -414,6 +425,7 @@ interface CreateProps {
             id: number;
             name: string;
             email: string;
+            facility_id: number;
         };
     };
 }
@@ -435,6 +447,9 @@ export default function Create() {
         districts: false,
         facilities: false
     });
+
+    // User facility
+    const [userFacility, setUserFacility] = useState<Facility | null>(null);
 
     // Form state - with default "no" for radio buttons
     const [formData, setFormData] = useState<PatientFormData>({
@@ -462,14 +477,14 @@ export default function Create() {
             hivStatus: '',
             artStatus: '',
             viralLoadStatus: '',
-            smokingHistory: 'no', // Default to 'no'
+            smokingHistory: 'no',
             smokingType: '',
-            alcoholUse: 'no', // Default to 'no'
-            familyHistoryOfCancer: 'no', // Default to 'no'
-            previousVIAPositive: 'no', // Default to 'no'
-            previousHPVPositive: 'no', // Default to 'no'
-            previousCINDiagnosis: 'no', // Default to 'no'
-            previousCervicalCancer: 'no', // Default to 'no'
+            alcoholUse: 'no',
+            familyHistoryOfCancer: 'no',
+            previousVIAPositive: 'no',
+            previousHPVPositive: 'no',
+            previousCINDiagnosis: 'no',
+            previousCervicalCancer: 'no',
         },
         riskFlags: [],
     });
@@ -524,22 +539,26 @@ export default function Create() {
         }
     };
 
-    const fetchFacilities = async (districtId: number) => {
+    const fetchUserFacility = async (facilityId: number) => {
         setLoading(prev => ({ ...prev, facilities: true }));
         try {
-            const response = await Http.get(`/locations/facilities?district_id=${districtId}`);
-            const facilitiesWithCode = response.data.map((facility: any) => ({
-                ...facility,
-                code: facility.code || `facility_${facility.id}`
-            }));
-            setFacilities(facilitiesWithCode);
+            const response = await Http.get(`/locations/facilities/${facilityId}`);
+            if (response.data) {
+                const facilityData = response.data;
+                setUserFacility(facilityData);
+                setFacilities([facilityData]);
+                // Set the facility in form data
+                setFormData(prev => ({
+                    ...prev,
+                    facility: String(facilityData.id)
+                }));
+            }
         } catch (error) {
-            console.error('Error fetching facilities:', error);
-            Notify.failure('Failed to load facilities.', {
+            console.error('Error fetching user facility:', error);
+            Notify.failure('Failed to load your facility information.', {
                 position: 'right-top',
                 timeout: 5000,
             });
-            setFacilities([]);
         } finally {
             setLoading(prev => ({ ...prev, facilities: false }));
         }
@@ -551,7 +570,12 @@ export default function Create() {
 
     useEffect(() => {
         fetchProvinces();
-    }, []);
+
+        // Set facility from logged-in user
+        if (auth?.user?.facility_id) {
+            fetchUserFacility(auth.user.facility_id);
+        }
+    }, [auth?.user?.facility_id]);
 
     useEffect(() => {
         if (formData.address.province) {
@@ -560,26 +584,30 @@ export default function Create() {
                 fetchDistricts(selectedProvince.id);
                 setFormData(prev => ({
                     ...prev,
-                    address: { ...prev.address, district: '' },
-                    facility: ''
+                    address: { ...prev.address, district: '' }
                 }));
-                setFacilities([]);
+                // Reset facility to user's facility if district changes
+                if (auth?.user?.facility_id) {
+                    setFormData(prev => ({
+                        ...prev,
+                        facility: String(auth.user?.facility_id || '')
+                    }));
+                }
             }
         } else {
             setDistricts([]);
-            setFacilities([]);
         }
     }, [formData.address.province]);
 
+    // Ensure facility stays as user's facility
     useEffect(() => {
         if (formData.address.district) {
-            const selectedDistrict = districts.find(d => d.code === formData.address.district);
-            if (selectedDistrict) {
-                fetchFacilities(selectedDistrict.id);
-                setFormData(prev => ({ ...prev, facility: '' }));
+            if (auth?.user?.facility_id) {
+                setFormData(prev => ({
+                    ...prev,
+                    facility: String(auth.user?.facility_id || '')
+                }));
             }
-        } else {
-            setFacilities([]);
         }
     }, [formData.address.district]);
 
@@ -602,7 +630,7 @@ export default function Create() {
                 landmark: '',
                 postalCode: '',
             },
-            facility: '',
+            facility: auth?.user?.facility_id ? String(auth.user.facility_id) : '',
             riskAssessment: {
                 numberOfPregnancies: '',
                 numberOfDeliveries: '',
@@ -625,7 +653,10 @@ export default function Create() {
         setError(null);
         setFormErrors({});
         setDistricts([]);
-        setFacilities([]);
+        // Don't clear facilities - keep user facility
+        if (auth?.user?.facility_id && userFacility) {
+            setFacilities([userFacility]);
+        }
     };
 
     const handleChange = (field: keyof PatientFormData, value: any) => {
@@ -776,6 +807,7 @@ export default function Create() {
         setIsSubmitting(true);
         setError(null);
 
+        // Prepare submission data with facility_id
         const submissionData = {
             ...formData,
             telecom: contacts.map(contact => ({
@@ -785,6 +817,7 @@ export default function Create() {
                     : contact.value,
             })),
             user_id: auth?.user?.id,
+            facility_id: Number(formData.facility), // Convert to number and append to payload
         };
 
         showInfoNotification('Saving patient...');
@@ -1061,66 +1094,100 @@ export default function Create() {
         </div>
     );
 
-    const renderFacility = () => (
-        <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-700">
-                    <Building2 className="w-4 h-4 inline mr-1" />
-                    Select the facility where this patient belongs for aggregation purposes
-                </p>
-            </div>
+    const renderFacility = () => {
+        // Get the facility name from userFacility
+        const facilityName = userFacility?.name ||
+            facilities.find(f => f.id === Number(formData.facility))?.name ||
+            'Loading facility...';
+        const facilityCode = userFacility?.code || '';
+        const facilityType = userFacility?.type || '';
+        const facilityStatus = userFacility?.status || '';
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                    <SimpleLabel htmlFor="facility">
-                        Facility <span className="text-red-500">*</span>
-                    </SimpleLabel>
-                    <SimpleSelect
-                        id="facility"
-                        value={formData.facility}
-                        onChange={(e) => handleChange('facility', e.target.value)}
-                        options={facilities.map(f => ({ value: f.code || String(f.id), label: f.name }))}
-                        placeholder={!formData.address.district ? "Select district first" : loading.facilities ? "Loading facilities..." : "Select facility"}
-                        disabled={!formData.address.district || loading.facilities}
-                        className={formErrors.facility ? 'border-red-500' : ''}
-                    />
-                    {formErrors.facility && <p className="text-xs text-red-500">{formErrors.facility}</p>}
+        return (
+            <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-700">
+                        <Building2 className="w-4 h-4 inline mr-1" />
+                        Patient will be assigned to your facility: <strong>{facilityName}</strong>
+                        {facilityCode && (
+                            <span className="ml-2 text-blue-600 font-mono">(Code: {facilityCode})</span>
+                        )}
+                    </p>
                 </div>
 
-                <div className="space-y-1">
-                    <SimpleLabel htmlFor="facilityType">Facility Type</SimpleLabel>
-                    <SimpleSelect
-                        id="facilityType"
-                        value=""
-                        onChange={() => {}}
-                        options={[
-                            { value: 'hospital', label: 'Hospital' },
-                            { value: 'clinic', label: 'Clinic' },
-                            { value: 'health_centre', label: 'Health Centre' },
-                            { value: 'rural_health_centre', label: 'Rural Health Centre' },
-                        ]}
-                        placeholder="Select facility type"
-                    />
-                </div>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                        <SimpleLabel htmlFor="facility">
+                            Facility Name <span className="text-red-500">*</span>
+                        </SimpleLabel>
+                        <div className="w-full h-8 px-3 text-sm border border-slate-300 rounded-md bg-slate-50 flex items-center text-slate-700">
+                            {loading.facilities ? 'Loading facility...' : facilityName}
+                        </div>
+                        <input
+                            type="hidden"
+                            name="facility"
+                            value={formData.facility}
+                        />
+                        {formErrors.facility && <p className="text-xs text-red-500">{formErrors.facility}</p>}
+                    </div>
 
-            {formData.address.province && formData.address.district && formData.facility && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
-                        <div>
-                            <p className="text-sm font-medium text-green-800">Location Selected</p>
-                            <p className="text-xs text-green-700">
-                                {provinces.find(p => p.code === formData.address.province)?.name || formData.address.province} →
-                                {districts.find(d => d.code === formData.address.district)?.name || formData.address.district} →
-                                {facilities.find(f => f.code === formData.facility)?.name || formData.facility}
-                            </p>
+                    {facilityCode && (
+                        <div className="space-y-1">
+                            <SimpleLabel htmlFor="facilityCode">Facility Code</SimpleLabel>
+                            <div className="w-full h-8 px-3 text-sm border border-slate-300 rounded-md bg-slate-50 flex items-center text-slate-700">
+                                {facilityCode}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {(facilityType || facilityStatus) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {facilityType && (
+                            <div className="space-y-1">
+                                <SimpleLabel htmlFor="facilityType">Facility Type</SimpleLabel>
+                                <div className="w-full h-8 px-3 text-sm border border-slate-300 rounded-md bg-slate-50 flex items-center text-slate-700 capitalize">
+                                    {facilityType.replace('_', ' ')}
+                                </div>
+                            </div>
+                        )}
+                        {facilityStatus && (
+                            <div className="space-y-1">
+                                <SimpleLabel htmlFor="facilityStatus">Status</SimpleLabel>
+                                <div className="w-full h-8 px-3 text-sm border border-slate-300 rounded-md bg-slate-50 flex items-center text-slate-700 capitalize">
+                                    <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
+                                        facilityStatus === 'active' ? 'bg-green-500' : 'bg-red-500'
+                                    }`}></span>
+                                    {facilityStatus}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {formData.address.province && formData.address.district && formData.facility && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-start gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                            <div>
+                                <p className="text-sm font-medium text-green-800">Location Selected</p>
+                                <p className="text-xs text-green-700">
+                                    {provinces.find(p => p.code === formData.address.province)?.name || formData.address.province} →
+                                    {districts.find(d => d.code === formData.address.district)?.name || formData.address.district} →
+                                    {facilityName}
+                                </p>
+                                {facilityCode && (
+                                    <p className="text-xs text-green-600 mt-1">
+                                        Code: {facilityCode} | Type: {facilityType || 'N/A'}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
-    );
+                )}
+            </div>
+        );
+    };
 
     const renderRiskAssessment = () => {
         const risk = formData.riskAssessment;
@@ -1331,82 +1398,98 @@ export default function Create() {
         );
     };
 
-    const renderReview = () => (
-        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-            <div className="bg-slate-50 p-3 rounded-md">
-                <h4 className="text-sm font-semibold mb-2">Demographics</h4>
-                <dl className="grid grid-cols-2 gap-1 text-xs">
-                    <dt className="text-slate-500">Name:</dt>
-                    <dd>{formData.firstName} {formData.lastName}</dd>
-                    <dt className="text-slate-500">DOB:</dt>
-                    <dd>{formData.dateOfBirth}</dd>
-                    <dt className="text-slate-500">Gender:</dt>
-                    <dd>{formData.gender || 'N/A'}</dd>
-                    <dt className="text-slate-500">NRC:</dt>
-                    <dd>{formData.nrcNumber || 'N/A'}</dd>
-                </dl>
-            </div>
+    const renderReview = () => {
+        const facilityName = userFacility?.name ||
+            facilities.find(f => f.id === Number(formData.facility))?.name ||
+            'Not selected';
+        const facilityCode = userFacility?.code || '';
+        const facilityType = userFacility?.type || '';
 
-            <div className="bg-slate-50 p-3 rounded-md">
-                <h4 className="text-sm font-semibold mb-2">Contact</h4>
-                <div className="text-xs">Phone: {formData.phoneNumber || 'N/A'}</div>
-                {contacts.filter(c => c.value).map((c, i) => (
-                    <div key={i} className="text-xs flex gap-2 mt-1">
-                        <span className="text-slate-500">{c.system}:</span>
-                        <span>{c.value}</span>
-                        <SimpleBadge variant="outline">{c.use}</SimpleBadge>
+        return (
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                <div className="bg-slate-50 p-3 rounded-md">
+                    <h4 className="text-sm font-semibold mb-2">Demographics</h4>
+                    <dl className="grid grid-cols-2 gap-1 text-xs">
+                        <dt className="text-slate-500">Name:</dt>
+                        <dd>{formData.firstName} {formData.lastName}</dd>
+                        <dt className="text-slate-500">DOB:</dt>
+                        <dd>{formData.dateOfBirth}</dd>
+                        <dt className="text-slate-500">Gender:</dt>
+                        <dd>{formData.gender || 'N/A'}</dd>
+                        <dt className="text-slate-500">NRC:</dt>
+                        <dd>{formData.nrcNumber || 'N/A'}</dd>
+                    </dl>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-md">
+                    <h4 className="text-sm font-semibold mb-2">Contact</h4>
+                    <div className="text-xs">Phone: {formData.phoneNumber || 'N/A'}</div>
+                    {contacts.filter(c => c.value).map((c, i) => (
+                        <div key={i} className="text-xs flex gap-2 mt-1">
+                            <span className="text-slate-500">{c.system}:</span>
+                            <span>{c.value}</span>
+                            <SimpleBadge variant="outline">{c.use}</SimpleBadge>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-md">
+                    <h4 className="text-sm font-semibold mb-2">Address</h4>
+                    <dl className="grid grid-cols-2 gap-1 text-xs">
+                        <dt className="text-slate-500">Province:</dt>
+                        <dd>{provinces.find(p => p.code === formData.address.province)?.name || formData.address.province || 'N/A'}</dd>
+                        <dt className="text-slate-500">District:</dt>
+                        <dd>{districts.find(d => d.code === formData.address.district)?.name || formData.address.district || 'N/A'}</dd>
+                        <dt className="text-slate-500">Chiefdom:</dt>
+                        <dd>{formData.address.chiefdom || 'N/A'}</dd>
+                        <dt className="text-slate-500">Village:</dt>
+                        <dd>{formData.address.village || 'N/A'}</dd>
+                        <dt className="text-slate-500">Compound:</dt>
+                        <dd>{formData.address.compound || 'N/A'}</dd>
+                    </dl>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-md">
+                    <h4 className="text-sm font-semibold mb-2">Facility</h4>
+                    <div className="text-xs font-medium text-blue-600">
+                        {facilityName}
+                        {facilityCode && (
+                            <span className="ml-2 text-blue-400 font-mono">(Code: {facilityCode})</span>
+                        )}
                     </div>
-                ))}
-            </div>
-
-            <div className="bg-slate-50 p-3 rounded-md">
-                <h4 className="text-sm font-semibold mb-2">Address</h4>
-                <dl className="grid grid-cols-2 gap-1 text-xs">
-                    <dt className="text-slate-500">Province:</dt>
-                    <dd>{provinces.find(p => p.code === formData.address.province)?.name || formData.address.province || 'N/A'}</dd>
-                    <dt className="text-slate-500">District:</dt>
-                    <dd>{districts.find(d => d.code === formData.address.district)?.name || formData.address.district || 'N/A'}</dd>
-                    <dt className="text-slate-500">Chiefdom:</dt>
-                    <dd>{formData.address.chiefdom || 'N/A'}</dd>
-                    <dt className="text-slate-500">Village:</dt>
-                    <dd>{formData.address.village || 'N/A'}</dd>
-                    <dt className="text-slate-500">Compound:</dt>
-                    <dd>{formData.address.compound || 'N/A'}</dd>
-                </dl>
-            </div>
-
-            <div className="bg-slate-50 p-3 rounded-md">
-                <h4 className="text-sm font-semibold mb-2">Facility</h4>
-                <div className="text-xs font-medium text-blue-600">
-                    {facilities.find(f => f.code === formData.facility)?.name || formData.facility || 'Not selected'}
-                </div>
-            </div>
-
-            <div className="bg-slate-50 p-3 rounded-md">
-                <h4 className="text-sm font-semibold mb-2">Risk Assessment</h4>
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                    <dt className="text-slate-500">Pregnancies:</dt>
-                    <dd>{formData.riskAssessment.numberOfPregnancies || '0'}</dd>
-                    <dt className="text-slate-500">Deliveries:</dt>
-                    <dd>{formData.riskAssessment.numberOfDeliveries || '0'}</dd>
-                    <dt className="text-slate-500">HIV Status:</dt>
-                    <dd>{formData.riskAssessment.hivStatus || 'N/A'}</dd>
-                    <dt className="text-slate-500">Smoking:</dt>
-                    <dd>{formData.riskAssessment.smokingHistory || 'N/A'}</dd>
-                    {formData.riskAssessment.smokingHistory === 'yes' && (
-                        <>
-                            <dt className="text-slate-500">Smoking Type:</dt>
-                            <dd>{formData.riskAssessment.smokingType || 'N/A'}</dd>
-                        </>
+                    {facilityType && (
+                        <div className="text-xs text-slate-500 mt-1">
+                            Type: {facilityType}
+                        </div>
                     )}
-                    <dt className="text-slate-500">Alcohol:</dt>
-                    <dd>{formData.riskAssessment.alcoholUse || 'N/A'}</dd>
-                    <dt className="text-slate-500">Family Cancer History:</dt>
-                    <dd>{formData.riskAssessment.familyHistoryOfCancer || 'N/A'}</dd>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-md">
+                    <h4 className="text-sm font-semibold mb-2">Risk Assessment</h4>
+                    <div className="grid grid-cols-2 gap-1 text-xs">
+                        <dt className="text-slate-500">Pregnancies:</dt>
+                        <dd>{formData.riskAssessment.numberOfPregnancies || '0'}</dd>
+                        <dt className="text-slate-500">Deliveries:</dt>
+                        <dd>{formData.riskAssessment.numberOfDeliveries || '0'}</dd>
+                        <dt className="text-slate-500">HIV Status:</dt>
+                        <dd>{formData.riskAssessment.hivStatus || 'N/A'}</dd>
+                        <dt className="text-slate-500">Smoking:</dt>
+                        <dd>{formData.riskAssessment.smokingHistory || 'N/A'}</dd>
+                        {formData.riskAssessment.smokingHistory === 'yes' && (
+                            <>
+                                <dt className="text-slate-500">Smoking Type:</dt>
+                                <dd>{formData.riskAssessment.smokingType || 'N/A'}</dd>
+                            </>
+                        )}
+                        <dt className="text-slate-500">Alcohol:</dt>
+                        <dd>{formData.riskAssessment.alcoholUse || 'N/A'}</dd>
+                        <dt className="text-slate-500">Family Cancer History:</dt>
+                        <dd>{formData.riskAssessment.familyHistoryOfCancer || 'N/A'}</dd>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     // ============================================
     // MAIN RENDER

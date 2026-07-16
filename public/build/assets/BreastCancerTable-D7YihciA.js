@@ -1,0 +1,1 @@
+function e({screenings:e,pagination:t,onViewDetails:n,onPageChange:r,formatDate:i,getResultBadge:a,getStageColor:o}){}export{e as default};

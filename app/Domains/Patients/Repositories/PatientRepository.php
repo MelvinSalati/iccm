@@ -45,7 +45,7 @@ class PatientRepository implements PatientInterface
                     'marital_status' => $data['maritalStatus'] ?? null,
                     'nrc_number' => $data['nrcNumber'] ?? null,
                     'phone_number' => $data['phoneNumber'] ?? null,
-                    'facility' => $data['facility'] ?? null,
+                    'facility_id' => $data['facility'] ?? null,
                     'registered_at' => now(),
                     'is_active' => true,
                 ];

@@ -125,6 +125,9 @@ interface PageProps {
             id: string;
             name: string;
             email: string;
+            facility_id?: number;
+            district?: string;
+            province?: string;
         };
     };
 }
@@ -146,18 +149,13 @@ const AVAILABLE_TESTS: LabTest[] = [
 
 // Helper function to safely get order display number
 const getOrderDisplayNumber = (order: LabOrder): string => {
-    // Try order_number first
     if (order.order_number) {
         return order.order_number;
     }
-
-    // Fall back to id
     if (order.id) {
         const idStr = String(order.id);
         return idStr.length > 8 ? idStr.slice(0, 8) : idStr;
     }
-
-    // Ultimate fallback
     return 'N/A';
 };
 
@@ -203,7 +201,7 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
     );
 };
 
-// Results Display Component for inline results
+// Results Display Component - Fixed without usePage()
 const ResultsDisplay = ({ results }: { results: any[] }) => {
     const safeResults = getSafeResults(results);
 
@@ -215,8 +213,6 @@ const ResultsDisplay = ({ results }: { results: any[] }) => {
         );
     }
 
-    const props = usePage();
-    console.log(props);
     return (
         <div className="mt-2 space-y-2">
             <div className="text-xs font-medium text-slate-700 mb-1">Results:</div>
@@ -264,7 +260,7 @@ const ResultsDisplay = ({ results }: { results: any[] }) => {
 
 export default function Laboratory() {
     const { props } = usePage<PageProps>();
-    const { patient, labOrders = [], auth } = props;
+    const { patient, labOrders = [], auth, availableTests = [] } = props;
 
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -276,6 +272,10 @@ export default function Laboratory() {
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [periodFilter, setPeriodFilter] = useState<string>('all');
     const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+    // Get facility_id and user_id from auth
+    const facilityId = auth?.user?.facility_id || null;
+    const userId = auth?.user?.id || null;
 
     useEffect(() => {
         if (JSON.stringify(labOrders) !== JSON.stringify(ordersList)) {
@@ -409,7 +409,7 @@ export default function Laboratory() {
                 })),
                 priority: orderData.priority,
                 notes: orderData.notes,
-                ordered_by: auth.user.id,
+                ordered_by: userId,
                 ordered_at: new Date().toISOString(),
             };
 
@@ -426,7 +426,7 @@ export default function Laboratory() {
         } finally {
             setLoading(false);
         }
-    }, [patient.id, patient.patient_uuid, auth.user.id, fetchOrders]);
+    }, [patient.id, patient.patient_uuid, userId, fetchOrders]);
 
     const handleViewResults = (order: LabOrder) => {
         setSelectedOrder(order);
@@ -810,8 +810,9 @@ export default function Laboratory() {
                     availableTests={AVAILABLE_TESTS}
                     patientName={patient?.full_name}
                     patientId={patient?.id}
-                    facilityId={1}
-                    userId={parseInt(auth.user.id)}
+                    facilityId={facilityId}
+                    userId={userId ? parseInt(userId) : undefined}
+                    visitId={undefined}
                     loading={loading}
                 />
 

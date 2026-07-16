@@ -88,6 +88,10 @@ createInertiaApp({
                 return null;
             case name === 'patients/treatment':
                 return null;
+            case name === 'admin/admin-dashboard':
+                return null;
+            case name === 'admin/manage-facility':
+                return null;
             case name === 'dashboard':
                 return AppLayout;
             case name === 'patients/medications':

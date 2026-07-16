@@ -42,7 +42,7 @@ import {
     CalendarPlus,
     ChevronDown,
     AlertCircle,
-    Pencil
+    Pencil, Building
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
@@ -164,7 +164,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
         }
     }, [appointment]);
 
-    // Reset editing state when modal closes
     useEffect(() => {
         if (!isOpen) {
             setIsEditing(false);
@@ -244,7 +243,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
 
     return (
         <>
-            {/* Overlay with solid background */}
             <div
                 className="fixed inset-0 z-50 bg-black/50"
                 onClick={() => { setIsEditing(false); onClose(); }}
@@ -312,7 +310,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                             </div>
                         </div>
 
-                        {/* Status and priority in header */}
                         <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-200">
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-slate-500">Status:</span>
@@ -341,7 +338,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
 
                     {/* Body - Two Column Layout */}
                     <div className="p-4 flex-1 overflow-y-auto">
-                        {/* Quick Action: Patient Showed Up - Full Width */}
                         {formData.status !== 'completed' && formData.status !== 'cancelled' && formData.status !== 'no-show' && (
                             <div className="mb-3 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -360,11 +356,9 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                             </div>
                         )}
 
-                        {/* Two Column Grid */}
                         <div className="grid grid-cols-2 gap-4">
                             {/* Left Column */}
                             <div className="space-y-3">
-                                {/* Status Dropdown */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <Activity className="h-3 w-3" />
@@ -395,7 +389,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                                     )}
                                 </div>
 
-                                {/* Date */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <Calendar className="h-3 w-3" />
@@ -406,7 +399,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                                     </p>
                                 </div>
 
-                                {/* Time */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <Clock className="h-3 w-3" />
@@ -415,7 +407,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                                     <p className="mt-1 text-sm font-medium text-slate-900">{appointment.time || '—'}</p>
                                 </div>
 
-                                {/* Type */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <Stethoscope className="h-3 w-3" />
@@ -424,7 +415,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                                     <p className="mt-1 text-sm font-medium text-slate-900">{appointment.type || '—'}</p>
                                 </div>
 
-                                {/* Doctor */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <User className="h-3 w-3" />
@@ -443,7 +433,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                                     )}
                                 </div>
 
-                                {/* Facility */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <MapPin className="h-3 w-3" />
@@ -455,7 +444,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
 
                             {/* Right Column */}
                             <div className="space-y-3">
-                                {/* Reason for Appointment */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <ClipboardCheck className="h-3 w-3" />
@@ -481,7 +469,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                                     )}
                                 </div>
 
-                                {/* Appointment Notes */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <FileText className="h-3 w-3" />
@@ -507,7 +494,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                                     )}
                                 </div>
 
-                                {/* Review Notes */}
                                 <div>
                                     <label className="text-xs font-medium text-slate-700 flex items-center gap-1">
                                         <FileText className="h-3 w-3" />
@@ -533,7 +519,6 @@ function AppointmentDetailsModal({ appointment, isOpen, onClose, onUpdate }: App
                                     )}
                                 </div>
 
-                                {/* Follow-up Section */}
                                 <div className="border-t border-slate-200 pt-2">
                                     <div className="flex items-center gap-2 mb-1">
                                         <input
@@ -692,7 +677,9 @@ const statuses = [
 ];
 
 export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }: AppointmentModalProps) {
-    const { sharedData } = usePage().props;
+    const { props } = usePage();
+    const { auth } = props as any;
+    const { sharedData } = props as any;
 
     const [formData, setFormData] = useState({
         appointment_date: '',
@@ -708,7 +695,11 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
         reason: '',
         appointment_status: 'Scheduled',
         visit_id: visitId || null,
+        facility_id: null,
     });
+
+    // Get facility_id from auth user
+    const facilityId = auth?.user?.facility_id || null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -732,7 +723,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
             reason: formData.reason || null,
             notes: formData.notes || null,
             duration_minutes: formData.duration_minutes || 30,
-            facility_id: null,
+            facility_id: facilityId, // From auth user
             provider_id: null,
             province_code: null,
             district_code: null,
@@ -767,6 +758,7 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
             reason: '',
             appointment_status: 'Scheduled',
             visit_id: visitId || null,
+            facility_id: facilityId,
         });
     };
 
@@ -822,6 +814,14 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
                                     </div>
                                 )}
                             </div>
+
+                            {/* Facility ID Display */}
+                            {facilityId && (
+                                <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                                    <Building className="h-4 w-4 text-blue-500" />
+                                    <span className="text-xs text-blue-700">Facility ID: {facilityId}</span>
+                                </div>
+                            )}
 
                             {/* Date & Time */}
                             <div className="grid grid-cols-2 gap-4">
@@ -1012,6 +1012,12 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
                                     <span className="font-medium text-slate-700">Visit:</span> #{visitId}
                                 </>
                             )}
+                            {facilityId && (
+                                <>
+                                    <span className="mx-2 text-slate-300">·</span>
+                                    <span className="font-medium text-slate-700">Facility:</span> {facilityId}
+                                </>
+                            )}
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                             <button
@@ -1042,12 +1048,17 @@ export function AppointmentModal({ isOpen, onClose, onSubmit, patient, visitId }
 
 // Main Appointment Table Component
 export default function AppointmentTable({ appointments = [] }: AppointmentTableProps) {
+    const { props } = usePage();
+    const { auth } = props as any;
     const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const itemsPerPage = 10;
+
+    // Get facility_id from auth user
+    const facilityId = auth?.user?.facility_id || null;
 
     // Filter appointments based on period and search
     const filteredAppointments = useMemo(() => {
@@ -1057,7 +1068,6 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
 
         let filtered = [...appointments];
 
-        // Period filter
         const now = new Date();
         filtered = filtered.filter(app => {
             try {
@@ -1078,7 +1088,6 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
             }
         });
 
-        // Search filter
         if (searchTerm.trim()) {
             const term = searchTerm.toLowerCase().trim();
             filtered = filtered.filter(app =>
@@ -1090,7 +1099,6 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
             );
         }
 
-        // Sort by date (newest first)
         filtered.sort((a, b) => {
             try {
                 const dateA = new Date(`${a.date}T${a.time}`);
@@ -1104,7 +1112,6 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
         return filtered;
     }, [appointments, filterPeriod, searchTerm]);
 
-    // Pagination
     const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
     const paginatedAppointments = useMemo(() => {
         if (filteredAppointments.length === 0) return [];
@@ -1122,12 +1129,11 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
         setIsDetailsModalOpen(true);
     };
 
-    // Update appointment using Axios with /api/v1 prefix
     const handleUpdateAppointment = async (data: any) => {
         try {
             const response = await axios.post(`/api/v1/appointments/${data.id}`, {
                 ...data,
-                _method: 'PUT' // Laravel method spoofing
+                _method: 'PUT'
             }, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -1138,7 +1144,6 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
 
             if (response.data.success) {
                 Notiflix.Notify.success('Appointment updated successfully');
-                // Refresh the page to show updated data
                 window.location.reload();
                 return response.data;
             } else {
@@ -1152,7 +1157,6 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
         }
     };
 
-    // Reset to first page when filter or search changes
     useEffect(() => {
         setCurrentPage(1);
     }, [filterPeriod, searchTerm]);
@@ -1210,6 +1214,14 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
                     <User className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 </div>
             </div>
+
+            {/* Facility ID Display */}
+            {facilityId && (
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Building className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Facility: {facilityId}</span>
+                </div>
+            )}
 
             {/* Results count */}
             <div className="text-xs text-slate-500">
@@ -1283,8 +1295,7 @@ export default function AppointmentTable({ appointments = [] }: AppointmentTable
                                         </TableCell>
                                         <TableCell>
                                             <span className="text-xs text-slate-700 truncate block max-w-[100px]">
-                                                {appointment.doctor_name || '—'}
-                                            </span>
+                                                {appointment.doctor_name || '—'}</span>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-0.5">

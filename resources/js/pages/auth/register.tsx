@@ -24,24 +24,10 @@ type Props = {
     passwordRules: string;
 };
 
-interface Province {
-    id: number;
-    name: string;
-    code: string;
-}
-
-interface District {
-    id: number;
-    name: string;
-    province_id: number;
-    code: string;
-}
-
 interface Facility {
     id: number;
     name: string;
     type: string;
-    district_id: number;
     code: string;
 }
 
@@ -58,94 +44,32 @@ export default function Register({ passwordRules }: Props) {
         password: '',
         password_confirmation: '',
         role_id: '',
-        province_code: '',
-        district_code: '',
-        facility_code: '',
+        facility_id: '',
         employee_id: '',
         job_title: '',
         terms: false,
     });
 
-    // Location state
-    const [provinces, setProvinces] = useState<Province[]>([]);
-    const [districts, setDistricts] = useState<District[]>([]);
+    // Add activeTab state
+    const [activeTab, setActiveTab] = useState<string>('personal');
+
+    // Facility state
     const [facilities, setFacilities] = useState<Facility[]>([]);
     const [loading, setLoading] = useState({
-        provinces: false,
-        districts: false,
         facilities: false
     });
 
-    const [selectedProvince, setSelectedProvince] = useState<string>('');
-    const [selectedDistrict, setSelectedDistrict] = useState<string>('');
     const [selectedFacility, setSelectedFacility] = useState<string>('');
-    const [activeTab, setActiveTab] = useState<string>('personal');
 
-    // Fetch provinces on mount
+    // Fetch facilities on mount
     useEffect(() => {
-        fetchProvinces();
+        fetchFacilities();
     }, []);
 
-    // Fetch districts when province changes
-    useEffect(() => {
-        if (selectedProvince) {
-            const province = provinces.find(p => p.code === selectedProvince);
-            if (province) {
-                fetchDistricts(province.id);
-                setSelectedDistrict('');
-                setSelectedFacility('');
-                setData('district_code', '');
-                setData('facility_code', '');
-                setFacilities([]);
-            }
-        }
-    }, [selectedProvince]);
-
-    // Fetch facilities when district changes
-    useEffect(() => {
-        if (selectedDistrict) {
-            const district = districts.find(d => d.code === selectedDistrict);
-            if (district) {
-                fetchFacilities(district.id);
-                setSelectedFacility('');
-                setData('facility_code', '');
-            }
-        }
-    }, [selectedDistrict]);
-
-    const fetchProvinces = async () => {
-        setLoading(prev => ({ ...prev, provinces: true }));
-        try {
-            const response = await Http.get('/locations/provinces');
-            setProvinces(response.data);
-        } catch (error) {
-            console.error('Error fetching provinces:', error);
-        } finally {
-            setLoading(prev => ({ ...prev, provinces: false }));
-        }
-    };
-
-    const fetchDistricts = async (provinceId: number) => {
-        setLoading(prev => ({ ...prev, districts: true }));
-        try {
-            const response = await Http.get(`/locations/districts?province_id=${provinceId}`);
-            // Ensure districts have codes
-            const districtsWithCode = response.data.map((d: any) => ({
-                ...d,
-                code: d.code || d.name.toLowerCase().replace(/\s+/g, '_')
-            }));
-            setDistricts(districtsWithCode);
-        } catch (error) {
-            console.error('Error fetching districts:', error);
-        } finally {
-            setLoading(prev => ({ ...prev, districts: false }));
-        }
-    };
-
-    const fetchFacilities = async (districtId: number) => {
+    const fetchFacilities = async () => {
         setLoading(prev => ({ ...prev, facilities: true }));
         try {
-            const response = await Http.get(`/locations/facilities?district_id=${districtId}`);
+            const response = await Http.get('/locations/enrolled-facilities');
             // Ensure facilities have codes
             const facilitiesWithCode = response.data.map((f: any) => ({
                 ...f,
@@ -167,6 +91,19 @@ export default function Register({ passwordRules }: Props) {
             },
         });
     };
+
+    console.log(facilities)
+    const ROLE_IDS = {
+        ADMINISTRATOR: 1,
+        CHW: 2,
+        NURSE: 3,
+        CLINICIAN: 4,
+        COUNSELLOR: 5,
+        WARD_CLERK: 6,
+        FACILITY_MANAGER: 7,
+        DHO: 8,
+        MEL_OFFICER: 9,
+    } as const;
 
     return (
         <>
@@ -336,8 +273,6 @@ export default function Register({ passwordRules }: Props) {
                                                         <SelectContent>
                                                             <SelectItem value="Male">Male</SelectItem>
                                                             <SelectItem value="Female">Female</SelectItem>
-                                                            <SelectItem value="Other">Other</SelectItem>
-                                                            <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     <InputError message={errors.gender} className="text-xs" />
@@ -378,15 +313,15 @@ export default function Register({ passwordRules }: Props) {
                                                             <SelectValue placeholder="Select role" />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="1">Administrator</SelectItem>
-                                                            <SelectItem value="2">CHW</SelectItem>
-                                                            <SelectItem value="3">Nurse/Midwife</SelectItem>
-                                                            <SelectItem value="4">Clinician</SelectItem>
-                                                            <SelectItem value="5">Counsellor</SelectItem>
-                                                            <SelectItem value="6">Ward Clerk</SelectItem>
-                                                            <SelectItem value="7">Facility Manager</SelectItem>
-                                                            <SelectItem value="8">DHO</SelectItem>
-                                                            <SelectItem value="9">MEL Officer</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.ADMINISTRATOR)}>Administrator</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.CHW)}>CHW</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.NURSE)}>Nurse/Midwife</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.CLINICIAN)}>Clinician</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.COUNSELLOR)}>Counsellor</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.WARD_CLERK)}>Ward Clerk</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.FACILITY_MANAGER)}>Facility Manager</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.DHO)}>DHO</SelectItem>
+                                                            <SelectItem value={String(ROLE_IDS.MEL_OFFICER)}>MEL Officer</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     <InputError message={errors.role_id} className="text-xs" />
@@ -426,74 +361,8 @@ export default function Register({ passwordRules }: Props) {
                                                     <InputError message={errors.job_title} className="text-xs" />
                                                 </div>
 
-                                                <div className="space-y-1">
-                                                    <Label htmlFor="province_code" className="text-sm font-medium text-gray-700">
-                                                        Province <span className="text-red-500">*</span>
-                                                    </Label>
-                                                    <Select
-                                                        value={selectedProvince}
-                                                        onValueChange={(value) => {
-                                                            setSelectedProvince(value);
-                                                            setSelectedDistrict('');
-                                                            setSelectedFacility('');
-                                                            setData('province_code', value);
-                                                            setData('district_code', '');
-                                                            setData('facility_code', '');
-                                                            setFacilities([]);
-                                                        }}
-                                                        disabled={loading.provinces}
-                                                    >
-                                                        <SelectTrigger id="province_code" tabIndex={11} className="h-9 text-sm">
-                                                            <SelectValue placeholder={loading.provinces ? "Loading..." : "Select province"} />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {provinces.map((province) => (
-                                                                <SelectItem key={province.code} value={province.code}>
-                                                                    {province.name} ({province.code})
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <InputError message={errors.province_code} className="text-xs" />
-                                                </div>
-
-                                                <div className="space-y-1">
-                                                    <Label htmlFor="district_code" className="text-sm font-medium text-gray-700">
-                                                        District <span className="text-red-500">*</span>
-                                                    </Label>
-                                                    <Select
-                                                        value={selectedDistrict}
-                                                        onValueChange={(value) => {
-                                                            setSelectedDistrict(value);
-                                                            setSelectedFacility('');
-                                                            setData('district_code', value);
-                                                            setData('facility_code', '');
-                                                            setFacilities([]);
-                                                        }}
-                                                        disabled={!selectedProvince || loading.districts}
-                                                    >
-                                                        <SelectTrigger id="district_code" tabIndex={12} className="h-9 text-sm">
-                                                            <SelectValue placeholder={
-                                                                !selectedProvince ? "Select province first" :
-                                                                    loading.districts ? "Loading..." :
-                                                                        "Select district"
-                                                            } />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {districts.map((district) => (
-                                                                <SelectItem key={district.code} value={district.code}>
-                                                                    {district.name}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <InputError message={errors.district_code} className="text-xs" />
-                                                    {selectedProvince && districts.length === 0 && !loading.districts && (
-                                                        <p className="text-xs text-amber-600 mt-1">No districts found for this province</p>
-                                                    )}
-                                                </div>
-
-                                                <div className="space-y-1">
+                                                {/* Facility Selection - Only facility dropdown */}
+                                                <div className="space-y-1 md:col-span-3">
                                                     <Label htmlFor="facility_code" className="text-sm font-medium text-gray-700">
                                                         Facility <span className="text-red-500">*</span>
                                                     </Label>
@@ -501,29 +370,27 @@ export default function Register({ passwordRules }: Props) {
                                                         value={selectedFacility}
                                                         onValueChange={(value) => {
                                                             setSelectedFacility(value);
-                                                            setData('facility_code', value);
+                                                            setData('facility_id', value);
+                                                            console.log(facility_code)
                                                         }}
-                                                        disabled={!selectedDistrict || loading.facilities}
+                                                        disabled={loading.facilities}
                                                     >
-                                                        <SelectTrigger id="facility_code" tabIndex={13} className="h-9 text-sm">
-                                                            <SelectValue placeholder={
-                                                                !selectedDistrict ? "Select district first" :
-                                                                    loading.facilities ? "Loading..." :
-                                                                        "Select facility"
-                                                            } />
+                                                        <SelectTrigger id="facility_code" tabIndex={11} className="h-9 text-sm">
+                                                            <SelectValue placeholder={loading.facilities ? "Loading facilities..." : "Select enrolled facility"} />
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             {facilities.map((facility) => (
-                                                                <SelectItem key={facility.code} value={facility.code}>
-                                                                    {facility.name} ({facility.type})
+                                                                <SelectItem key={facility.id} value={facility.id}>
+                                                                    {facility.name} {facility.type && `(${facility.type})`}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
                                                     <InputError message={errors.facility_code} className="text-xs" />
-                                                    {selectedDistrict && facilities.length === 0 && !loading.facilities && (
-                                                        <p className="text-xs text-amber-600 mt-1">No facilities found for this district</p>
+                                                    {facilities.length === 0 && !loading.facilities && (
+                                                        <p className="text-xs text-amber-600 mt-1">No enrolled facilities found</p>
                                                     )}
+                                                    <p className="text-xs text-gray-400">Select your enrolled facility from the list above</p>
                                                 </div>
                                             </div>
                                         </TabsContent>
@@ -539,7 +406,7 @@ export default function Register({ passwordRules }: Props) {
                                                         id="username"
                                                         type="text"
                                                         required
-                                                        tabIndex={14}
+                                                        tabIndex={12}
                                                         autoComplete="username"
                                                         name="username"
                                                         placeholder="johndoe"
@@ -558,7 +425,7 @@ export default function Register({ passwordRules }: Props) {
                                                     <PasswordInput
                                                         id="password"
                                                         required
-                                                        tabIndex={15}
+                                                        tabIndex={13}
                                                         autoComplete="new-password"
                                                         name="password"
                                                         placeholder="Enter password"
@@ -577,7 +444,7 @@ export default function Register({ passwordRules }: Props) {
                                                     <PasswordInput
                                                         id="password_confirmation"
                                                         required
-                                                        tabIndex={16}
+                                                        tabIndex={14}
                                                         autoComplete="new-password"
                                                         name="password_confirmation"
                                                         placeholder="Confirm password"
@@ -594,7 +461,7 @@ export default function Register({ passwordRules }: Props) {
                                                         <input
                                                             type="checkbox"
                                                             id="terms"
-                                                            tabIndex={17}
+                                                            tabIndex={15}
                                                             checked={data.terms}
                                                             onChange={(e) => setData('terms', e.target.checked)}
                                                             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0 cursor-pointer"
@@ -632,7 +499,7 @@ export default function Register({ passwordRules }: Props) {
                                                         setActiveTab(tabs[currentIndex - 1]);
                                                     }
                                                 }}
-                                                tabIndex={18}
+                                                tabIndex={16}
                                                 className="px-6 py-1.5 h-9 text-sm"
                                             >
                                                 ← Previous
@@ -650,7 +517,7 @@ export default function Register({ passwordRules }: Props) {
                                                             setActiveTab(tabs[currentIndex + 1]);
                                                         }
                                                     }}
-                                                    tabIndex={19}
+                                                    tabIndex={17}
                                                     className="px-6 py-1.5 h-9 text-sm"
                                                 >
                                                     Next →
@@ -658,7 +525,7 @@ export default function Register({ passwordRules }: Props) {
                                             ) : (
                                                 <Button
                                                     type="submit"
-                                                    tabIndex={20}
+                                                    tabIndex={18}
                                                     data-test="register-user-button"
                                                     disabled={processing}
                                                     className="px-8 py-1.5 h-9 text-sm min-w-[140px]"
@@ -673,7 +540,7 @@ export default function Register({ passwordRules }: Props) {
                                     {/* Login Link */}
                                     <div className="text-center text-sm text-gray-500 mt-4 pt-3 border-t border-gray-200">
                                         Already have an account?{' '}
-                                        <TextLink href={login()} tabIndex={21} className="font-medium text-blue-600 hover:underline">
+                                        <TextLink href={login()} tabIndex={19} className="font-medium text-blue-600 hover:underline">
                                             Log in
                                         </TextLink>
                                     </div>

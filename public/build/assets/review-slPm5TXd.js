@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-Bt-cYkS5.js";import{i as t}from"./app-0etwlUJi.js";var n=e();function r(){return(0,n.jsx)(t,{children:(0,n.jsx)(`h1`,{children:`Mortality Review`})})}export{r as default};

@@ -8,7 +8,8 @@ export default function AppLayout({
                                       children,
                                       notifications,
                                       isPatientView,
-                                      patient
+                                      patient,
+                                      admin
                                   }: {
     breadcrumbs?: BreadcrumbItem[],
     children: React.ReactNode,
@@ -17,7 +18,7 @@ export default function AppLayout({
 }) {
 
     return (
-        <AppLayoutTemplate breadcrumbs={breadcrumbs} patient={patient} isPatientView={isPatientView} notifications={notifications}>
+        <AppLayoutTemplate breadcrumbs={breadcrumbs} patient={patient} isPatientView={isPatientView} notifications={notifications} admin={admin}>
             {children}
         </AppLayoutTemplate>
     );

@@ -1,3 +1,4 @@
+import Admin from './Admin'
 import Pathology from './Pathology'
 import IntegratedScreeningController from './IntegratedScreeningController'
 import VitalsController from './VitalsController'
@@ -9,7 +10,8 @@ import Consultancies from './Consultancies'
 import BreastCancerController from './BreastCancerController'
 import Settings from './Settings'
 const Controllers = {
-    Pathology: Object.assign(Pathology, Pathology),
+    Admin: Object.assign(Admin, Admin),
+Pathology: Object.assign(Pathology, Pathology),
 IntegratedScreeningController: Object.assign(IntegratedScreeningController, IntegratedScreeningController),
 VitalsController: Object.assign(VitalsController, VitalsController),
 CommunityOutreachController: Object.assign(CommunityOutreachController, CommunityOutreachController),

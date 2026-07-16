@@ -21,6 +21,7 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        Log::info([$input]);
         // Log the incoming data for debugging
         Log::info('Registration data received:', $input);
 
@@ -43,11 +44,6 @@ class CreateNewUser implements CreatesNewUsers
             'employee_id' => ['nullable', 'string', 'max:50'],
             'job_title' => ['nullable', 'string', 'max:255'],
 
-            // Location
-            'province_code' => ['nullable', 'string'],
-            'district_code' => ['nullable', 'string'],
-            'facility_code' => ['nullable', 'string'],
-
             // Security
             'password' => ['required', 'string', new Password, 'confirmed'],
             'password_confirmation' => ['required', 'same:password'],
@@ -60,9 +56,7 @@ class CreateNewUser implements CreatesNewUsers
         }
 
         // Get location IDs
-        $provinceId = $this->getProvinceId($input['province_code'] ?? null);
-        $districtId = $this->getDistrictId($input['district_code'] ?? null);
-        $facilityId = $this->getFacilityId($input['facility_code'] ?? null);
+
 
         // Prepare user data
         $userData = [
@@ -85,9 +79,7 @@ class CreateNewUser implements CreatesNewUsers
             'designation' => $input['job_title'] ?? null,
 
             // Location fields
-            'province_id' => $provinceId,
-            'district_id' => $districtId,
-            'facility_id' => $facilityId,
+            'facility_id' => $input['facility_id'] ?? null,
 
             // Status
             'is_active' => true,

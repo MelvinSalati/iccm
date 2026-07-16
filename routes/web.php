@@ -39,6 +39,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ]);
     })->name('dashboard');
 
+    Route::get('/admin',function(){
+        return Inertia::render('admin/admin-dashboard');
+    });
     /*
     |--------------------------------------------------------------------------
     | Patient
@@ -201,3 +204,4 @@ Route::get('/patients/search', [BreastCancerController::class, 'searchPatients']
     ->name('patients.search');
 require __DIR__.'/settings.php';
 require __DIR__.'/Patient.php';
+require __DIR__.'/admin.php';

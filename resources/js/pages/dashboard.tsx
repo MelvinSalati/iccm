@@ -449,7 +449,7 @@ const KPICard: React.FC<{ kpi: KPI }> = ({ kpi }) => {
 // ============================================================================
 
 export default function Dashboard() {
-    const { props } = usePage<PageProps>();
+    const { props } = usePage();
 
     // Log props for debugging
     console.log('📊 Full Props:', props);

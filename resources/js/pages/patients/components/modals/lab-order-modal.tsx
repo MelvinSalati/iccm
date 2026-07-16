@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { usePage } from '@inertiajs/react';
 import {
     Search,
     X,
@@ -11,9 +12,11 @@ import {
     Clock,
     AlertCircle,
     CheckCircle,
-    XCircle
+    Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Http from '@/utils/Http';
+import Notiflix from 'notiflix';
 
 // Types aligned with laboratory_orders table
 interface LabTest {
@@ -31,13 +34,13 @@ interface LabTest {
 interface LabOrderModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: any) => Promise<void> | void;
+    onSubmit: (data: any) => Promise<any> | void;
     availableTests: LabTest[];
     patientName?: string;
     patientId?: number;
     facilityId?: number;
     userId?: number;
-    visitId?: string; // Added visitId
+    visitId?: string;
     loading?: boolean;
 }
 
@@ -48,11 +51,14 @@ export function LabOrderModal({
                                   availableTests = [],
                                   patientName = 'Patient',
                                   patientId,
-                                  facilityId,
-                                  userId,
+                                  facilityId: propFacilityId,
+                                  userId: propUserId,
                                   visitId,
                                   loading = false
                               }: LabOrderModalProps) {
+    const { props } = usePage();
+    const { auth } = props as any;
+
     const [selectedTests, setSelectedTests] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -68,6 +74,13 @@ export function LabOrderModal({
 
     const pageSize = 5;
     const categories = ['All', ...new Set(availableTests.map(t => t.test_category))];
+
+    // Get facility_id and user_id from auth user
+    const authUser = auth?.user;
+    const facilityId = authUser?.facility_id || propFacilityId || null;
+    const userId = authUser?.id || propUserId || null;
+    const userDistrict = authUser?.district || null;
+    const userProvince = authUser?.province || null;
 
     // Generate UUID for the order
     useEffect(() => {
@@ -102,43 +115,49 @@ export function LabOrderModal({
         if (error) setError(null);
     };
 
-    // In lab-order-modal.tsx - Update the handleSubmit function
-
     const handleSubmit = async () => {
+        // Validate selections
         if (selectedTests.length === 0) {
             setError('Please select at least one test');
+            Notiflix.Notify.warning('Please select at least one test');
             return;
         }
 
         if (!patientId) {
             setError('Patient ID is required');
+            Notiflix.Notify.warning('Patient ID is required');
             return;
         }
 
         if (!facilityId) {
-            setError('Facility ID is required');
+            setError('Facility ID is required. Please ensure you are logged in.');
+            Notiflix.Notify.warning('Facility ID is required');
             return;
         }
 
         if (!userId) {
             setError('User ID is required');
+            Notiflix.Notify.warning('User ID is required');
             return;
         }
 
-        // Prepare data matching laboratory_orders table structure
+        const selectedTestObjects = getSelectedTestObjects();
+
+        // Prepare data - matches LaboratoryController expectations
         const orderData = {
             laboratory_uuid: generatedUUID,
             patient_id: patientId,
             facility_id: facilityId,
             ordered_by: userId,
-            visit_id: visitId,
+            visit_id: visitId || null,
             test_ids: selectedTests,
             status: 'pending',
             comment: formData.notes || null,
             priority: formData.priority,
-            tests: getSelectedTestObjects(),
             test_count: selectedTests.length,
-            test_names: getSelectedTestObjects().map(t => t.test_name).join(', ')
+            test_names: selectedTestObjects.map(t => t.test_name).join(', '),
+            // Include tests array for reference
+            tests: selectedTestObjects
         };
 
         console.log('Submitting order data:', orderData);
@@ -146,15 +165,27 @@ export function LabOrderModal({
         try {
             setIsSubmitting(true);
             setError(null);
-            await onSubmit(orderData);
+
+            // Submit the order - backend will handle event dispatch
+            const result = await onSubmit(orderData);
+
+            // Check if the result indicates success
+            if (result?.success === false) {
+                throw new Error(result.message || 'Failed to create order');
+            }
+
+            Notiflix.Notify.success(`Lab order created successfully with ${selectedTests.length} test(s)`);
             onClose();
         } catch (err: any) {
             console.error('Order submission error:', err);
-            setError(err.message || 'Failed to create order. Please try again.');
+            const message = err.response?.data?.message || err.message || 'Failed to create order. Please try again.';
+            setError(message);
+            Notiflix.Notify.failure(message);
         } finally {
             setIsSubmitting(false);
         }
     };
+
     useEffect(() => {
         if (!isOpen) {
             setSelectedTests([]);
@@ -178,7 +209,7 @@ export function LabOrderModal({
             <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="relative w-full max-w-3xl bg-white rounded-lg shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                    {/* Header - Compact */}
+                    {/* Header */}
                     <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200">
                         <div className="flex items-center gap-1.5">
                             <TestTube className="h-3.5 w-3.5 text-slate-600" />
@@ -191,19 +222,25 @@ export function LabOrderModal({
                                     <span className="text-[10px] text-slate-500">Visit: #{visitId}</span>
                                 </>
                             )}
+                            {facilityId && (
+                                <>
+                                    <span className="text-[10px] text-slate-400">|</span>
+                                    <span className="text-[10px] text-slate-500">Facility: {facilityId}</span>
+                                </>
+                            )}
                         </div>
                         <button onClick={onClose} className="p-0.5 hover:bg-slate-200 rounded transition-colors">
                             <X className="h-3.5 w-3.5 text-slate-500" />
                         </button>
                     </div>
 
-                    {/* UUID Display - Compact */}
+                    {/* UUID Display */}
                     <div className="px-3 py-1 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
                         <span className="text-[10px] text-slate-500">Order #:</span>
                         <span className="text-[10px] font-mono font-medium text-slate-700">{generatedUUID || 'Generating...'}</span>
                     </div>
 
-                    {/* Error Display - Compact */}
+                    {/* Error Display */}
                     {error && (
                         <div className="px-3 py-1 bg-red-50 border-b border-red-200">
                             <p className="text-[10px] text-red-600 flex items-center gap-1">
@@ -213,11 +250,11 @@ export function LabOrderModal({
                         </div>
                     )}
 
-                    {/* Body - Compact */}
+                    {/* Body */}
                     <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
                         {/* Left - Test Selection */}
                         <div className="p-2 bg-slate-50/50">
-                            {/* Search & Filter - Compact */}
+                            {/* Search & Filter */}
                             <div className="flex gap-1.5 mb-1.5">
                                 <div className="flex-1 relative">
                                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
@@ -239,13 +276,13 @@ export function LabOrderModal({
                                 </select>
                             </div>
 
-                            {/* Selected count - Compact */}
+                            {/* Selected count */}
                             <div className="flex items-center justify-between mb-1">
                                 <span className="text-[10px] text-slate-500">{filteredTests.length} available</span>
                                 <span className="text-[10px] font-medium text-slate-700">{selectedTests.length} selected</span>
                             </div>
 
-                            {/* Test List - Compact */}
+                            {/* Test List */}
                             <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
                                 {paginatedTests.length === 0 ? (
                                     <div className="text-center py-3 text-xs text-slate-500">No tests found</div>
@@ -301,7 +338,7 @@ export function LabOrderModal({
                                 )}
                             </div>
 
-                            {/* Pagination - Compact */}
+                            {/* Pagination */}
                             {totalPages > 1 && (
                                 <div className="flex items-center justify-between pt-1 mt-1 border-t border-slate-200">
                                     <span className="text-[10px] text-slate-500">
@@ -327,7 +364,7 @@ export function LabOrderModal({
                             )}
                         </div>
 
-                        {/* Right - Order Details - Compact */}
+                        {/* Right - Order Details */}
                         <div className="p-2 bg-white">
                             {selectedTests.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-[180px] text-center">
@@ -337,7 +374,7 @@ export function LabOrderModal({
                                 </div>
                             ) : (
                                 <div className="space-y-1.5">
-                                    {/* Selected Tests Summary - Compact */}
+                                    {/* Selected Tests Summary */}
                                     <div className="pb-1 border-b border-slate-200">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
@@ -368,7 +405,7 @@ export function LabOrderModal({
                                         </div>
                                     </div>
 
-                                    {/* Visit ID Display - Compact */}
+                                    {/* Visit ID */}
                                     <div className="bg-slate-50 rounded px-2 py-1 border border-slate-200">
                                         <div className="flex items-center justify-between">
                                             <span className="text-[10px] text-slate-500">Visit ID</span>
@@ -376,7 +413,15 @@ export function LabOrderModal({
                                         </div>
                                     </div>
 
-                                    {/* Priority - Compact */}
+                                    {/* Facility ID */}
+                                    <div className="bg-slate-50 rounded px-2 py-1 border border-slate-200">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] text-slate-500">Facility</span>
+                                            <span className="text-xs font-medium text-slate-800">{facilityId || '—'}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Priority */}
                                     <div>
                                         <Label className="text-[10px] text-slate-500 font-medium">Priority</Label>
                                         <div className="flex gap-0.5 mt-0.5">
@@ -397,7 +442,7 @@ export function LabOrderModal({
                                         </div>
                                     </div>
 
-                                    {/* Comment - Compact */}
+                                    {/* Comment */}
                                     <div>
                                         <Label className="text-[10px] text-slate-500 font-medium">Comment</Label>
                                         <textarea
@@ -413,7 +458,7 @@ export function LabOrderModal({
                         </div>
                     </div>
 
-                    {/* Footer - Compact */}
+                    {/* Footer */}
                     <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 border-t border-slate-200">
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                             {selectedTests.length > 0 && (
@@ -432,6 +477,12 @@ export function LabOrderModal({
                                 <>
                                     <span className="text-slate-300">|</span>
                                     <span className="text-[9px] text-slate-400">Visit: {visitId}</span>
+                                </>
+                            )}
+                            {facilityId && (
+                                <>
+                                    <span className="text-slate-300">|</span>
+                                    <span className="text-[9px] text-slate-400">Facility: {facilityId}</span>
                                 </>
                             )}
                         </div>
@@ -455,7 +506,7 @@ export function LabOrderModal({
                             >
                                 {isSubmitting || loading ? (
                                     <>
-                                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                        <Loader2 className="h-3 w-3 animate-spin" />
                                         Ordering...
                                     </>
                                 ) : (

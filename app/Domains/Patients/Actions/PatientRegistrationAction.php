@@ -3,10 +3,12 @@
 namespace App\Domains\Patients\Actions;
 
 use App\Domains\Patients\Services\PatientService;
+use App\Jobs\ProcessEventData;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Jobs\RecalculateIndicators;
 
 class PatientRegistrationAction
 {
@@ -35,14 +37,18 @@ class PatientRegistrationAction
     {
         try {
             // Validate inputs first
-            $patientData = array_merge($data,[
+            $validatedData = self::validateInputs($data);
+
+            $patientData = array_merge($validatedData, [
                 'patient_uuid' => Str::uuid()
             ]);
-//            self::validateInputs($data);
 
             // Get the service and create patient
             $service = self::getService();
             $patient = $service->create($patientData);
+
+            // Dispatch event to event_data table via ProcessEventData queue
+            self::dispatchPatientRegistrationEvent($patient, $validatedData);
 
             return [
                 'success' => true,
@@ -79,6 +85,62 @@ class PatientRegistrationAction
     }
 
     /**
+     * Dispatch patient registration event to ProcessEventData queue.
+     *
+     * @param $patient
+     * @param array $data
+     * @return void
+     */
+    protected static function dispatchPatientRegistrationEvent($patient, array $data): void
+    {
+        try {
+            // Prepare event data
+            $eventData = [
+                'facility_id' => $data['facility_id'] ?? $data['facility'] ?? null,
+                'district' => $data['address']['district'] ?? null,
+                'province' => $data['address']['province'] ?? null,
+                'entity_id' => $patient->id,
+                'entity_type' => 'patient',
+                'entity_name' => ($data['firstName'] ?? '') . ' ' . ($data['lastName'] ?? ''),
+                'age' => isset($data['dateOfBirth']) ? now()->diffInYears($data['dateOfBirth']) : null,
+                'gender' => $data['gender'] ?? null,
+                'phone' => $data['phoneNumber'] ?? null,
+                'event_type' => 'patient_registration',
+                'event_date' => now()->toDateString(),
+                'payload' => [
+                    'patient_uuid' => $patient->uuid ?? null,
+                    'nrc' => $data['nrcNumber'] ?? null,
+                    'marital_status' => $data['maritalStatus'] ?? null,
+                    'address' => $data['address'] ?? null,
+                    'risk_assessment' => $data['riskAssessment'] ?? null,
+                ],
+                'risk_factors' => $data['riskAssessment'] ?? null,
+                'risk_level' => self::determineRiskLevel($data['riskAssessment'] ?? null),
+                'metadata' => [
+                    'registered_by' => $data['user_id'] ?? null,
+                    'registration_method' => $data['registration_method'] ?? 'manual',
+                    'source' => $data['source'] ?? 'web',
+                ],
+            ];
+
+            // Dispatch the job to the queue using ProcessEventData
+            ProcessEventData::dispatch($eventData, 'registration');
+
+            Log::info('Patient registration event dispatched to ProcessEventData', [
+                'patient_id' => $patient->id,
+                'event_type' => 'patient_registration',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to dispatch patient registration event to ProcessEventData', [
+                'patient_id' => $patient->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't throw - event dispatch failure shouldn't stop patient registration
+        }
+    }
+
+    /**
      * Validate patient registration inputs.
      *
      * @param array $patientData
@@ -110,8 +172,7 @@ class PatientRegistrationAction
 
             // Facility
             'facility' => 'required|string|max:255',
-
-            // Telecom
+            'facility_id' => 'nullable|exists:enrolled_facilities,id',
 
             // Risk Assessment
             'riskAssessment' => 'nullable|array',
@@ -148,6 +209,7 @@ class PatientRegistrationAction
             'address.district.required_with' => 'District is required',
             'user_id.required' => 'User ID is required',
             'user_id.exists' => 'Invalid user',
+            'facility_id.exists' => 'Invalid facility selected',
         ];
 
         $validator = Validator::make($patientData, $rules, $messages);
@@ -157,6 +219,66 @@ class PatientRegistrationAction
         }
 
         return $validator->validated();
+    }
+
+    /**
+     * Determine risk level based on risk assessment data.
+     *
+     * @param array|null $riskAssessment
+     * @return string|null
+     */
+    protected static function determineRiskLevel(?array $riskAssessment): ?string
+    {
+        if (!$riskAssessment) {
+            return null;
+        }
+
+        $highRiskFactors = 0;
+        $moderateRiskFactors = 0;
+
+        // High risk factors
+        $highRiskConditions = [
+            'hivStatus' => 'positive',
+            'hpvStatus' => 'positive',
+            'previousCervicalCancer' => 'yes',
+            'previousCINDiagnosis' => 'yes',
+        ];
+
+        // Moderate risk factors
+        $moderateRiskConditions = [
+            'smokingHistory' => 'yes',
+            'alcoholUse' => 'yes',
+            'familyHistoryOfCancer' => 'yes',
+            'longTermContraceptive' => 'yes',
+            'immunosuppression' => 'yes',
+        ];
+
+        // Count high risk factors
+        foreach ($highRiskConditions as $field => $value) {
+            if (isset($riskAssessment[$field]) && $riskAssessment[$field] === $value) {
+                $highRiskFactors++;
+            }
+        }
+
+        // Count moderate risk factors
+        foreach ($moderateRiskConditions as $field => $value) {
+            if (isset($riskAssessment[$field]) && $riskAssessment[$field] === $value) {
+                $moderateRiskFactors++;
+            }
+        }
+
+        // Determine overall risk level
+        if ($highRiskFactors >= 2) {
+            return 'critical';
+        } elseif ($highRiskFactors >= 1) {
+            return 'high';
+        } elseif ($moderateRiskFactors >= 2) {
+            return 'moderate';
+        } elseif ($moderateRiskFactors >= 1) {
+            return 'low';
+        }
+
+        return 'low';
     }
 
     /**
@@ -221,6 +343,7 @@ class PatientRegistrationAction
             'nrcNumber' => "nullable|string|max:50|unique:patients,nrc_number,{$patientId}",
             'phoneNumber' => 'nullable|string|max:20',
             'facility' => 'sometimes|string|max:255',
+            'facility_id' => 'nullable|exists:enrolled_facilities,id',
             'address.province' => 'nullable|string|max:255',
             'address.district' => 'nullable|string|max:255',
             'is_active' => 'sometimes|boolean',
@@ -251,6 +374,7 @@ class PatientRegistrationAction
             'nrcNumber' => 'nullable|string|max:50',
             'phoneNumber' => 'nullable|string|max:20',
             'facility' => 'required|string|max:255',
+            'facility_id' => 'nullable|exists:enrolled_facilities,id',
             'user_id' => 'required|exists:users,id',
         ];
     }
@@ -271,6 +395,7 @@ class PatientRegistrationAction
             'facility.required' => 'Facility is required',
             'user_id.required' => 'User ID is required',
             'user_id.exists' => 'Invalid user selected',
+            'facility_id.exists' => 'Invalid facility selected',
         ];
     }
 }

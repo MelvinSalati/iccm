@@ -64,35 +64,56 @@ class HandleInertiaRequests extends Middleware
             $startDate = Carbon::now()->subDays(7);
             $endDate = Carbon::now();
 
-            // Query screenings
-            $screenings = IntegratedScreening::whereBetween('created_at', [$startDate, $endDate]);
-            $patientRisks = PatientRiskFactor::whereBetween('created_at', [$startDate, $endDate]);
+            // Query screenings with eager loading for age groups
+            $screenings = IntegratedScreening::with(['patient'])
+                ->whereBetween('screening_date', [$startDate, $endDate])
+                ->get();
 
-            // Calculate KPIs
+            // Get patient IDs for risk factors
+            $patientIds = $screenings->pluck('patient_id')->unique()->filter();
+            $patientRisks = collect();
+
+            if ($patientIds->isNotEmpty()) {
+                $patientRisks = PatientRiskFactor::whereIn('patient_id', $patientIds)->get();
+            }
+
+            // ============ SCREENING COUNTS ============
             $screenedWomen = $screenings->count();
-            $hpvPositive = $screenings->where('screening_method', 'hpv_test')->where('screening_results', 'positive')->count();
-            $viaPositive = $screenings->where('screening_method', 'via')->where('screening_results', 'positive')->count();
-            $viaNegative = $screenings->where('screening_method', 'via')->where('screening_results', 'negative')->count();
-            $hpvNegative = $screenings->where('screening_method', 'hpv_test')->where('screening_results', 'negative')->count();
 
-            // Treatment and referral counts
-            $treatment = $screenings->whereIn('treatment_decision', ['thermal_ablation', 'cryotherapy'])->count();
+            // HPV Tests - using correct column names from v2_integrated_screenings
+            $hpvScreenings = $screenings->where('screening_method', 'hpv_test');
+            $hpvPositive = $hpvScreenings->where('screening_result', 'hpv_positive')->count();
+            $hpvNegative = $hpvScreenings->where('screening_result', 'negative')->count();
+
+            // VIA Tests
+            $viaScreenings = $screenings->where('screening_method', 'via');
+            $viaPositive = $viaScreenings->where('screening_result', 'via_positive')->count();
+            $viaNegative = $viaScreenings->where('screening_result', 'negative')->count();
+
+            // ============ TREATMENT & REFERRAL ============
+            $treatment = $screenings->whereIn('treatment_decision', ['thermal_ablation', 'cryotherapy', 'leep'])->count();
             $referral = $screenings->where('treatment_decision', 'referral')->count();
 
-            // HIV status from risk factors
+            // ============ HIV STATUS from risk factors ============
             $hivPositive = $patientRisks->where('hiv_status', 'positive')->count();
             $hivNegative = $patientRisks->where('hiv_status', 'negative')->count();
 
-            // Disability count
+            // ============ DISABILITY ============
             $disability = $patientRisks->where('has_disability', true)->count();
 
-            // Mortality count
-            $mortality = 0; // Adjust based on your schema
+            // ============ MORTALITY ============
+            $mortality = 0;
 
-            // Get weekly trends
+            // ============ WEEKLY TRENDS ============
             $weeklyTrends = $this->getWeeklyTrends();
 
-            // Get KPI data with icons as strings
+            // ============ AGE GROUPS ============
+            $ageGroups = $this->getAgeGroups($screenings);
+
+            // ============ FACILITY STATS ============
+            $facilityStats = $this->getFacilityStats($startDate, $endDate);
+
+            // ============ KPIS ============
             $kpis = $this->getKPIData([
                 'screenedWomen' => $screenedWomen,
                 'hpvPositive' => $hpvPositive,
@@ -103,45 +124,17 @@ class HandleInertiaRequests extends Middleware
                 'mortality' => $mortality,
             ]);
 
-            // Get HIV disaggregation
-            $hivDisaggregation = [
-                [
-                    'name' => 'HIV Positive',
-                    'value' => $hivPositive,
-                    'color' => '#EF4444'
-                ],
-                [
-                    'name' => 'HIV Negative',
-                    'value' => $hivNegative,
-                    'color' => '#22C55E'
-                ],
-            ];
-
-            // Get disability disaggregation
-            $disabilityDisaggregation = [
-                [
-                    'name' => 'No Disability',
-                    'value' => $patientRisks->where('has_disability', false)->count(),
-                    'color' => '#22C55E'
-                ],
-                [
-                    'name' => 'With Disability',
-                    'value' => $disability,
-                    'color' => '#F59E0B'
-                ],
-            ];
-
-            // Get age groups
-            $ageGroups = $this->getAgeGroups($screenings);
-
-            // Get facility stats
-            $facilityStats = $this->getFacilityStats($startDate, $endDate);
-
             return [
                 'kpis' => $kpis,
                 'weeklyTrends' => $weeklyTrends,
-                'hivDisaggregation' => $hivDisaggregation,
-                'disabilityDisaggregation' => $disabilityDisaggregation,
+                'hivDisaggregation' => [
+                    ['name' => 'HIV Positive', 'value' => $hivPositive, 'color' => '#EF4444'],
+                    ['name' => 'HIV Negative', 'value' => $hivNegative, 'color' => '#22C55E'],
+                ],
+                'disabilityDisaggregation' => [
+                    ['name' => 'No Disability', 'value' => max(0, $patientRisks->count() - $disability), 'color' => '#22C55E'],
+                    ['name' => 'With Disability', 'value' => $disability, 'color' => '#F59E0B'],
+                ],
                 'ageGroups' => $ageGroups,
                 'metadata' => [
                     'lastSync' => Carbon::now()->toISOString(),
@@ -154,9 +147,9 @@ class HandleInertiaRequests extends Middleware
                 'aggregates' => [
                     'total_screened' => $screenedWomen,
                     'hpv_positive' => $hpvPositive,
+                    'hpv_negative' => $hpvNegative,
                     'via_positive' => $viaPositive,
                     'via_negative' => $viaNegative,
-                    'hpv_negative' => $hpvNegative,
                     'treatment' => $treatment,
                     'referral' => $referral,
                     'hiv_positive' => $hivPositive,
@@ -167,7 +160,11 @@ class HandleInertiaRequests extends Middleware
             ];
 
         } catch (\Exception $e) {
-            // Return empty data on error
+            \Log::error('Dashboard error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
             return [
                 'kpis' => [],
                 'weeklyTrends' => [],
@@ -185,9 +182,9 @@ class HandleInertiaRequests extends Middleware
                 'aggregates' => [
                     'total_screened' => 0,
                     'hpv_positive' => 0,
+                    'hpv_negative' => 0,
                     'via_positive' => 0,
                     'via_negative' => 0,
-                    'hpv_negative' => 0,
                     'treatment' => 0,
                     'referral' => 0,
                     'hiv_positive' => 0,
@@ -204,31 +201,36 @@ class HandleInertiaRequests extends Middleware
      */
     private function getWeeklyTrends(): array
     {
-        $trends = [];
+        try {
+            $trends = [];
 
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
-            $dayStart = $date->copy()->startOfDay();
-            $dayEnd = $date->copy()->endOfDay();
+            for ($i = 6; $i >= 0; $i--) {
+                $date = Carbon::now()->subDays($i);
+                $dayStart = $date->copy()->startOfDay();
+                $dayEnd = $date->copy()->endOfDay();
 
-            $dayScreenings = IntegratedScreening::whereBetween('created_at', [$dayStart, $dayEnd]);
+                $dayScreenings = IntegratedScreening::whereBetween('screening_date', [$dayStart, $dayEnd])->get();
 
-            $trends[] = [
-                'date' => $date->format('Y-m-d'),
-                'day' => $date->format('D'),
-                'screened' => $dayScreenings->count(),
-                'viaPositive' => $dayScreenings->where('screening_method', 'via')
-                    ->where('screening_results', 'positive')
-                    ->count(),
-                'hpvPositive' => $dayScreenings->where('screening_method', 'hpv')
-                    ->where('screening_results', 'positive')
-                    ->count(),
-                'treated' => $dayScreenings->whereIn('treatment_decision', ['thermal_ablation', 'cryotherapy'])->count(),
-                'followUpCompleted' => $dayScreenings->where('follow_up_completed', true)->count(),
-            ];
+                $trends[] = [
+                    'date' => $date->format('Y-m-d'),
+                    'day' => $date->format('D'),
+                    'screened' => $dayScreenings->count(),
+                    'hpvPositive' => $dayScreenings->where('screening_method', 'hpv_test')
+                        ->where('screening_result', 'hpv_positive')
+                        ->count(),
+                    'viaPositive' => $dayScreenings->where('screening_method', 'via')
+                        ->where('screening_result', 'via_positive')
+                        ->count(),
+                    'treated' => $dayScreenings->whereIn('treatment_decision', ['thermal_ablation', 'cryotherapy', 'leep'])->count(),
+                    'followUpCompleted' => $dayScreenings->where('follow_up_completed', true)->count(),
+                ];
+            }
+
+            return $trends;
+        } catch (\Exception $e) {
+            \Log::error('Weekly trends error: ' . $e->getMessage());
+            return [];
         }
-
-        return $trends;
     }
 
     /**
@@ -236,34 +238,42 @@ class HandleInertiaRequests extends Middleware
      */
     private function getAgeGroups($screenings): array
     {
-        $ageGroups = [
-            ['name' => '15-24', 'value' => 0, 'color' => '#3B82F6'],
-            ['name' => '25-34', 'value' => 0, 'color' => '#8B5CF6'],
-            ['name' => '35-44', 'value' => 0, 'color' => '#EC4899'],
-            ['name' => '45-54', 'value' => 0, 'color' => '#F59E0B'],
-            ['name' => '55+', 'value' => 0, 'color' => '#EF4444'],
-        ];
+        try {
+            $ageGroups = [
+                ['name' => '15-24', 'value' => 0, 'color' => '#3B82F6'],
+                ['name' => '25-34', 'value' => 0, 'color' => '#8B5CF6'],
+                ['name' => '35-44', 'value' => 0, 'color' => '#EC4899'],
+                ['name' => '45-54', 'value' => 0, 'color' => '#F59E0B'],
+                ['name' => '55+', 'value' => 0, 'color' => '#EF4444'],
+            ];
 
-        // Assuming you have patient relationship with date_of_birth
-        foreach ($screenings->get() as $screening) {
-            if ($screening->patient && $screening->patient->date_of_birth) {
-                $age = Carbon::parse($screening->patient->date_of_birth)->age;
+            foreach ($screenings as $screening) {
+                if ($screening->patient && $screening->patient->date_of_birth) {
+                    try {
+                        $age = Carbon::parse($screening->patient->date_of_birth)->age;
 
-                if ($age >= 15 && $age <= 24) {
-                    $ageGroups[0]['value']++;
-                } elseif ($age >= 25 && $age <= 34) {
-                    $ageGroups[1]['value']++;
-                } elseif ($age >= 35 && $age <= 44) {
-                    $ageGroups[2]['value']++;
-                } elseif ($age >= 45 && $age <= 54) {
-                    $ageGroups[3]['value']++;
-                } elseif ($age >= 55) {
-                    $ageGroups[4]['value']++;
+                        if ($age >= 15 && $age <= 24) {
+                            $ageGroups[0]['value']++;
+                        } elseif ($age >= 25 && $age <= 34) {
+                            $ageGroups[1]['value']++;
+                        } elseif ($age >= 35 && $age <= 44) {
+                            $ageGroups[2]['value']++;
+                        } elseif ($age >= 45 && $age <= 54) {
+                            $ageGroups[3]['value']++;
+                        } elseif ($age >= 55) {
+                            $ageGroups[4]['value']++;
+                        }
+                    } catch (\Exception $e) {
+                        continue;
+                    }
                 }
             }
-        }
 
-        return $ageGroups;
+            return $ageGroups;
+        } catch (\Exception $e) {
+            \Log::error('Age groups error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -272,21 +282,17 @@ class HandleInertiaRequests extends Middleware
     private function getFacilityStats($startDate, $endDate): array
     {
         try {
-            $stats = DB::table('integrated_screenings')
-                ->join('facilities', 'integrated_screenings.facility_id', '=', 'facilities.id')
-                ->join('districts', 'facilities.district_id', '=', 'districts.id')
-                ->whereBetween('integrated_screenings.created_at', [$startDate, $endDate])
-                ->select(
-                    DB::raw('COUNT(DISTINCT integrated_screenings.facility_id) as total_facilities'),
-                    DB::raw('COUNT(DISTINCT facilities.district_id) as total_districts')
-                )
-                ->first();
+            $stats = IntegratedScreening::whereBetween('screening_date', [$startDate, $endDate])
+                ->select('facility_id')
+                ->distinct()
+                ->get();
 
             return [
-                'total_facilities' => $stats->total_facilities ?? 0,
-                'total_districts' => $stats->total_districts ?? 0,
+                'total_facilities' => $stats->count(),
+                'total_districts' => 0,
             ];
         } catch (\Exception $e) {
+            \Log::error('Facility stats error: ' . $e->getMessage());
             return [
                 'total_facilities' => 0,
                 'total_districts' => 0,
@@ -381,35 +387,36 @@ class HandleInertiaRequests extends Middleware
     private function getSparklineData($metric): array
     {
         $data = [];
+
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i);
             $dayStart = $date->copy()->startOfDay();
             $dayEnd = $date->copy()->endOfDay();
 
-            $query = IntegratedScreening::whereBetween('created_at', [$dayStart, $dayEnd]);
+            $screenings = IntegratedScreening::whereBetween('screening_date', [$dayStart, $dayEnd])->get();
 
             switch ($metric) {
                 case 'screened':
-                    $value = $query->count();
-                    break;
-                case 'via_positive':
-                    $value = $query->where('screening_method', 'via')
-                        ->where('screening_results', 'positive')
-                        ->count();
+                    $value = $screenings->count();
                     break;
                 case 'hpv_positive':
-                    $value = $query->where('screening_method', 'hpv')
-                        ->where('screening_results', 'positive')
+                    $value = $screenings->where('screening_method', 'hpv_test')
+                        ->where('screening_result', 'hpv_positive')
+                        ->count();
+                    break;
+                case 'via_positive':
+                    $value = $screenings->where('screening_method', 'via')
+                        ->where('screening_result', 'via_positive')
                         ->count();
                     break;
                 case 'treated':
-                    $value = $query->whereIn('treatment_decision', ['thermal_ablation', 'cryotherapy'])->count();
+                    $value = $screenings->whereIn('treatment_decision', ['thermal_ablation', 'cryotherapy', 'leep'])->count();
                     break;
                 case 'referral':
-                    $value = $query->where('treatment_decision', 'referral')->count();
+                    $value = $screenings->where('treatment_decision', 'referral')->count();
                     break;
                 case 'mortality':
-                    $value = 0; // Adjust based on your mortality table
+                    $value = 0;
                     break;
                 default:
                     $value = 0;
